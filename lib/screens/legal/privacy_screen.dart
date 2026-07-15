@@ -1,0 +1,204 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:drivio/theme/app_theme.dart';
+
+class PrivacyScreen extends StatelessWidget {
+  const PrivacyScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.bgDark,
+      appBar: AppBar(
+        title: const Text('Polityka prywatności'),
+        backgroundColor: AppTheme.bgDark,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        children: [
+          Text(
+            'Polityka Prywatności Drivio',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Ostatnia aktualizacja: 1 marca 2026',
+            style: GoogleFonts.poppins(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _section(
+            '1. Administrator danych',
+            '''Administratorem Twoich danych osobowych jest firma Drivio z siedzibą w Szczecinie, Polska.
+
+Kontakt z Administratorem:
+Email: kontakt@drivio.app
+Strona: www.drivio.app
+
+W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt pod powyższymi adresami.''',
+          ),
+          _section(
+            '2. Jakie dane zbieramy',
+            '''W zależności od sposobu korzystania z Aplikacji możemy zbierać następujące dane:
+
+DANE PODAWANE BEZPOŚREDNIO:
+• Adres email (przy rejestracji)
+• Imię i nazwisko (przy rejestracji)
+• Hasło (przechowywane w formie zaszyfrowanej)
+• Zdjęcia dodawane przez użytkownika
+• Komentarze i opinie
+
+DANE ZBIERANE AUTOMATYCZNIE:
+• Adres IP
+• Typ urządzenia i system operacyjny
+• Wersja aplikacji
+• Dane o lokalizacji (wyłącznie do wyświetlania mapy, za Twoją zgodą)
+• Dane analityczne (czas korzystania, przeglądane ekrany)
+• Dane o zakupach (identyfikatory transakcji)
+
+DANE DOTYCZĄCE KONTA:
+• Historia przeglądanych pułapek (liczby dzienne)
+• Zapisane pułapki i szkoły
+• Status subskrypcji Premium''',
+          ),
+          _section(
+            '3. W jakim celu przetwarzamy dane',
+            '''Twoje dane osobowe przetwarzamy w następujących celach:
+
+a) ŚWIADCZENIE USŁUG (art. 6 ust. 1 lit. b RODO):
+   – obsługa konta użytkownika,
+   – realizacja subskrypcji Premium,
+   – wyświetlanie spersonalizowanych treści.
+
+b) UZASADNIONY INTERES (art. 6 ust. 1 lit. f RODO):
+   – analiza i poprawa działania Aplikacji,
+   – zapobieganie nadużyciom,
+   – obsługa reklamacji.
+
+c) ZGODA (art. 6 ust. 1 lit. a RODO):
+   – dostęp do lokalizacji,
+   – dostęp do aparatu lub biblioteki zdjęć, jeśli dodajesz zdjęcie.
+
+d) OBOWIĄZEK PRAWNY (art. 6 ust. 1 lit. c RODO):
+   – wystawianie faktur i rachunków,
+   – przestrzeganie przepisów podatkowych.''',
+          ),
+          _section(
+            '4. Komu udostępniamy dane',
+            '''Twoje dane mogą być udostępniane następującym podmiotom:
+
+DOSTAWCY USŁUG TECHNICZNYCH:
+• Google LLC (Firebase) – hosting, baza danych, uwierzytelnianie
+• Google Maps Platform – usługi mapowe
+• Apple / Google – obsługa płatności w aplikacji mobilnej
+• Stripe – obsługa płatności w wersji webowej, jeśli jest dostępna
+
+ORGANY PUBLICZNE:
+• Wyłącznie na podstawie przepisów prawa lub prawomocnego orzeczenia sądu.
+
+Nie sprzedajemy Twoich danych osobowych podmiotom trzecim.
+
+Dane mogą być przekazywane do państw trzecich (USA) na podstawie standardowych klauzul umownych zatwierdzonych przez Komisję Europejską.''',
+          ),
+          _section(
+            '5. Jak długo przechowujemy dane',
+            '''• Dane konta: przez cały okres korzystania z Aplikacji + 2 lata po usunięciu konta
+• Dane transakcyjne: 5 lat (wymóg podatkowy)
+• Logi systemowe: 90 dni
+• Komentarze i treści: do usunięcia przez użytkownika lub administratora
+
+Po upływie powyższych terminów dane są trwale usuwane lub anonimizowane.''',
+          ),
+          _section(
+            '6. Twoje prawa',
+            '''Na podstawie RODO przysługują Ci następujące prawa:
+
+• DOSTĘP – możesz zażądać kopii swoich danych
+• SPROSTOWANIE – możesz poprawić nieprawidłowe dane
+• USUNIĘCIE ("prawo do bycia zapomnianym") – możesz zażądać usunięcia danych
+• OGRANICZENIE PRZETWARZANIA – możesz ograniczyć przetwarzanie w określonych przypadkach
+• PRZENOSZENIE – możesz otrzymać swoje dane w formacie JSON
+• SPRZECIW – możesz sprzeciwić się przetwarzaniu opartemu na uzasadnionym interesie
+• COFNIĘCIE ZGODY – w każdej chwili możesz cofnąć wyrażoną zgodę
+
+Aby skorzystać ze swoich praw, skontaktuj się z nami: kontakt@drivio.app
+
+Masz również prawo wniesienia skargi do Urzędu Ochrony Danych Osobowych (UODO).''',
+          ),
+          _section(
+            '7. Bezpieczeństwo danych',
+            '''Stosujemy następujące środki bezpieczeństwa:
+
+• Szyfrowanie danych w transmisji (HTTPS/TLS)
+• Szyfrowanie haseł (bcrypt)
+• Bezpieczna infrastruktura Firebase (Google Cloud)
+• Regularne aktualizacje zabezpieczeń
+• Dostęp do danych wyłącznie dla upoważnionych pracowników
+• Monitoring i alerty bezpieczeństwa
+
+W przypadku naruszenia bezpieczeństwa danych poinformujemy Cię i właściwe organy zgodnie z wymogami RODO.''',
+          ),
+          _section(
+            '8. Pliki cookie i śledzenie',
+            '''Aplikacja mobilna nie używa plików cookie. Jednak stosujemy podobne technologie:
+
+• Firebase – logowanie, baza danych, przechowywanie zdjęć i dane techniczne potrzebne do działania Aplikacji
+• Google Maps – wyświetlanie mapy i lokalizacji na mapie
+• Lokalne preferencje urządzenia – zapamiętanie wybranego miasta
+
+Wersja webowa Aplikacji może używać plików cookie niezbędnych do funkcjonowania.''',
+          ),
+          _section(
+            '9. Zmiany polityki prywatności',
+            '''1. Zastrzegamy sobie prawo do zmiany niniejszej Polityki Prywatności.
+
+2. O istotnych zmianach poinformujemy Cię z co najmniej 14-dniowym wyprzedzeniem przez:
+   – powiadomienie push w Aplikacji,
+   – wiadomość email na podany adres.
+
+3. Dalsze korzystanie z Aplikacji po wejściu w życie zmian oznacza ich akceptację.
+
+4. Niniejsza Polityka Prywatności wchodzi w życie z dniem 1 marca 2026 roku.
+
+Kontakt: kontakt@drivio.app
+Drivio – Szczecin, Polska''',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _section(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            color: AppTheme.primary,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: GoogleFonts.poppins(
+            color: AppTheme.textSecondary,
+            fontSize: 13,
+            height: 1.7,
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Divider(color: AppTheme.dividerColor),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+}
