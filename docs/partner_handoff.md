@@ -14,7 +14,7 @@ Konfiguracja wymagana w panelu RevenueCat:
 
 Wszystkie trzy produkty muszą odblokowywać entitlement drivio pro relase. Produkty drivioweek i driviomonth powinny być Auto-Renewable Subscriptions, a driviolifetime — Non-Consumable. Nie należy tworzyć produktu lifetime jako subskrypcji ani consumable.
 
-W RevenueCat trzeba podłączyć aplikację App Store Connect o Bundle ID com.drivio.app i dodać wymagane dane App Store Connect / In-App Purchase Key. Klucz publiczny RevenueCat może być w aplikacji; prywatne klucze Apple .p8 mogą być wyłącznie sekretem RevenueCat, backendu albo CI.
+W RevenueCat trzeba podłączyć aplikację App Store Connect o Bundle ID com.drivio.com i dodać wymagane dane App Store Connect / In-App Purchase Key. Klucz publiczny RevenueCat może być w aplikacji; prywatne klucze Apple .p8 mogą być wyłącznie sekretem RevenueCat, backendu albo CI.
 
 ## Firestore / backend
 
@@ -35,7 +35,7 @@ Nie trzeba dodawać własnej walidacji paragonów w aplikacji mobilnej — zakup
 
 Po stronie aplikacji jest gotowy natywny flow Firebase Auth i entitlement Sign in with Apple. Przed testem trzeba:
 
-- w Apple Developer włączyć Sign in with Apple dla App ID com.drivio.app;
+- w Apple Developer włączyć Sign in with Apple dla App ID com.drivio.com;
 - odświeżyć provisioning profile;
 - w Firebase Authentication włączyć provider Apple;
 - w Firebase użyć klucza Apple driviokey, Key ID 6D43VGP33F; po otrzymaniu pliku .p8 uzupełnić także Team ID i prywatny klucz;

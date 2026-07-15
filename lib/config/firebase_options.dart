@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     ),
     iosBundleId: const String.fromEnvironment(
       'IOS_BUNDLE_ID',
-      defaultValue: 'com.drivio.app',
+      defaultValue: 'com.drivio.com',
     ),
   );
 

@@ -16,12 +16,12 @@ The root codemagic.yaml contains the ios-release workflow for a signed Drivio IP
    - FIREBASE_PROJECT_ID
    - FIREBASE_STORAGE_BUCKET
    - REVENUECAT_IOS_API_KEY (optional because the public iOS SDK key has a code fallback)
-6. Keep an Apple Distribution certificate and an App Store provisioning profile for com.drivio.app available to Codemagic automatic signing.
+6. Keep an Apple Distribution certificate and an App Store provisioning profile for com.drivio.com available to Codemagic automatic signing.
 7. Run the ios-release workflow.
 
 ## Fixed identifiers
 
-- Bundle ID: com.drivio.app
+- Bundle ID: com.drivio.com
 - App Store Apple ID: 6776345734
 - RevenueCat offering: driviooffers
 - RevenueCat entitlement: drivio pro relase

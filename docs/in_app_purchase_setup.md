@@ -34,6 +34,6 @@ The existing Firestore Premium fields remain as a migration/backend fallback. Th
 
 Before TestFlight:
 
-1. Enable the Sign in with Apple capability for App ID `com.drivio.app`.
+1. Enable the Sign in with Apple capability for App ID `com.drivio.com`.
 2. Enable Apple in Firebase Authentication with key name driviokey and Key ID 6D43VGP33F. Add the Team ID and private .p8 key when available; configure the Service ID/redirect URI where required.
 3. Verify first sign-in, repeat sign-in (Apple may hide name/email), sign-out, and account switching on a physical device.

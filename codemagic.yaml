@@ -10,7 +10,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.drivio.app
+        bundle_identifier: com.drivio.com
 
       flutter: stable
       xcode: latest
@@ -21,7 +21,7 @@ workflows:
 
       vars:
         APP_STORE_APPLE_ID: "6776345734"
-        IOS_BUNDLE_ID: "com.drivio.app"
+        IOS_BUNDLE_ID: "com.drivio.com"
 
     scripts:
       - name: Validate release configuration
