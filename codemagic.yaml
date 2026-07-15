@@ -1,0 +1,84 @@
+workflows:
+  ios-release:
+    name: Drivio iOS Release
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: "wychor appstoreconnectkey"
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.drivio.app
+
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+
+      groups:
+        - drivio_secrets
+
+      vars:
+        APP_STORE_APPLE_ID: "6776345734"
+        IOS_BUNDLE_ID: "com.drivio.app"
+
+    scripts:
+      - name: Validate release configuration
+        script: |
+          set -euo pipefail
+          : "${GOOGLE_MAPS_API_KEY:?Missing GOOGLE_MAPS_API_KEY in drivio_secrets}"
+          : "${FIREBASE_IOS_API_KEY:?Missing FIREBASE_IOS_API_KEY in drivio_secrets}"
+          : "${FIREBASE_IOS_APP_ID:?Missing FIREBASE_IOS_APP_ID in drivio_secrets}"
+          : "${FIREBASE_MESSAGING_SENDER_ID:?Missing FIREBASE_MESSAGING_SENDER_ID in drivio_secrets}"
+          : "${FIREBASE_PROJECT_ID:?Missing FIREBASE_PROJECT_ID in drivio_secrets}"
+          : "${FIREBASE_STORAGE_BUCKET:?Missing FIREBASE_STORAGE_BUCKET in drivio_secrets}"
+
+      - name: Get Flutter packages
+        script: flutter pub get
+
+      - name: Create iOS secrets configuration
+        script: |
+          echo "GOOGLE_MAPS_API_KEY = $GOOGLE_MAPS_API_KEY" > ios/Flutter/Secrets.xcconfig
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+
+      - name: Set up automatic iOS code signing
+        script: xcode-project use-profiles
+
+      - name: Analyze Flutter project
+        script: flutter analyze --no-fatal-warnings --no-fatal-infos --no-pub
+
+      - name: Run Flutter tests
+        script: flutter test --no-pub
+
+      - name: Build signed IPA
+        script: |
+          IOS_BUILD_NUMBER="$(date -u +%Y%m%d%H%M%S)"
+          BUILD_ARGUMENTS=(
+            --release
+            "--build-number=$IOS_BUILD_NUMBER"
+            "--dart-define=FIREBASE_IOS_API_KEY=$FIREBASE_IOS_API_KEY"
+            "--dart-define=FIREBASE_IOS_APP_ID=$FIREBASE_IOS_APP_ID"
+            "--dart-define=FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID"
+            "--dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID"
+            "--dart-define=FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET"
+            "--dart-define=IOS_BUNDLE_ID=$IOS_BUNDLE_ID"
+            "--dart-define=REVENUECAT_IOS_API_KEY=${REVENUECAT_IOS_API_KEY:-}"
+            "--export-options-plist=/Users/builder/export_options.plist"
+          )
+          flutter build ipa "${BUILD_ARGUMENTS[@]}"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
