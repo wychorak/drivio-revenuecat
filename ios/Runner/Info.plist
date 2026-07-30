@@ -28,6 +28,21 @@
 		<true/>
 		<key>GoogleMapsApiKey</key>
 		<string>$(GOOGLE_MAPS_API_KEY)</string>
+		<key>GIDClientID</key>
+		<string>154834085926-sl7gdikb90m9p8gic56ru6btqpskdrk2.apps.googleusercontent.com</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.154834085926-sl7gdikb90m9p8gic56ru6btqpskdrk2</string>
+				</array>
+			</dict>
+		</array>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>GADApplicationIdentifier</key>
 		<string>ca-app-pub-8263324816746737~5489467107</string>
 		<key>NSCameraUsageDescription</key>

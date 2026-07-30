@@ -8,12 +8,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'config/firebase_options.dart';
 import 'app.dart';
 import 'services/revenuecat_service.dart';
+import 'services/session_preference_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env', isOptional: true);
   await initializeDateFormatting('pl', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await SessionPreferenceService.enforceOnStartup();
   await _activateAppCheck();
   await RevenueCatService.instance.initialize();
   runApp(const ProviderScope(child: DrivioApp()));

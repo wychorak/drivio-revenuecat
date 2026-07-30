@@ -1,11 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
+  static const _iosGoogleClientId =
+      '154834085926-sl7gdikb90m9p8gic56ru6btqpskdrk2.apps.googleusercontent.com';
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _googleInitialized = false;
 
   User? get currentUser => _auth.currentUser;
 
@@ -26,9 +31,35 @@ class AuthService {
       await _auth.signOut();
       throw FirebaseAuthException(
         code: 'email-not-verified',
-        message: 'Potwierdź adres email przed logowaniem.',
+        message: 'Potwierdź adres e-mail przed logowaniem.',
       );
     }
+    return user;
+  }
+
+  Future<User?> signInWithGoogle() async {
+    final UserCredential credential;
+    if (kIsWeb) {
+      final provider = GoogleAuthProvider()
+        ..setCustomParameters({'prompt': 'select_account'});
+      credential = await _auth.signInWithPopup(provider);
+    } else {
+      await _initializeGoogleSignIn();
+      final googleUser = await GoogleSignIn.instance.authenticate();
+      final googleAuth = googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'invalid-oauth-response',
+          message: 'Google did not return an ID token.',
+        );
+      }
+      final googleCredential = GoogleAuthProvider.credential(idToken: idToken);
+      credential = await _auth.signInWithCredential(googleCredential);
+    }
+
+    final user = credential.user;
+    if (user != null) await _ensureUserDocument(user);
     return user;
   }
 
@@ -39,16 +70,26 @@ class AuthService {
     final credential = kIsWeb
         ? await _auth.signInWithPopup(provider)
         : await _auth.signInWithProvider(provider);
+
     final user = credential.user;
-    if (user != null) {
-      await _ensureUserDocument(user);
-    }
+    if (user != null) await _ensureUserDocument(user);
     return user;
   }
 
+  Future<void> _initializeGoogleSignIn() async {
+    if (_googleInitialized) return;
+    final useIosClientId =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    await GoogleSignIn.instance.initialize(
+      clientId: useIosClientId ? _iosGoogleClientId : null,
+    );
+    _googleInitialized = true;
+  }
+
   Future<void> _ensureUserDocument(User user) async {
-    final ref = _firestore.collection('users').doc(user.uid);
-    final snapshot = await ref.get();
+    final reference = _firestore.collection('users').doc(user.uid);
+    final snapshot = await reference.get();
     if (!snapshot.exists) {
       final fallbackName = user.displayName?.trim().isNotEmpty == true
           ? user.displayName!.trim()
@@ -56,11 +97,17 @@ class AuthService {
       await _createUserDocument(user, fallbackName);
       return;
     }
-    await ref.set({
-      'email': user.email ?? '',
-      if (user.displayName?.trim().isNotEmpty == true)
-        'displayName': user.displayName!.trim(),
-    }, SetOptions(merge: true));
+
+    final updates = <String, Object>{};
+    final email = user.email?.trim();
+    final displayName = user.displayName?.trim();
+    if (email != null && email.isNotEmpty) updates['email'] = email;
+    if (displayName != null && displayName.isNotEmpty) {
+      updates['displayName'] = displayName;
+    }
+    if (updates.isNotEmpty) {
+      await reference.set(updates, SetOptions(merge: true));
+    }
   }
 
   Future<User?> registerWithEmail(
@@ -100,6 +147,13 @@ class AuthService {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    if (_googleInitialized && !kIsWeb) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {
+        // Firebase logout must still succeed if the provider is unavailable.
+      }
+    }
   }
 
   Future<void> sendPasswordReset(String email) async {
@@ -140,8 +194,8 @@ class AuthService {
           .get();
       if (snapshot.docs.isEmpty) return;
       final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
+      for (final document in snapshot.docs) {
+        batch.delete(document.reference);
       }
       await batch.commit();
       if (snapshot.docs.length < 400) return;
