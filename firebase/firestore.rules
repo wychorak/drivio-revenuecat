@@ -13,61 +13,126 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Temporary release admin. Replace with a backend-managed custom claim.
     function isAdmin() {
-      return signedIn() && request.auth.token.admin == true;
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'joa.rycyk@gmail.com';
     }
 
-    function validOptionalString(value, maxLength) {
-      return value == null || (value is string && value.size() <= maxLength);
+    function optionalString(data, field, maxLength) {
+      return data.get(field, null) == null
+        || (data.get(field, null) is string
+          && data.get(field, null).size() <= maxLength);
+    }
+
+    function optionalTimestamp(data, field) {
+      return data.get(field, null) == null
+        || data.get(field, null) is timestamp;
+    }
+
+    function validUserEmail(data) {
+      return data.get('email', null) == null
+        || (data.email is string
+          && data.email.size() <= 254
+          && (data.email == ''
+            || (request.auth.token.email is string
+              && data.email == request.auth.token.email)));
     }
 
     function validUser(data, uid) {
-      return data.keys().hasOnly([
-          'uid', 'email', 'displayName', 'isPremium', 'premiumUntil',
+      return data.keys().hasAll([
+          'uid', 'isPremium', 'premiumUntil', 'savedTraps', 'savedSchools',
+          'blockedUsers', 'dailyTrapViews', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'photoUrl', 'createdAt',
           'savedTraps', 'savedSchools', 'blockedUsers', 'dailyTrapViews',
-          'photoUrl', 'createdAt'
+          'isBlocked', 'isGuest',
+          'isPremium', 'premiumUntil', 'premiumPlan', 'premiumProductId',
+          'premiumSource', 'premiumStore', 'premiumUpdatedAt'
         ])
         && data.uid == uid
-        && data.email is string && data.email.size() <= 254
-        && data.displayName is string && data.displayName.size() <= 80
-        && data.isPremium is bool
-        && (data.premiumUntil == null || data.premiumUntil is timestamp)
+        && validUserEmail(data)
+        && optionalString(data, 'displayName', 80)
+        && optionalString(data, 'photoUrl', 2048)
+        && data.createdAt is timestamp
         && data.savedTraps is list && data.savedTraps.size() <= 500
         && data.savedSchools is list && data.savedSchools.size() <= 100
         && data.blockedUsers is list && data.blockedUsers.size() <= 500
-        && data.dailyTrapViews is map
-        && validOptionalString(data.photoUrl, 2048);
+        && data.dailyTrapViews is map && data.dailyTrapViews.size() <= 31
+        && (data.get('isBlocked', false) is bool)
+        && (data.get('isGuest', false) is bool)
+        && data.isPremium is bool
+        && optionalTimestamp(data, 'premiumUntil')
+        && optionalString(data, 'premiumPlan', 64)
+        && optionalString(data, 'premiumProductId', 128)
+        && optionalString(data, 'premiumSource', 32)
+        && optionalString(data, 'premiumStore', 32)
+        && optionalTimestamp(data, 'premiumUpdatedAt');
+    }
+
+    function safeUserCreate(data) {
+      return data.isPremium == false
+        && data.premiumUntil == null
+        && data.get('premiumPlan', null) == null
+        && data.get('premiumProductId', null) == null
+        && data.get('premiumSource', null) == null
+        && data.get('premiumStore', null) == null
+        && data.get('premiumUpdatedAt', null) == null
+        && data.get('isBlocked', false) == false
+        && data.get('isGuest', false) == false
+        && data.savedTraps.size() == 0
+        && data.savedSchools.size() == 0
+        && data.blockedUsers.size() == 0
+        && data.dailyTrapViews.size() == 0
+        && data.createdAt == request.time;
     }
 
     match /users/{uid} {
-      allow read: if owns(uid) || isAdmin();
+      allow read: if owns(uid);
       allow create: if owns(uid)
         && validUser(request.resource.data, uid)
-        && request.resource.data.isPremium == false
-        && request.resource.data.premiumUntil == null;
-      allow update: if isAdmin() || (owns(uid)
+        && safeUserCreate(request.resource.data);
+      allow update: if owns(uid)
         && validUser(request.resource.data, uid)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'email', 'displayName', 'savedTraps', 'savedSchools', 'blockedUsers',
-          'photoUrl'
-        ]));
-      allow delete: if owns(uid) || isAdmin();
+          'displayName', 'photoUrl', 'savedTraps', 'savedSchools',
+          'blockedUsers'
+        ]);
+      allow delete: if false;
 
+      // Legacy-compatible rolling counter used by the current Flutter client.
+      // Only +1 in a transaction is accepted; reset is possible only after 24 h.
       match /usage/{usageId} {
-        allow read: if owns(uid) || isAdmin();
+        allow read: if owns(uid);
         allow create: if owns(uid)
           && usageId == 'trapViews'
+          && request.resource.data.keys().hasAll([
+            'views', 'periodStartedAt', 'updatedAt'
+          ])
           && request.resource.data.keys().hasOnly([
             'views', 'periodStartedAt', 'updatedAt'
           ])
+          && request.resource.data.views is int
           && request.resource.data.views == 1
+          && request.resource.data.periodStartedAt is timestamp
           && request.resource.data.periodStartedAt == request.time
+          && request.resource.data.updatedAt is timestamp
           && request.resource.data.updatedAt == request.time;
         allow update: if owns(uid)
           && usageId == 'trapViews'
+          && request.resource.data.keys().hasAll([
+            'views', 'periodStartedAt', 'updatedAt'
+          ])
           && request.resource.data.keys().hasOnly([
             'views', 'periodStartedAt', 'updatedAt'
           ])
+          && resource.data.views is int
+          && resource.data.periodStartedAt is timestamp
+          && request.resource.data.views is int
+          && request.resource.data.periodStartedAt is timestamp
+          && request.resource.data.updatedAt is timestamp
           && request.resource.data.updatedAt == request.time
           && (
             (
@@ -86,7 +151,11 @@ service cloud.firestore {
     }
 
     function validTrap(data) {
-      return data.keys().hasOnly([
+      return data.keys().hasAll([
+          'lat', 'lng', 'title', 'description', 'difficulty',
+          'ruleDescription', 'createdBy', 'city', 'createdAt', 'savesCount'
+        ])
+        && data.keys().hasOnly([
           'lat', 'lng', 'title', 'description', 'difficulty', 'photoUrl',
           'videoUrl', 'ruleDescription', 'createdBy', 'city', 'createdAt',
           'savesCount'
@@ -97,8 +166,8 @@ service cloud.firestore {
         && data.description is string && data.description.size() >= 10
         && data.description.size() <= 1500
         && data.difficulty is int && data.difficulty >= 1 && data.difficulty <= 5
-        && validOptionalString(data.photoUrl, 2048)
-        && validOptionalString(data.videoUrl, 2048)
+        && optionalString(data, 'photoUrl', 2048)
+        && optionalString(data, 'videoUrl', 2048)
         && data.ruleDescription is string && data.ruleDescription.size() <= 1000
         && data.createdBy is string && data.createdBy.size() <= 128
         && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
@@ -107,33 +176,54 @@ service cloud.firestore {
     }
 
     match /traps/{trapId} {
-      allow read: if signedIn();
-      allow create: if verified()
+      allow read: if true;
+      allow create: if isAdmin()
         && validTrap(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
         && request.resource.data.savesCount == 0;
-      allow update: if isAdmin() || (signedIn()
-        && resource.data.createdBy == request.auth.uid
+      allow update: if isAdmin()
+        && validTrap(request.resource.data)
         && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.savesCount == resource.data.savesCount
-        && validTrap(request.resource.data));
-      allow delete: if isAdmin()
-        || (signedIn() && resource.data.createdBy == request.auth.uid);
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
+    function hasOneCreatedTime(data) {
+      return (
+          data.keys().hasAny(['createdAt'])
+          && data.createdAt is timestamp
+          && !data.keys().hasAny(['timestamp'])
+        ) || (
+          data.keys().hasAny(['timestamp'])
+          && data.timestamp is timestamp
+          && !data.keys().hasAny(['createdAt'])
+        );
+    }
+
+    function createdTimeIsNow(data) {
+      return (data.keys().hasAny(['createdAt']) && data.createdAt == request.time)
+        || (data.keys().hasAny(['timestamp']) && data.timestamp == request.time);
     }
 
     function validComment(data) {
-      return data.keys().hasOnly([
-          'itemId', 'itemType', 'userId', 'userDisplayName', 'text',
-          'timestamp', 'reported'
+      return data.keys().hasAll([
+          'itemId', 'itemType', 'userId', 'text', 'reported'
+        ])
+        && data.keys().hasOnly([
+          'itemId', 'itemType', 'userId', 'userDisplayName', 'authorName',
+          'authorPhotoUrl', 'text', 'createdAt', 'timestamp', 'updatedAt',
+          'reported'
         ])
         && data.itemId is string && data.itemId.size() >= 1 && data.itemId.size() <= 128
         && data.itemType in ['trap', 'school']
-        && data.userId is string && data.userId.size() <= 128
-        && data.userDisplayName is string && data.userDisplayName.size() <= 80
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+        && optionalString(data, 'userDisplayName', 80)
+        && optionalString(data, 'authorName', 80)
+        && optionalString(data, 'authorPhotoUrl', 2048)
         && data.text is string && data.text.size() >= 1 && data.text.size() <= 1000
-        && data.timestamp is timestamp
+        && hasOneCreatedTime(data)
+        && optionalTimestamp(data, 'updatedAt')
         && data.reported is bool;
     }
 
@@ -142,37 +232,79 @@ service cloud.firestore {
       allow create: if verified()
         && validComment(request.resource.data)
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.timestamp == request.time
-        && request.resource.data.reported == false;
-      allow update: if isAdmin();
+        && createdTimeIsNow(request.resource.data)
+        && request.resource.data.reported == false
+        && !request.resource.data.keys().hasAny(['updatedAt']);
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && validComment(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'text', 'updatedAt'
+        ])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
+          || request.resource.data.updatedAt == request.time);
       allow delete: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
     function validReport(data) {
-      return data.keys().hasOnly([
-          'itemId', 'itemType', 'reason', 'reporterId', 'timestamp'
+      return data.keys().hasAll([
+          'itemId', 'itemType', 'reason', 'reporterId'
+        ])
+        && data.keys().hasOnly([
+          'itemId', 'itemType', 'reason', 'details', 'reporterId',
+          'createdAt', 'timestamp', 'status', 'resolutionNote', 'resolvedAt'
         ])
         && data.itemId is string && data.itemId.size() >= 1 && data.itemId.size() <= 128
         && data.itemType in ['trap', 'school', 'comment']
         && data.reason is string && data.reason.size() >= 3 && data.reason.size() <= 500
-        && data.reporterId is string && data.reporterId.size() <= 128
-        && data.timestamp is timestamp;
+        && optionalString(data, 'details', 2000)
+        && data.reporterId is string
+        && data.reporterId.size() >= 1 && data.reporterId.size() <= 128
+        && hasOneCreatedTime(data)
+        && (data.get('status', 'pending') in ['pending', 'resolved', 'dismissed'])
+        && optionalString(data, 'resolutionNote', 1000)
+        && optionalTimestamp(data, 'resolvedAt');
     }
 
     match /reports/{reportId} {
       allow create: if verified()
         && validReport(request.resource.data)
         && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.timestamp == request.time;
-      allow read, delete: if isAdmin()
-        || (signedIn() && resource.data.reporterId == request.auth.uid);
-      allow update: if isAdmin();
+        && createdTimeIsNow(request.resource.data)
+        && request.resource.data.get('status', 'pending') == 'pending'
+        && !request.resource.data.keys().hasAny([
+          'resolutionNote', 'resolvedAt'
+        ]);
+      allow read: if isAdmin();
+      allow update: if isAdmin()
+        && validReport(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'resolutionNote', 'resolvedAt'
+        ]);
+      allow delete: if isAdmin();
     }
 
     match /schools/{schoolId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Backend/Admin SDK owns this collection. A client cannot reset or forge
+    // counters; server SDKs bypass Firestore Security Rules and require IAM.
+    match /dailyLimits/{limitId} {
+      allow get: if signedIn()
+        && (limitId == request.auth.uid
+          || resource.data.get('userId', '') == request.auth.uid);
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    // Purchase history and entitlement synchronization are backend-only.
+    match /iapTransactions/{transactionId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
     }
 
     match /{document=**} {

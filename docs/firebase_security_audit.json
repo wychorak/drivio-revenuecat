@@ -1,35 +1,47 @@
 {
-    "auditDate":  "2026-07-30",
-    "ruleSetFound":  true,
-    "files":  [
-                  "firebase/firestore.rules",
-                  "firebase/storage.rules",
-                  "firebase/firestore.indexes.json"
-              ],
-    "scores":  {
-                   "defaultDeny":  4,
-                   "authentication":  4,
-                   "ownershipAndAccessControl":  4,
-                   "inputValidation":  3,
-                   "privilegedOperations":  4,
-                   "storageSecurity":  4
-               },
-    "overallRating":  "Strong",
-    "criticalFindings":  [
-
-                         ],
-    "warnings":  [
-                     "Rules are committed but still require deployment by the Firebase owner.",
-                     "Custom admin claim must be assigned from a trusted Firebase Admin SDK environment.",
-                     "App Check enforcement must be enabled in Firebase Console after monitoring TestFlight traffic.",
-                     "Trap views have a server-enforced rolling limit; trap/comment creation still needs operational abuse monitoring or backend rate limiting at scale."
-                 ],
-    "manualChecks":  [
-                         "Verify ADMIN_EMAILS account also has verified email and admin=true token claim.",
-                         "Verify all expected Firestore indexes finish building after deployment.",
-                         "Verify Storage upload rejects files above 5 MB and non-image MIME types.",
-                         "Verify a normal user cannot edit isPremium, premiumUntil, uid or admin data.",
-                         "Verify report queries and moderation deletes succeed only for admin claim."
-                     ],
-    "validation":  "Firestore Emulator 1.22.0 and Storage Rules Runtime 1.1.3 compiled the rules successfully with Firebase CLI 15.25.0 and Java 21."
+  "score": 5,
+  "summary": "Firestore rules use default-deny, verified-email admin authorization, strict ownership, field allowlists, type and size validation, immutable identity fields, backend-only Premium/IAP writes, and backend-only top-level daily limits. All 17 emulator tests pass. Two release integration gaps remain outside the rules: client-side account deletion now requires backend cleanup, and the Flutter admin gate still expects an admin custom claim.",
+  "findings": [
+    {
+      "check": "Update and recreate bypass",
+      "severity": "minor",
+      "issue": "Allowing users to delete users/{uid} would let a blocked account recreate the profile with isBlocked=false.",
+      "recommendation": "Client deletes are denied. Implement account deletion and Firestore cleanup with a trusted backend/Admin SDK."
+    },
+    {
+      "check": "Business logic vs. rules",
+      "severity": "moderate",
+      "issue": "The current client deletion flow queries reports and deletes traps. The requested admin-only report reads and admin-only trap writes correctly deny those operations.",
+      "recommendation": "Move account cleanup to a callable backend function and verify ownership server-side before deleting Auth, Firestore and Storage data."
+    },
+    {
+      "check": "Admin integration",
+      "severity": "minor",
+      "issue": "Firestore and Storage rules recognize the exact verified email, but AdminAccessService in Flutter additionally requires the admin=true custom claim.",
+      "recommendation": "Until admin authorization is migrated fully to claims, set admin=true only for joa.rycyk@gmail.com so the existing admin UI can open."
+    },
+    {
+      "check": "Public data surface",
+      "severity": "minor",
+      "issue": "Every field stored in traps and schools is public because Firestore rules cannot hide selected fields in a readable document.",
+      "recommendation": "Keep PII, moderation notes and internal metadata out of these public documents or move them to private subcollections."
+    }
+  ],
+  "validation": {
+    "date": "2026-07-30",
+    "firebaseTools": "15.25.0",
+    "rulesUnitTesting": "5.0.1",
+    "firestoreSdk": "12.16.0",
+    "java": "21.0.9",
+    "tests": 17,
+    "passed": 17,
+    "failed": 0
+  },
+  "remainingRisks": [
+    "Enable and enforce Firebase App Check after monitoring valid TestFlight traffic.",
+    "Security Rules do not provide business-level rate limits for comments and reports; add backend quotas and abuse monitoring.",
+    "RevenueCat webhook processing must verify webhook authorization, be idempotent, and write Premium fields with Admin SDK.",
+    "Protect backend service accounts and Firestore IAM because Admin SDK bypasses Security Rules.",
+    "Deploy the committed rules to the correct Firebase project before release."
+  ]
 }

@@ -54,3 +54,4 @@ ios/Flutter/Secrets.xcconfig
 # Local architecture audit output
 graphify-out/
 android/.kotlin/
+firebase/rules-tests/node_modules/
