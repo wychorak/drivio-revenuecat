@@ -121,6 +121,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         error.contains('wrong-password') ||
         error.contains('invalid-credential')) {
       return 'Nieprawidłowy email lub hasło';
+    } else if (error.contains('email-not-verified')) {
+      return 'Potwierdź adres email. Wysłaliśmy nowy link weryfikacyjny.';
     } else if (error.contains('too-many-requests')) {
       return 'Za dużo prób. Spróbuj za chwilę.';
     } else if (error.contains('network-request-failed')) {

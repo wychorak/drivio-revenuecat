@@ -44,6 +44,7 @@ class RevenueCatService {
 
   bool _purchaseInFlight = false;
   bool get isConfigured => _configured;
+  String? get activeUid => _activeUid;
   bool get shouldUseIAP =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.iOS ||
@@ -157,10 +158,18 @@ class RevenueCatService {
       );
 
       try {
+        if (!productIds.contains(product.storeProduct.identifier)) {
+          throw StateError('Nieznany produkt App Store.');
+        }
         final result = await Purchases.purchase(
           PurchaseParams.package(product),
         );
         _onCustomerInfo(result.customerInfo);
+        if (!hasPremium(result.customerInfo)) {
+          throw StateError(
+            'Zakup zakończony, ale entitlement Premium nie został aktywowany.',
+          );
+        }
         _events.add(
           const PremiumPurchaseEvent(
             type: PremiumPurchaseEventType.purchased,

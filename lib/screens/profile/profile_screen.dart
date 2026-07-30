@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import 'package:drivio/models/school_model.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/dev_data_service.dart';
+import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
 
@@ -167,8 +169,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         context.go('/login');
         return;
       }
-      await ref.read(authServiceProvider).deleteAccount();
-      if (mounted) context.go('/login');
+      try {
+        await ref.read(authServiceProvider).deleteAccount();
+        if (mounted) context.go('/login');
+      } on FirebaseAuthException catch (error) {
+        if (!mounted) return;
+        final requiresLogin = error.code == 'requires-recent-login';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              requiresLogin
+                  ? 'Dla bezpieczeństwa wyloguj się, zaloguj ponownie i od razu ponów usunięcie konta.'
+                  : 'Nie udało się usunąć konta. Spróbuj ponownie.',
+            ),
+          ),
+        );
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nie udało się usunąć konta. Spróbuj ponownie.'),
+          ),
+        );
+      }
     }
   }
 
@@ -176,6 +199,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final isPremium = ref.watch(isPremiumProvider);
+    final adminAccess = ref.watch(adminAccessProvider).value;
 
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
@@ -254,6 +278,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           fontSize: 14,
                         ),
                       ),
+                      if (adminAccess?.emailListed == true) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                (adminAccess?.isAdmin == true
+                                        ? Colors.green
+                                        : Colors.orange)
+                                    .withAlpha(25),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: adminAccess?.isAdmin == true
+                                  ? Colors.green
+                                  : Colors.orange,
+                            ),
+                          ),
+                          child: Text(
+                            adminAccess?.isAdmin == true
+                                ? 'Administrator zweryfikowany'
+                                : 'Brak claimu administratora',
+                            style: GoogleFonts.poppins(
+                              color: adminAccess?.isAdmin == true
+                                  ? Colors.greenAccent
+                                  : Colors.orangeAccent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       if (isPremium)
                         Container(

@@ -13,6 +13,8 @@ import 'package:drivio/providers/schools_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
+import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
+import 'package:drivio/services/admin_access_service.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -253,29 +255,35 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         backgroundColor: AppTheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavTap,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            activeIcon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school_outlined),
-            activeIcon: Icon(Icons.school),
-            label: 'Szkoły',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            activeIcon: Icon(Icons.assignment),
-            label: 'Egzamin',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const PremiumAwareBannerAd(),
+          BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onNavTap,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map_outlined),
+                activeIcon: Icon(Icons.map),
+                label: 'Mapa',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.school_outlined),
+                activeIcon: Icon(Icons.school),
+                label: 'Szkoły',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assignment_outlined),
+                activeIcon: Icon(Icons.assignment),
+                label: 'Egzamin',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Profil',
+              ),
+            ],
           ),
         ],
       ),
@@ -283,6 +291,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Widget _buildDrawer() {
+    final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
     return Drawer(
       backgroundColor: AppTheme.bgCard,
       child: SafeArea(
@@ -344,6 +353,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 context.push('/profile');
               },
             ),
+            if (isAdmin)
+              _drawerItem(
+                icon: Icons.admin_panel_settings_outlined,
+                title: 'Moderacja',
+                iconColor: Colors.orangeAccent,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/admin');
+                },
+              ),
             _drawerItem(
               icon: Icons.emoji_events_outlined,
               title: 'Pro tipy',

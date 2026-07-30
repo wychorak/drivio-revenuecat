@@ -23,8 +23,12 @@ dependencies:
   firebase_core: ^3.13.0
   firebase_auth: ^5.5.0
   cloud_firestore: ^5.6.6
+  firebase_app_check: ^0.3.2+10
   purchases_flutter: ^10.2.0
   firebase_storage: ^12.4.4
+
+  # Privacy-safe iOS monetization
+  google_mobile_ads: ^9.0.0
 
   # Maps
   google_maps_flutter: ^2.10.0
@@ -53,19 +57,31 @@ dev_dependencies:
   flutter_native_splash: ^2.4.5
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: true
   image_path: "assets/images/icon.png"
   min_sdk_android: 21
+  remove_alpha_ios: true
   web:
     generate: true
     image_path: "assets/images/icon.png"
+  macos:
+    generate: true
+    image_path: "assets/images/icon.png"
+  windows:
+    generate: true
+    image_path: "assets/images/icon.png"
+    icon_size: 48
 
 flutter_native_splash:
   color: "#0A0C14"
+  image: assets/images/icon.png
   android: true
   ios: true
   web: false
+  android_12:
+    color: "#0A0C14"
+    image: assets/images/icon.png
 
 flutter:
   uses-material-design: true

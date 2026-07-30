@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,7 +16,20 @@ class AuthService {
       email: email.trim(),
       password: password,
     );
-    return credential.user;
+    final user = credential.user;
+    if (user != null && !user.emailVerified) {
+      try {
+        await user.sendEmailVerification();
+      } on FirebaseAuthException catch (error) {
+        if (error.code != 'too-many-requests') rethrow;
+      }
+      await _auth.signOut();
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message: 'Potwierdź adres email przed logowaniem.',
+      );
+    }
+    return user;
   }
 
   Future<User?> signInWithApple() async {
@@ -62,6 +76,8 @@ class AuthService {
     if (user != null) {
       await user.updateDisplayName(displayName);
       await _createUserDocument(user, displayName);
+      await user.sendEmailVerification();
+      await _auth.signOut();
     }
     return user;
   }
@@ -92,9 +108,53 @@ class AuthService {
 
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
-    if (user != null) {
-      await _firestore.collection('users').doc(user.uid).delete();
-      await user.delete();
+    if (user == null) return;
+
+    final lastSignIn = user.metadata.lastSignInTime;
+    if (lastSignIn == null ||
+        DateTime.now().difference(lastSignIn) > const Duration(minutes: 4)) {
+      throw FirebaseAuthException(
+        code: 'requires-recent-login',
+        message: 'Zaloguj się ponownie przed usunięciem konta.',
+      );
+    }
+
+    await _deleteOwnedDocuments('comments', 'userId', user.uid);
+    await _deleteOwnedDocuments('reports', 'reporterId', user.uid);
+    await _deleteOwnedDocuments('traps', 'createdBy', user.uid);
+    await _deleteUploadedTrapPhotos(user.uid);
+    await _firestore.collection('users').doc(user.uid).delete();
+    await user.delete();
+  }
+
+  Future<void> _deleteOwnedDocuments(
+    String collection,
+    String ownerField,
+    String uid,
+  ) async {
+    while (true) {
+      final snapshot = await _firestore
+          .collection(collection)
+          .where(ownerField, isEqualTo: uid)
+          .limit(400)
+          .get();
+      if (snapshot.docs.isEmpty) return;
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      if (snapshot.docs.length < 400) return;
+    }
+  }
+
+  Future<void> _deleteUploadedTrapPhotos(String uid) async {
+    final folder = FirebaseStorage.instance.ref().child('traps/$uid');
+    try {
+      final files = await folder.listAll();
+      await Future.wait(files.items.map((item) => item.delete()));
+    } on FirebaseException catch (error) {
+      if (error.code != 'object-not-found') rethrow;
     }
   }
 

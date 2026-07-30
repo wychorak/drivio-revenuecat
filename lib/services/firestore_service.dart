@@ -4,7 +4,7 @@ import 'package:drivio/models/report_model.dart';
 import 'package:drivio/models/school_model.dart';
 import 'package:drivio/models/trap_model.dart';
 import 'package:drivio/models/user_model.dart';
-import 'package:intl/intl.dart';
+import 'package:drivio/config/app_config.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -15,6 +15,8 @@ class FirestoreService {
     return _db
         .collection('traps')
         .where('city', isEqualTo: city)
+        .orderBy('createdAt', descending: true)
+        .limit(300)
         .snapshots()
         .map(
           (snap) => snap.docs
@@ -30,7 +32,10 @@ class FirestoreService {
   }
 
   Future<String> addTrap(TrapModel trap) async {
-    final ref = await _db.collection('traps').add(trap.toMap());
+    final data = trap.toMap()
+      ..['createdAt'] = FieldValue.serverTimestamp()
+      ..['savesCount'] = 0;
+    final ref = await _db.collection('traps').add(data);
     return ref.id;
   }
 
@@ -43,6 +48,7 @@ class FirestoreService {
   Stream<List<SchoolModel>> getSchools(String city) {
     return _db
         .collection('schools')
+        .limit(100)
         .snapshots()
         .map(
           (snap) => snap.docs
@@ -65,6 +71,7 @@ class FirestoreService {
         .where('itemId', isEqualTo: itemId)
         .where('itemType', isEqualTo: itemType)
         .orderBy('timestamp', descending: true)
+        .limit(100)
         .snapshots()
         .map(
           (snap) => snap.docs
@@ -74,13 +81,48 @@ class FirestoreService {
   }
 
   Future<void> addComment(CommentModel comment) async {
-    await _db.collection('comments').add(comment.toMap());
+    final data = comment.toMap()..['timestamp'] = FieldValue.serverTimestamp();
+    await _db.collection('comments').add(data);
   }
 
   // ─── REPORTS ─────────────────────────────────────────────────────────────
 
   Future<void> reportContent(ReportModel report) async {
-    await _db.collection('reports').add(report.toMap());
+    final data = report.toMap()..['timestamp'] = FieldValue.serverTimestamp();
+    await _db.collection('reports').add(data);
+  }
+
+  Stream<List<ReportModel>> getModerationReports() {
+    return _db
+        .collection('reports')
+        .orderBy('timestamp', descending: true)
+        .limit(100)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ReportModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> resolveReport(
+    ReportModel report, {
+    required bool deleteContent,
+  }) async {
+    final batch = _db.batch();
+    if (deleteContent) {
+      final collection = switch (report.itemType) {
+        'trap' => 'traps',
+        'school' => 'schools',
+        'comment' => 'comments',
+        _ => null,
+      };
+      if (collection != null) {
+        batch.delete(_db.collection(collection).doc(report.itemId));
+      }
+    }
+    batch.delete(_db.collection('reports').doc(report.id));
+    await batch.commit();
   }
 
   // ─── USERS ───────────────────────────────────────────────────────────────
@@ -98,43 +140,41 @@ class FirestoreService {
 
   Future<void> saveTrap(String uid, String trapId) async {
     final userRef = _db.collection('users').doc(uid);
-    final trapRef = _db.collection('traps').doc(trapId);
     await _db.runTransaction((transaction) async {
       final user = await transaction.get(userRef);
       final saved = List<String>.from(
         user.data()?['savedTraps'] as List? ?? const [],
       );
       if (saved.contains(trapId)) return;
+      if (saved.length >= AppConfig.maxSavedTraps) {
+        throw StateError('Osiągnięto limit zapisanych pułapek.');
+      }
       transaction.update(userRef, {
         'savedTraps': FieldValue.arrayUnion([trapId]),
       });
-      transaction.update(trapRef, {'savesCount': FieldValue.increment(1)});
     });
   }
 
   Future<void> unsaveTrap(String uid, String trapId) async {
-    final userRef = _db.collection('users').doc(uid);
-    final trapRef = _db.collection('traps').doc(trapId);
-    await _db.runTransaction((transaction) async {
-      final user = await transaction.get(userRef);
-      final saved = List<String>.from(
-        user.data()?['savedTraps'] as List? ?? const [],
-      );
-      if (!saved.contains(trapId)) return;
-      final trap = await transaction.get(trapRef);
-      final savesCount = (trap.data()?['savesCount'] as num?)?.toInt() ?? 0;
-      transaction.update(userRef, {
-        'savedTraps': FieldValue.arrayRemove([trapId]),
-      });
-      transaction.update(trapRef, {
-        'savesCount': savesCount > 0 ? savesCount - 1 : 0,
-      });
+    await _db.collection('users').doc(uid).update({
+      'savedTraps': FieldValue.arrayRemove([trapId]),
     });
   }
 
   Future<void> saveSchool(String uid, String schoolId) async {
-    await _db.collection('users').doc(uid).update({
-      'savedSchools': FieldValue.arrayUnion([schoolId]),
+    final userRef = _db.collection('users').doc(uid);
+    await _db.runTransaction((transaction) async {
+      final user = await transaction.get(userRef);
+      final saved = List<String>.from(
+        user.data()?['savedSchools'] as List? ?? const [],
+      );
+      if (saved.contains(schoolId)) return;
+      if (saved.length >= AppConfig.maxSavedSchools) {
+        throw StateError('Osiągnięto limit zapisanych szkół.');
+      }
+      transaction.update(userRef, {
+        'savedSchools': FieldValue.arrayUnion([schoolId]),
+      });
     });
   }
 
@@ -184,36 +224,57 @@ class FirestoreService {
 
   // ─── DAILY TRAP VIEWS ────────────────────────────────────────────────────
 
-  String get _todayKey => DateFormat('yyyy-MM-dd').format(DateTime.now());
+  DocumentReference<Map<String, dynamic>> _usageRef(String uid) =>
+      _db.collection('users').doc(uid).collection('usage').doc('trapViews');
 
   Future<int> getTrapViewsToday(String uid) async {
-    final doc = await _db.collection('users').doc(uid).get();
-    if (!doc.exists) return 0;
-    final data = doc.data()!;
-    final views = Map<String, dynamic>.from(
-      data['dailyTrapViews'] as Map? ?? {},
-    );
-    return (views[_todayKey] as num?)?.toInt() ?? 0;
+    final snapshot = await _usageRef(uid).get();
+    if (!snapshot.exists) return 0;
+    final data = snapshot.data()!;
+    final startedAt = (data['periodStartedAt'] as Timestamp?)?.toDate();
+    if (startedAt == null ||
+        DateTime.now().difference(startedAt) >= const Duration(hours: 24)) {
+      return 0;
+    }
+    return (data['views'] as num?)?.toInt() ?? 0;
   }
 
   Future<bool> consumeTrapView(String uid, int dailyLimit) async {
-    final userRef = _db.collection('users').doc(uid);
+    final usageRef = _usageRef(uid);
     return _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(userRef);
-      final views = Map<String, dynamic>.from(
-        snapshot.data()?['dailyTrapViews'] as Map? ?? const {},
-      );
-      final used = (views[_todayKey] as num?)?.toInt() ?? 0;
-      if (used >= dailyLimit) return false;
+      final snapshot = await transaction.get(usageRef);
+      if (!snapshot.exists) {
+        transaction.set(usageRef, {
+          'views': 1,
+          'periodStartedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      }
 
-      views[_todayKey] = used + 1;
-      transaction.set(userRef, {
-        'dailyTrapViews': views,
-      }, SetOptions(merge: true));
+      final data = snapshot.data()!;
+      final startedAt = (data['periodStartedAt'] as Timestamp?)?.toDate();
+      final expired =
+          startedAt == null ||
+          DateTime.now().difference(startedAt) >= const Duration(hours: 24);
+      if (expired) {
+        transaction.set(usageRef, {
+          'views': 1,
+          'periodStartedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      }
+
+      final used = (data['views'] as num?)?.toInt() ?? 0;
+      if (used >= dailyLimit) return false;
+      transaction.update(usageRef, {
+        'views': used + 1,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
       return true;
     });
   }
-
   // ─── SAVED TRAPS DETAILS ────────────────────────────────────────────────
 
   Future<List<TrapModel>> getSavedTraps(List<String> trapIds) async {

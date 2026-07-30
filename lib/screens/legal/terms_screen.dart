@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/config/app_config.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -26,7 +27,7 @@ class TermsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 1 marca 2026',
+            'Ostatnia aktualizacja: 30 lipca 2026',
             style: GoogleFonts.poppins(
               color: AppTheme.textSecondary,
               fontSize: 12,
@@ -136,17 +137,17 @@ class TermsScreen extends StatelessWidget {
           ),
           _section(
             '§9. Reklamy i śledzenie',
-            '''1. Aktualna wersja Aplikacji nie wyświetla reklam podmiotów trzecich.
+            '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Drivio Pro jest wolne od reklam.
 
-2. Jeżeli reklamy zostaną wprowadzone w przyszłości, użytkownicy zostaną poinformowani o zasadach ich działania oraz wymaganych zgodach.
+2. Reklamy są ładowane dopiero po sprawdzeniu wymaganych zgód. Aplikacja żąda reklam niepersonalizowanych i nie używa danych użytkownika do reklamy behawioralnej.
 
-3. Nie używamy danych użytkownika do śledzenia reklamowego w aktualnej wersji Aplikacji.
+3. Użytkownik może ponownie otworzyć wymagane ustawienia prywatności reklam z poziomu Polityki prywatności.
 
 4. Użytkownik może zarządzać uprawnieniami Aplikacji w ustawieniach urządzenia.''',
           ),
           _section(
             '§10. Postępowanie reklamacyjne',
-            '''1. Reklamacje dotyczące działania Aplikacji należy kierować na adres: kontakt@drivio.app
+            '''1. Reklamacje dotyczące działania Aplikacji należy kierować na adres: ${AppConfig.contactEmail}
 
 2. Reklamacja powinna zawierać:
    a) dane kontaktowe użytkownika (email),
@@ -175,7 +176,7 @@ class TermsScreen extends StatelessWidget {
 
 4. Regulamin wchodzi w życie z dniem 1 marca 2026 roku.
 
-Kontakt: kontakt@drivio.app
+Kontakt: ${AppConfig.contactEmail}
 Drivio – Szczecin, Polska''',
           ),
         ],

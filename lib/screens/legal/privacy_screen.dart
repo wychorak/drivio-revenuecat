@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/config/app_config.dart';
+import 'package:drivio/services/ad_service.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
@@ -26,7 +28,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 1 marca 2026',
+            'Ostatnia aktualizacja: 30 lipca 2026',
             style: GoogleFonts.poppins(
               color: AppTheme.textSecondary,
               fontSize: 12,
@@ -38,7 +40,7 @@ class PrivacyScreen extends StatelessWidget {
             '''Administratorem Twoich danych osobowych jest firma Drivio z siedzibą w Szczecinie, Polska.
 
 Kontakt z Administratorem:
-Email: kontakt@drivio.app
+Email: ${AppConfig.contactEmail}
 Strona: www.drivio.app
 
 W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt pod powyższymi adresami.''',
@@ -127,7 +129,7 @@ Po upływie powyższych terminów dane są trwale usuwane lub anonimizowane.''',
 • SPRZECIW – możesz sprzeciwić się przetwarzaniu opartemu na uzasadnionym interesie
 • COFNIĘCIE ZGODY – w każdej chwili możesz cofnąć wyrażoną zgodę
 
-Aby skorzystać ze swoich praw, skontaktuj się z nami: kontakt@drivio.app
+Aby skorzystać ze swoich praw, skontaktuj się z nami: ${AppConfig.contactEmail}
 
 Masz również prawo wniesienia skargi do Urzędu Ochrony Danych Osobowych (UODO).''',
           ),
@@ -155,7 +157,27 @@ W przypadku naruszenia bezpieczeństwa danych poinformujemy Cię i właściwe or
 Wersja webowa Aplikacji może używać plików cookie niezbędnych do funkcjonowania.''',
           ),
           _section(
-            '9. Zmiany polityki prywatności',
+            '9. Reklamy w wersji bezpłatnej',
+            '''W bezpłatnej wersji Drivio wyświetlamy dyskretny baner Google AdMob. Użytkownicy Drivio Pro nie widzą reklam.
+
+Przed załadowaniem reklamy Google User Messaging Platform sprawdza wymagane zgody. Drivio żąda wyłącznie reklam niepersonalizowanych, które nie są dobierane na podstawie wcześniejszej aktywności użytkownika. Google może przetwarzać dane techniczne urządzenia, adres IP oraz dane o wyświetleniu reklamy w celu dostarczenia reklamy, pomiaru i zapobiegania nadużyciom.''',
+          ),
+          FutureBuilder<bool>(
+            future: AdService.instance.isPrivacyOptionsRequired(),
+            builder: (context, snapshot) {
+              if (snapshot.data != true) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: OutlinedButton.icon(
+                  onPressed: AdService.instance.showPrivacyOptions,
+                  icon: const Icon(Icons.privacy_tip_outlined),
+                  label: const Text('Ustawienia prywatności reklam'),
+                ),
+              );
+            },
+          ),
+          _section(
+            '10. Zmiany polityki prywatności',
             '''1. Zastrzegamy sobie prawo do zmiany niniejszej Polityki Prywatności.
 
 2. O istotnych zmianach poinformujemy Cię z co najmniej 14-dniowym wyprzedzeniem przez:
@@ -166,7 +188,7 @@ Wersja webowa Aplikacji może używać plików cookie niezbędnych do funkcjonow
 
 4. Niniejsza Polityka Prywatności wchodzi w życie z dniem 1 marca 2026 roku.
 
-Kontakt: kontakt@drivio.app
+Kontakt: ${AppConfig.contactEmail}
 Drivio – Szczecin, Polska''',
           ),
         ],

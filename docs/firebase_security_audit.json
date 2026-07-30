@@ -1,0 +1,35 @@
+{
+    "auditDate":  "2026-07-30",
+    "ruleSetFound":  true,
+    "files":  [
+                  "firebase/firestore.rules",
+                  "firebase/storage.rules",
+                  "firebase/firestore.indexes.json"
+              ],
+    "scores":  {
+                   "defaultDeny":  4,
+                   "authentication":  4,
+                   "ownershipAndAccessControl":  4,
+                   "inputValidation":  3,
+                   "privilegedOperations":  4,
+                   "storageSecurity":  4
+               },
+    "overallRating":  "Strong",
+    "criticalFindings":  [
+
+                         ],
+    "warnings":  [
+                     "Rules are committed but still require deployment by the Firebase owner.",
+                     "Custom admin claim must be assigned from a trusted Firebase Admin SDK environment.",
+                     "App Check enforcement must be enabled in Firebase Console after monitoring TestFlight traffic.",
+                     "Trap views have a server-enforced rolling limit; trap/comment creation still needs operational abuse monitoring or backend rate limiting at scale."
+                 ],
+    "manualChecks":  [
+                         "Verify ADMIN_EMAILS account also has verified email and admin=true token claim.",
+                         "Verify all expected Firestore indexes finish building after deployment.",
+                         "Verify Storage upload rejects files above 5 MB and non-image MIME types.",
+                         "Verify a normal user cannot edit isPremium, premiumUntil, uid or admin data.",
+                         "Verify report queries and moderation deletes succeed only for admin claim."
+                     ],
+    "validation":  "Firestore Emulator 1.22.0 and Storage Rules Runtime 1.1.3 compiled the rules successfully with Firebase CLI 15.25.0 and Java 21."
+}

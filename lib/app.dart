@@ -21,6 +21,7 @@ import 'package:drivio/screens/premium/premium_screen.dart';
 import 'package:drivio/screens/legal/terms_screen.dart';
 import 'package:drivio/screens/legal/privacy_screen.dart';
 import 'package:drivio/screens/ranking/ranking_screen.dart';
+import 'package:drivio/screens/admin/admin_moderation_screen.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -116,6 +117,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/ranking',
         builder: (context, state) => const RankingScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminModerationScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

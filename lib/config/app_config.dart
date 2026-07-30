@@ -2,6 +2,26 @@ class AppConfig {
   static const String appName = 'Drivio';
   static const String defaultCity = 'Szczecin';
   static const int freeDailyTrapLimit = 5;
+  static const int maxSavedTraps = 500;
+  static const int maxSavedSchools = 100;
+
+  // Public build-time configuration. These values are not secrets.
+  static const String adminEmailsRaw = String.fromEnvironment('ADMIN_EMAILS');
+  static const String contactEmail = String.fromEnvironment(
+    'CONTACT_EMAIL',
+    defaultValue: 'kontakt@drivio.app',
+  );
+
+  static Set<String> get adminEmails => adminEmailsRaw
+      .split(RegExp(r'[,;\s]+'))
+      .map((email) => email.trim().toLowerCase())
+      .where((email) => email.isNotEmpty)
+      .toSet();
+
+  // AdMob public identifiers (iOS app only for this release).
+  static const String admobIosAppId = 'ca-app-pub-8263324816746737~5489467107';
+  static const String admobIosBannerId =
+      'ca-app-pub-8263324816746737/9237140422';
 
   // RevenueCat / App Store
   static const String revenueCatOfferingId = 'driviooffers';
@@ -34,7 +54,4 @@ class AppConfig {
   static const String priceMonthly = '20,99 zł';
   static const String priceLifetime = 'Cena w App Store';
   static const String priceYearly = '190,99 zł';
-
-  // Trial days
-  static const int trialDays = 2;
 }

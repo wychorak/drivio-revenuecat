@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function owns(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function validOptionalString(value, maxLength) {
+      return value == null || (value is string && value.size() <= maxLength);
+    }
+
+    function validUser(data, uid) {
+      return data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'isPremium', 'premiumUntil',
+          'savedTraps', 'savedSchools', 'blockedUsers', 'dailyTrapViews',
+          'photoUrl', 'createdAt'
+        ])
+        && data.uid == uid
+        && data.email is string && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() <= 80
+        && data.isPremium is bool
+        && (data.premiumUntil == null || data.premiumUntil is timestamp)
+        && data.savedTraps is list && data.savedTraps.size() <= 500
+        && data.savedSchools is list && data.savedSchools.size() <= 100
+        && data.blockedUsers is list && data.blockedUsers.size() <= 500
+        && data.dailyTrapViews is map
+        && validOptionalString(data.photoUrl, 2048);
+    }
+
+    match /users/{uid} {
+      allow read: if owns(uid) || isAdmin();
+      allow create: if owns(uid)
+        && validUser(request.resource.data, uid)
+        && request.resource.data.isPremium == false
+        && request.resource.data.premiumUntil == null;
+      allow update: if isAdmin() || (owns(uid)
+        && validUser(request.resource.data, uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'email', 'displayName', 'savedTraps', 'savedSchools', 'blockedUsers',
+          'photoUrl'
+        ]));
+      allow delete: if owns(uid) || isAdmin();
+
+      match /usage/{usageId} {
+        allow read: if owns(uid) || isAdmin();
+        allow create: if owns(uid)
+          && usageId == 'trapViews'
+          && request.resource.data.keys().hasOnly([
+            'views', 'periodStartedAt', 'updatedAt'
+          ])
+          && request.resource.data.views == 1
+          && request.resource.data.periodStartedAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if owns(uid)
+          && usageId == 'trapViews'
+          && request.resource.data.keys().hasOnly([
+            'views', 'periodStartedAt', 'updatedAt'
+          ])
+          && request.resource.data.updatedAt == request.time
+          && (
+            (
+              request.time < resource.data.periodStartedAt + duration.value(24, 'h')
+              && request.resource.data.periodStartedAt == resource.data.periodStartedAt
+              && request.resource.data.views == resource.data.views + 1
+              && request.resource.data.views <= 5
+            ) || (
+              request.time >= resource.data.periodStartedAt + duration.value(24, 'h')
+              && request.resource.data.periodStartedAt == request.time
+              && request.resource.data.views == 1
+            )
+          );
+        allow delete: if isAdmin();
+      }
+    }
+
+    function validTrap(data) {
+      return data.keys().hasOnly([
+          'lat', 'lng', 'title', 'description', 'difficulty', 'photoUrl',
+          'videoUrl', 'ruleDescription', 'createdBy', 'city', 'createdAt',
+          'savesCount'
+        ])
+        && data.lat is number && data.lat >= -90 && data.lat <= 90
+        && data.lng is number && data.lng >= -180 && data.lng <= 180
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 100
+        && data.description is string && data.description.size() >= 10
+        && data.description.size() <= 1500
+        && data.difficulty is int && data.difficulty >= 1 && data.difficulty <= 5
+        && validOptionalString(data.photoUrl, 2048)
+        && validOptionalString(data.videoUrl, 2048)
+        && data.ruleDescription is string && data.ruleDescription.size() <= 1000
+        && data.createdBy is string && data.createdBy.size() <= 128
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.createdAt is timestamp
+        && data.savesCount is int && data.savesCount >= 0;
+    }
+
+    match /traps/{trapId} {
+      allow read: if signedIn();
+      allow create: if verified()
+        && validTrap(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.savesCount == 0;
+      allow update: if isAdmin() || (signedIn()
+        && resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.savesCount == resource.data.savesCount
+        && validTrap(request.resource.data));
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+    }
+
+    function validComment(data) {
+      return data.keys().hasOnly([
+          'itemId', 'itemType', 'userId', 'userDisplayName', 'text',
+          'timestamp', 'reported'
+        ])
+        && data.itemId is string && data.itemId.size() >= 1 && data.itemId.size() <= 128
+        && data.itemType in ['trap', 'school']
+        && data.userId is string && data.userId.size() <= 128
+        && data.userDisplayName is string && data.userDisplayName.size() <= 80
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 1000
+        && data.timestamp is timestamp
+        && data.reported is bool;
+    }
+
+    match /comments/{commentId} {
+      allow read: if signedIn();
+      allow create: if verified()
+        && validComment(request.resource.data)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.timestamp == request.time
+        && request.resource.data.reported == false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    function validReport(data) {
+      return data.keys().hasOnly([
+          'itemId', 'itemType', 'reason', 'reporterId', 'timestamp'
+        ])
+        && data.itemId is string && data.itemId.size() >= 1 && data.itemId.size() <= 128
+        && data.itemType in ['trap', 'school', 'comment']
+        && data.reason is string && data.reason.size() >= 3 && data.reason.size() <= 500
+        && data.reporterId is string && data.reporterId.size() <= 128
+        && data.timestamp is timestamp;
+    }
+
+    match /reports/{reportId} {
+      allow create: if verified()
+        && validReport(request.resource.data)
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.timestamp == request.time;
+      allow read, delete: if isAdmin()
+        || (signedIn() && resource.data.reporterId == request.auth.uid);
+      allow update: if isAdmin();
+    }
+
+    match /schools/{schoolId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

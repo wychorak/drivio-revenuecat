@@ -53,7 +53,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             _passwordController.text,
             _nameController.text.trim(),
           );
-      if (mounted) context.go('/map');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Konto utworzone. Otwórz link w emailu, a następnie się zaloguj.',
+            ),
+          ),
+        );
+        context.go('/login');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

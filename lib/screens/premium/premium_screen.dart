@@ -174,7 +174,7 @@ class PremiumScreen extends ConsumerWidget {
       _PlanData(
         label: 'Tydzień',
         price: AppConfig.priceWeekly,
-        period: '7 dni',
+        period: 'co tydzień',
         productId: AppConfig.iapWeekly,
         stripeUrl: AppConfig.stripeWeekly,
         badge: 'Na próbę',
@@ -184,7 +184,7 @@ class PremiumScreen extends ConsumerWidget {
       _PlanData(
         label: 'Miesiąc',
         price: AppConfig.priceMonthly,
-        period: '30 dni',
+        period: 'co miesiąc',
         productId: AppConfig.iapMonthly,
         stripeUrl: AppConfig.stripeMonthly,
         badge: 'Najczęściej',
@@ -781,16 +781,34 @@ class _Footnote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      useIap
-          ? 'Subskrypcję możesz anulować w ustawieniach konta App Store lub Google Play. Ceny i dostępność produktów pochodzą ze sklepu.'
-          : 'Wersja web otwiera bezpieczną stronę płatności. W aplikacji iOS zakup przejmie App Store.',
-      textAlign: TextAlign.center,
-      style: GoogleFonts.poppins(
-        color: AppTheme.textSecondary,
-        fontSize: 11,
-        height: 1.5,
-      ),
+    return Column(
+      children: [
+        Text(
+          useIap
+              ? 'Plan tygodniowy i miesięczny odnawia się automatycznie, dopóki nie zostanie anulowany co najmniej 24 godziny przed końcem okresu. Płatność obciąża Apple ID. Plan „Na zawsze” jest zakupem jednorazowym.'
+              : 'Wersja web otwiera bezpieczną stronę płatności. W aplikacji iOS zakup przejmuje App Store.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            color: AppTheme.textSecondary,
+            fontSize: 11,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => context.push('/terms'),
+              child: const Text('Regulamin'),
+            ),
+            TextButton(
+              onPressed: () => context.push('/privacy'),
+              child: const Text('Polityka prywatności'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
