@@ -14,16 +14,16 @@
 - Firebase App Check jest aktywowany w aplikacji: App Attest z fallbackiem DeviceCheck na iOS, Play Integrity na Androidzie i provider debug w debug buildzie.
 - Firestore i Storage mają reguły default-deny, walidację pól, ownership, limity list/uploadu i custom claim `admin`.
 - Limit darmowych pułapek jest transakcyjnym, nieusuwalnym licznikiem w 24-godzinnym oknie, a nie tylko kontrolą UI.
-- Konto admin wymaga jednocześnie: emailu z `ADMIN_EMAILS`, zweryfikowanego emailu Firebase i custom claimu `admin=true`.
+- Reguły backendowe przyznają dostęp administratora wyłącznie przez custom claim `admin=true`. `ADMIN_EMAILS` jest dodatkowym filtrem widoczności UI i sam nie przyznaje żadnych uprawnień.
 - Admin ma kolejkę zgłoszeń i może odrzucić zgłoszenie lub usunąć zgłoszoną treść.
-- Usunięcie konta usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase; starsza sesja wymaga ponownego logowania.
+- Chroniona przez App Check funkcja callable usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase; sesja starsza niż pięć minut wymaga ponownego logowania.
 - Finalne ikony Drivio i splash screen zostały wygenerowane dla iOS, Androida, macOS, Windows i web.
 - Polityka prywatności, manifest prywatności i regulamin opisują AdMob oraz brak reklamy behawioralnej.
 
 ## Blokery w panelach — wykonać przed TestFlight
 
 1. **Codemagic:** grupa musi nazywać się dokładnie `drivio secrets`. Na załączonym ekranie widać Maps/admin/kontakt, ale build wymaga też `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_PROJECT_ID` i `FIREBASE_STORAGE_BUCKET`.
-2. **Firebase Rules:** partner musi wdrożyć `firebase/firestore.rules`, `firebase/storage.rules` i indeksy. Polecenie: `firebase deploy --only firestore:rules,firestore:indexes,storage --project <FIREBASE_PROJECT_ID>`.
+2. **Firebase backend:** partner musi wdrożyć funkcję usuwania konta, `firebase/firestore.rules`, `firebase/storage.rules` i indeksy. Polecenie: `firebase deploy --only functions,firestore:rules,firestore:indexes,storage --project <FIREBASE_PROJECT_ID>`.
 3. **Admin:** zaufane środowisko Firebase Admin SDK musi nadać właściwemu UID custom claim `{ admin: true }`. Po nadaniu wylogować i zalogować konto. Samo `ADMIN_EMAILS` nie daje uprawnień.
 4. **App Check:** zarejestrować `com.drivio.com` w Firebase App Check, najpierw obserwować metryki TestFlight, a potem włączyć enforcement dla Firestore, Storage i Authentication. Nie włączać enforcement przed pierwszym poprawnym tokenem z TestFlight.
 5. **Apple login:** w Firebase Authentication włączyć Apple i uzupełnić Team ID, Key ID `6D43VGP33F` oraz prywatny `.p8` klucza `driviokey`. W Apple Developer włączyć capability dla App ID `com.drivio.com` i odświeżyć profile.

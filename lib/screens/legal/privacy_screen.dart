@@ -28,7 +28,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 30 lipca 2026',
+            'Ostatnia aktualizacja: 7 sierpnia 2026',
             style: GoogleFonts.poppins(
               color: AppTheme.textSecondary,
               fontSize: 12,
@@ -37,7 +37,7 @@ class PrivacyScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _section(
             '1. Administrator danych',
-            '''Administratorem Twoich danych osobowych jest firma Drivio z siedzibą w Szczecinie, Polska.
+            '''Administratorem danych jest operator aplikacji Drivio. Przed publiczną publikacją tej wersji operator uzupełni pełną nazwę lub imię i nazwisko oraz adres wymagany przez prawo.
 
 Kontakt z Administratorem:
 Email: ${AppConfig.contactEmail}
@@ -51,8 +51,8 @@ W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt
 
 DANE PODAWANE BEZPOŚREDNIO:
 • Adres email (przy rejestracji)
-• Imię i nazwisko (przy rejestracji)
-• Hasło (przechowywane w formie zaszyfrowanej)
+• Nazwa wyświetlana (przy rejestracji)
+• Dane logowania obsługiwane przez Firebase Authentication; aplikacja nie ma dostępu do hasła
 • Zdjęcia dodawane przez użytkownika
 • Komentarze i opinie
 
@@ -61,7 +61,7 @@ DANE ZBIERANE AUTOMATYCZNIE:
 • Typ urządzenia i system operacyjny
 • Wersja aplikacji
 • Dane o lokalizacji (wyłącznie do wyświetlania mapy, za Twoją zgodą)
-• Dane analityczne (czas korzystania, przeglądane ekrany)
+• Dane techniczne niezbędne do bezpieczeństwa i działania usług Firebase
 • Dane o zakupach (identyfikatory transakcji)
 
 DANE DOTYCZĄCE KONTA:
@@ -110,10 +110,10 @@ Dane mogą być przekazywane do państw trzecich (USA) na podstawie standardowyc
           ),
           _section(
             '5. Jak długo przechowujemy dane',
-            '''• Dane konta: przez cały okres korzystania z Aplikacji + 2 lata po usunięciu konta
-• Dane transakcyjne: 5 lat (wymóg podatkowy)
-• Logi systemowe: 90 dni
-• Komentarze i treści: do usunięcia przez użytkownika lub administratora
+            '''• Dane konta i treści użytkownika: przez okres korzystania z Aplikacji, a następnie usuwane w procesie usunięcia konta
+• Dane o zakupach: zgodnie z obowiązkami prawnymi i okresami dostawców płatności; aplikacja przechowuje wyłącznie niezbędne informacje o uprawnieniu
+• Logi techniczne: zgodnie z okresami skonfigurowanymi u dostawców infrastruktury
+• Treści usunięte wcześniej przez użytkownika lub administratora: do zakończenia operacji usunięcia i kopii bezpieczeństwa dostawcy
 
 Po upływie powyższych terminów dane są trwale usuwane lub anonimizowane.''',
           ),
@@ -138,7 +138,7 @@ Masz również prawo wniesienia skargi do Urzędu Ochrony Danych Osobowych (UODO
             '''Stosujemy następujące środki bezpieczeństwa:
 
 • Szyfrowanie danych w transmisji (HTTPS/TLS)
-• Szyfrowanie haseł (bcrypt)
+• Obsługa danych uwierzytelniających przez Firebase Authentication
 • Bezpieczna infrastruktura Firebase (Google Cloud)
 • Regularne aktualizacje zabezpieczeń
 • Dostęp do danych wyłącznie dla upoważnionych pracowników
@@ -181,8 +181,8 @@ Przed załadowaniem reklamy Google User Messaging Platform sprawdza wymagane zgo
             '''1. Zastrzegamy sobie prawo do zmiany niniejszej Polityki Prywatności.
 
 2. O istotnych zmianach poinformujemy Cię z co najmniej 14-dniowym wyprzedzeniem przez:
-   – powiadomienie push w Aplikacji,
-   – wiadomość email na podany adres.
+   – komunikat w Aplikacji,
+   – wiadomość email, jeżeli kanał ten będzie dostępny.
 
 3. Dalsze korzystanie z Aplikacji po wejściu w życie zmian oznacza ich akceptację.
 

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -173,43 +173,9 @@ class AuthService {
       );
     }
 
-    await _deleteOwnedDocuments('comments', 'userId', user.uid);
-    await _deleteOwnedDocuments('reports', 'reporterId', user.uid);
-    await _deleteOwnedDocuments('traps', 'createdBy', user.uid);
-    await _deleteUploadedTrapPhotos(user.uid);
-    await _firestore.collection('users').doc(user.uid).delete();
-    await user.delete();
-  }
-
-  Future<void> _deleteOwnedDocuments(
-    String collection,
-    String ownerField,
-    String uid,
-  ) async {
-    while (true) {
-      final snapshot = await _firestore
-          .collection(collection)
-          .where(ownerField, isEqualTo: uid)
-          .limit(400)
-          .get();
-      if (snapshot.docs.isEmpty) return;
-      final batch = _firestore.batch();
-      for (final document in snapshot.docs) {
-        batch.delete(document.reference);
-      }
-      await batch.commit();
-      if (snapshot.docs.length < 400) return;
-    }
-  }
-
-  Future<void> _deleteUploadedTrapPhotos(String uid) async {
-    final folder = FirebaseStorage.instance.ref().child('traps/$uid');
-    try {
-      final files = await folder.listAll();
-      await Future.wait(files.items.map((item) => item.delete()));
-    } on FirebaseException catch (error) {
-      if (error.code != 'object-not-found') rethrow;
-    }
+    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+        .httpsCallable('deleteAccount');
+    await callable.call<void>();
   }
 
   Future<void> updateDisplayName(String displayName) async {
