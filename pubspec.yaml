@@ -25,6 +25,7 @@ dependencies:
   google_sign_in: ^7.2.0
   cloud_firestore: ^5.6.6
   firebase_app_check: ^0.3.2+10
+  cloud_functions: ^5.3.4
   purchases_flutter: ^10.2.0
   firebase_storage: ^12.4.4
 

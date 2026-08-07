@@ -13,11 +13,9 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // Temporary release admin. Replace with a backend-managed custom claim.
     function isAdmin() {
       return signedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email == 'joa.rycyk@gmail.com';
+        && request.auth.token.get('admin', false) == true;
     }
 
     function optionalString(data, field, maxLength) {
