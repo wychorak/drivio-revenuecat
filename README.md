@@ -11,11 +11,12 @@ Drivio is a Flutter application that helps learners prepare for the Polish drivi
 - moderated community content and an admin review queue
 - RevenueCat subscriptions with weekly, monthly and lifetime products
 - AdMob with UMP consent and an ad-free premium entitlement
-- account deletion, privacy controls and default-deny Firestore/Storage rules
+- App Check-protected account deletion and default-deny Firestore/Storage rules
+- authenticated, idempotent RevenueCat webhook syncing Premium to Firestore
 
 ## Stack
 
-Flutter, Dart, Riverpod, Firebase Auth, Firestore, Storage, App Check, Google Maps, RevenueCat, AdMob and Codemagic.
+Flutter, Dart, Riverpod, Firebase Auth, Firestore, Storage, Functions, App Check, Google Maps, RevenueCat, AdMob and Codemagic.
 
 ## Local development
 
@@ -30,10 +31,12 @@ Copy `.env.example` to `.env`. For iOS Maps, copy `ios/Flutter/Secrets.example.x
 
 ## Quality and release status
 
-The current source passes `flutter analyze` and all 9 automated tests. Store submission still requires the Firebase, Apple, RevenueCat, AdMob and App Store Connect steps documented in [`docs/app_store_launch_checklist.md`](docs/app_store_launch_checklist.md).
+The current source passes `flutter analyze`, 10 Flutter tests, 22 Firestore Rules tests and 7 RevenueCat backend tests. Store submission still requires the Firebase, Apple, RevenueCat, AdMob and App Store Connect steps documented in [`docs/app_store_launch_checklist.md`](docs/app_store_launch_checklist.md).
 
 Additional documentation:
 
 - [`docs/in_app_purchase_setup.md`](docs/in_app_purchase_setup.md)
 - [`docs/CODEMAGIC_IOS.md`](docs/CODEMAGIC_IOS.md)
 - [`docs/partner_handoff.md`](docs/partner_handoff.md)
+- [`docs/security.md`](docs/security.md)
+- [`docs/remaining_setup.md`](docs/remaining_setup.md)

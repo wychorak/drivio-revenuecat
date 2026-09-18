@@ -27,7 +27,7 @@ class TermsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 30 lipca 2026',
+            'Ostatnia aktualizacja: 19 września 2026',
             style: GoogleFonts.poppins(
               color: AppTheme.textSecondary,
               fontSize: 12,
@@ -38,7 +38,7 @@ class TermsScreen extends StatelessWidget {
             '§1. Postanowienia ogólne',
             '''1. Niniejszy Regulamin określa zasady korzystania z aplikacji mobilnej Drivio (dalej: "Aplikacja"), dostępnej na platformach Android i iOS.
 
-2. Właścicielem i operatorem Aplikacji jest firma Drivio (dalej: "Usługodawca").
+2. Operatorem Aplikacji jest podmiot wskazany w finalnej wersji danych usługodawcy. Przed publiczną publikacją należy uzupełnić jego pełną nazwę lub imię i nazwisko, adres oraz wymagane dane rejestrowe (dalej: "Usługodawca").
 
 3. Korzystanie z Aplikacji oznacza akceptację niniejszego Regulaminu w całości.
 
@@ -77,14 +77,14 @@ class TermsScreen extends StatelessWidget {
           ),
           _section(
             '§4. Subskrypcja Premium',
-            '''1. Aplikacja oferuje płatne plany subskrypcji Premium:
+            '''1. Aplikacja oferuje płatne plany Premium:
    a) Plan tygodniowy – 5,99 zł / 7 dni,
    b) Plan miesięczny – 20,99 zł / 30 dni,
-   c) Plan roczny – 190,99 zł / rok.
+   c) Plan „Na zawsze” – zakup jednorazowy w cenie wyświetlanej przez sklep.
 
 2. Płatności w aplikacji mobilnej są realizowane przez Google Play lub App Store. Płatności Stripe mogą być używane wyłącznie w wersji webowej, jeśli jest dostępna.
 
-3. Subskrypcja odnawia się automatycznie, chyba że użytkownik anuluje ją przed końcem okresu rozliczeniowego.
+3. Plany tygodniowy i miesięczny odnawiają się automatycznie, chyba że użytkownik anuluje je przed końcem okresu rozliczeniowego. Plan „Na zawsze” nie odnawia się.
 
 4. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta.
 

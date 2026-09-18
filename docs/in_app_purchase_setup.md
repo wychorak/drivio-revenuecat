@@ -28,7 +28,23 @@ The client reads prices and periods from StoreKit through RevenueCat. It purchas
 
 ## Firestore
 
-The existing Firestore Premium fields remain as a migration/backend fallback. The Flutter purchase flow does not write entitlement fields directly. If Firestore must mirror RevenueCat, the backend partner should configure RevenueCat webhooks or the RevenueCat Firebase extension and keep security rules blocking client writes to Premium fields.
+The Flutter purchase flow never writes Premium fields directly. The included
+`revenueCatWebhook` verifies the configured authorization header, ignores
+duplicate event IDs, rejects stale state updates and mirrors the entitlement to
+Firestore as a server-side fallback.
+
+Before deployment:
+
+1. Set `REVENUECAT_WEBHOOK_AUTH` with `firebase functions:secrets:set`.
+2. Deploy Firebase Functions.
+3. Configure the deployed HTTPS endpoint and exactly the same Authorization
+   header in RevenueCat.
+4. Test initial purchase, renewal, cancellation, expiration, refund, billing
+   grace period and lifetime purchase in sandbox.
+
+The direct Stripe links shown by the web build are not sufficient on their own:
+Stripe purchases must be connected to the same RevenueCat customer/Firebase UID
+and verified end to end before web checkout is released publicly.
 
 ## Sign in with Apple
 

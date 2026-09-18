@@ -19,18 +19,23 @@ import {
 
 const PROJECT_ID = 'demo-drivio-rules';
 const ADMIN_EMAIL = 'joa.rycyk@gmail.com';
-const SECOND_ADMIN_EMAIL = 'estlin20@gmail.com';
 
 let testEnv;
 
-const auth = (uid, email = uid + '@example.com', emailVerified = true) =>
+const auth = (
+  uid,
+  email = uid + '@example.com',
+  emailVerified = true,
+  claims = {},
+) =>
   testEnv.authenticatedContext(uid, {
     email,
     email_verified: emailVerified,
+    ...claims,
   }).firestore();
 
-const adminDb = (verified = true) =>
-  auth('release-admin', ADMIN_EMAIL, verified);
+const adminDb = () =>
+  auth('release-admin', ADMIN_EMAIL, true, { admin: true });
 
 const baseUser = (uid, email = uid + '@example.com') => ({
   uid,
@@ -361,7 +366,7 @@ describe('reports and admin access', () => {
     );
   });
 
-  test('admin requires an allowed email and verified token', async () => {
+  test('admin requires a backend-managed custom claim', async () => {
     await seed('reports/report-1', {
       itemId: 'trap-1',
       itemType: 'trap',
@@ -370,14 +375,13 @@ describe('reports and admin access', () => {
       createdAt: Timestamp.now(),
     });
 
-    await assertFails(getDoc(doc(adminDb(false), 'reports/report-1')));
     await assertFails(
       getDoc(doc(auth('fake-admin', 'other@example.com', true), 'reports/report-1')),
     );
-    await assertSucceeds(getDoc(doc(adminDb(true), 'reports/report-1')));
-    await assertSucceeds(
-      getDoc(doc(auth('second-admin', SECOND_ADMIN_EMAIL, true), 'reports/report-1')),
+    await assertFails(
+      getDoc(doc(auth('email-only', ADMIN_EMAIL, true), 'reports/report-1')),
     );
+    await assertSucceeds(getDoc(doc(adminDb(), 'reports/report-1')));
   });
 });
 
@@ -391,7 +395,7 @@ describe('public catalog and privileged writes', () => {
     await assertSucceeds(getDoc(doc(publicDb, 'schools/school-1')));
   });
 
-  test('only the verified temporary admin may create traps', async () => {
+  test('only a custom-claim admin may create traps', async () => {
     const trap = {
       lat: 52.2297,
       lng: 21.0122,

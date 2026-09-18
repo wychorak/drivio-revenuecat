@@ -17,6 +17,7 @@ migrate_working_dir/
 *.ipr
 *.iws
 .idea/
+.vscode/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -32,6 +33,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+**/node_modules/
 
 # Symbolication related
 app.*.symbols
@@ -44,12 +46,31 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Nasze tajne pliki Drivio
+# Local configuration and credentials
 .env
+.env.*
+!.env.example
 *.p8
+*.pem
+*.p12
+*.key
+*.cer
+*.mobileprovision
+*.jks
+*.keystore
+key.properties
+android/key.properties
+*service-account*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 ios/Flutter/Secrets.xcconfig
+
+# Infrastructure state must never be committed
+*.tfstate
+*.tfstate.*
+.terraform/
 
 # Local architecture audit output
 graphify-out/

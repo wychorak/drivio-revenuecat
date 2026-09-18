@@ -51,3 +51,41 @@ test('lifetime product stays active without an expiration date', () => {
   equal(state?.isPremium, true);
   equal(state?.premiumUntil, null);
 });
+
+test('refund revokes a lifetime purchase', () => {
+  const state = premiumStateForEvent({
+    type: 'REFUND',
+    product_id: 'driviolifetime',
+    entitlement_ids: ['drivio pro relase'],
+    expiration_at_ms: null,
+  });
+  equal(state?.isPremium, false);
+  equal(state?.premiumPlan, 'lifetime');
+});
+
+test('billing grace period keeps premium active', () => {
+  const state = premiumStateForEvent(
+    {
+      type: 'BILLING_ISSUE',
+      product_id: 'driviomonth',
+      entitlement_ids: ['drivio pro relase'],
+      expiration_at_ms: 900,
+      grace_period_expiration_at_ms: 2_000,
+    },
+    1_000,
+  );
+  equal(state?.isPremium, true);
+  equal(state?.premiumUntil?.getTime(), 2_000);
+});
+
+test('unrelated RevenueCat products do not grant premium', () => {
+  equal(
+    premiumStateForEvent({
+      type: 'INITIAL_PURCHASE',
+      product_id: 'other-product',
+      entitlement_ids: ['other-entitlement'],
+      expiration_at_ms: 2_000,
+    }),
+    null,
+  );
+});

@@ -1,47 +1,47 @@
 {
-  "score": 5,
-  "summary": "Firestore rules use default-deny, verified-email admin authorization, strict ownership, field allowlists, type and size validation, immutable identity fields, backend-only Premium/IAP writes, and backend-only top-level daily limits. All 17 emulator tests pass. Two release integration gaps remain outside the rules: client-side account deletion now requires backend cleanup, and the Flutter admin gate still expects an admin custom claim.",
+  "status": "release-candidate",
+  "summary": "Firestore and Storage use default-deny rules, strict ownership and validation. Administrative authorization relies on a backend-managed custom claim. Account deletion is implemented as an App Check-protected callable function, and RevenueCat Premium state is synchronized by an authenticated, idempotent webhook.",
   "findings": [
     {
-      "check": "Update and recreate bypass",
-      "severity": "minor",
-      "issue": "Allowing users to delete users/{uid} would let a blocked account recreate the profile with isBlocked=false.",
-      "recommendation": "Client deletes are denied. Implement account deletion and Firestore cleanup with a trusted backend/Admin SDK."
+      "check": "Administrative authorization",
+      "severity": "resolved",
+      "result": "Rules require request.auth.token.admin == true. An email address alone grants no backend access."
     },
     {
-      "check": "Business logic vs. rules",
+      "check": "Account deletion",
+      "severity": "deployment-required",
+      "result": "The callable deletes data only for request.auth.uid and requires App Check plus authentication no older than five minutes."
+    },
+    {
+      "check": "Premium synchronization",
+      "severity": "deployment-required",
+      "result": "The RevenueCat webhook authenticates requests, rejects duplicate event IDs and prevents stale events from overwriting newer entitlement state."
+    },
+    {
+      "check": "Web Stripe checkout",
       "severity": "moderate",
-      "issue": "The current client deletion flow queries reports and deletes traps. The requested admin-only report reads and admin-only trap writes correctly deny those operations.",
-      "recommendation": "Move account cleanup to a callable backend function and verify ownership server-side before deleting Auth, Firestore and Storage data."
+      "result": "Direct payment links require a verified mapping to the same RevenueCat customer and Firebase UID before production release."
     },
     {
-      "check": "Admin integration",
-      "severity": "minor",
-      "issue": "Firestore and Storage rules recognize the exact verified email, but AdminAccessService in Flutter additionally requires the admin=true custom claim.",
-      "recommendation": "Until admin authorization is migrated fully to claims, set admin=true only for joa.rycyk@gmail.com so the existing admin UI can open."
-    },
-    {
-      "check": "Public data surface",
-      "severity": "minor",
-      "issue": "Every field stored in traps and schools is public because Firestore rules cannot hide selected fields in a readable document.",
-      "recommendation": "Keep PII, moderation notes and internal metadata out of these public documents or move them to private subcollections."
+      "check": "Public catalogue",
+      "severity": "accepted",
+      "result": "Traps and schools are intentionally public. Personal data and moderation metadata must not be stored in those documents."
     }
   ],
   "validation": {
-    "date": "2026-07-30",
-    "firebaseTools": "15.25.0",
-    "rulesUnitTesting": "5.0.1",
-    "firestoreSdk": "12.16.0",
-    "java": "21.0.9",
-    "tests": 17,
-    "passed": 17,
+    "date": "2026-09-19",
+    "flutterAnalyze": "passed",
+    "flutterTests": 10,
+    "firestoreRulesTests": 22,
+    "revenueCatBackendTests": 7,
     "failed": 0
   },
   "remainingRisks": [
-    "Enable and enforce Firebase App Check after monitoring valid TestFlight traffic.",
-    "Security Rules do not provide business-level rate limits for comments and reports; add backend quotas and abuse monitoring.",
-    "RevenueCat webhook processing must verify webhook authorization, be idempotent, and write Premium fields with Admin SDK.",
-    "Protect backend service accounts and Firestore IAM because Admin SDK bypasses Security Rules.",
-    "Deploy the committed rules to the correct Firebase project before release."
+    "Deploy Functions before rules that require the backend-managed admin claim.",
+    "Register and monitor valid App Check tokens before enabling enforcement for additional Firebase products.",
+    "Add business-level request quotas and abuse monitoring for comments and reports.",
+    "Configure the RevenueCat webhook authorization value and monitor failed deliveries.",
+    "Verify Stripe-to-RevenueCat identity mapping before releasing web checkout.",
+    "Protect backend service accounts with least-privilege IAM and MFA."
   ]
 }

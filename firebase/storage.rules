@@ -11,12 +11,7 @@ service firebase.storage {
 
     function isAdmin() {
       return signedIn()
-        && request.auth.token.email_verified == true
-        && (
-          request.auth.token.admin == true
-          || request.auth.token.email == 'joa.rycyk@gmail.com'
-          || request.auth.token.email == 'estlin20@gmail.com'
-        );
+        && request.auth.token.get('admin', false) == true;
     }
 
     match /traps/{uid}/{fileName} {

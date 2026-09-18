@@ -15,7 +15,7 @@ class AdminAccess {
     required this.hasAdminClaim,
   });
 
-  bool get isAdmin => emailListed && emailVerified;
+  bool get isAdmin => emailListed && emailVerified && hasAdminClaim;
 }
 
 final adminAccessProvider = FutureProvider<AdminAccess>((ref) async {
@@ -53,7 +53,8 @@ class AdminAccessService {
         ).httpsCallable('refreshAdminClaim').call<void>();
         token = await user.getIdTokenResult(true);
       } on FirebaseFunctionsException {
-        // The verified release email remains usable under Firestore rules.
+        // Backend rules still require the claim, so a failed refresh never
+        // grants UI access based on the email allowlist alone.
       }
     }
     return AdminAccess(

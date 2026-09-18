@@ -41,51 +41,57 @@ async function deleteQuery(
   }
 }
 
-export const deleteAccount = onCall({region: REGION}, async (request) => {
-  const uid = request.auth?.uid;
-  if (uid == null) {
-    throw new HttpsError('unauthenticated', 'Wymagane logowanie.');
-  }
+export const deleteAccount = onCall(
+  {region: REGION, enforceAppCheck: true},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (uid == null) {
+      throw new HttpsError('unauthenticated', 'Wymagane logowanie.');
+    }
 
-  const authTime = Number(request.auth?.token.auth_time ?? 0) * 1000;
-  if (!authTime || Date.now() - authTime > 5 * 60 * 1000) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Zaloguj się ponownie przed usunięciem konta.',
-    );
-  }
+    const authTime = Number(request.auth?.token.auth_time ?? 0) * 1000;
+    if (!authTime || Date.now() - authTime > 5 * 60 * 1000) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Zaloguj się ponownie przed usunięciem konta.',
+      );
+    }
 
-  await Promise.all([
-    deleteQuery('comments', 'userId', uid),
-    deleteQuery('reports', 'reporterId', uid),
-    deleteQuery('traps', 'createdBy', uid),
-    getStorage().bucket().deleteFiles({prefix: `traps/${uid}/`}),
-  ]);
+    await Promise.all([
+      deleteQuery('comments', 'userId', uid),
+      deleteQuery('reports', 'reporterId', uid),
+      deleteQuery('traps', 'createdBy', uid),
+      getStorage().bucket().deleteFiles({prefix: `traps/${uid}/`}),
+    ]);
 
-  const userRef = getFirestore().collection('users').doc(uid);
-  await getFirestore().recursiveDelete(userRef);
-  await getAuth().deleteUser(uid);
-  return {success: true};
-});
+    const userRef = getFirestore().collection('users').doc(uid);
+    await getFirestore().recursiveDelete(userRef);
+    await getAuth().deleteUser(uid);
+    return {success: true};
+  },
+);
 
-export const refreshAdminClaim = onCall({region: REGION}, async (request) => {
-  const uid = request.auth?.uid;
-  if (uid == null) {
-    throw new HttpsError('unauthenticated', 'Wymagane logowanie.');
-  }
+export const refreshAdminClaim = onCall(
+  {region: REGION, enforceAppCheck: true},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (uid == null) {
+      throw new HttpsError('unauthenticated', 'Wymagane logowanie.');
+    }
 
-  const user = await getAuth().getUser(uid);
-  const email = user.email?.trim().toLowerCase() ?? '';
-  if (!ADMIN_EMAILS.has(email) || !user.emailVerified) {
-    throw new HttpsError('permission-denied', 'Brak uprawnień administratora.');
-  }
+    const user = await getAuth().getUser(uid);
+    const email = user.email?.trim().toLowerCase() ?? '';
+    if (!ADMIN_EMAILS.has(email) || !user.emailVerified) {
+      throw new HttpsError('permission-denied', 'Brak uprawnień administratora.');
+    }
 
-  await getAuth().setCustomUserClaims(uid, {
-    ...(user.customClaims ?? {}),
-    admin: true,
-  });
-  return {success: true, refreshToken: true};
-});
+    await getAuth().setCustomUserClaims(uid, {
+      ...(user.customClaims ?? {}),
+      admin: true,
+    });
+    return {success: true, refreshToken: true};
+  },
+);
 
 async function resolveFirebaseUid(event: RevenueCatEvent): Promise<string | null> {
   for (const candidate of firebaseUidCandidates(event)) {
