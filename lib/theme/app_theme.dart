@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -18,7 +19,12 @@ class AppTheme {
   static const Color bgLight = Color(0xFFF5F5F7);
   static const Color bgCardLight = Color(0xFFFFFFFF);
 
-  static ThemeData get darkTheme {
+  static ThemeData? _cachedDarkTheme;
+  static ThemeData? _cachedLightTheme;
+
+  static ThemeData get darkTheme => _cachedDarkTheme ??= _buildDarkTheme();
+
+  static ThemeData _buildDarkTheme() {
     final base = ThemeData.dark();
     return base.copyWith(
       colorScheme: const ColorScheme.dark(
@@ -29,6 +35,8 @@ class AppTheme {
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textPrimary,
+        onSurfaceVariant: textSecondary,
+        outline: dividerColor,
       ),
       scaffoldBackgroundColor: bgDark,
       textTheme: GoogleFonts.poppinsTextTheme(
@@ -37,6 +45,13 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: bgDark,
         foregroundColor: textPrimary,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: bgDark,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.poppins(
@@ -96,6 +111,11 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: bgCard,
+        floatingLabelStyle: GoogleFonts.poppins(
+          color: primary,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -180,13 +200,24 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         textColor: textPrimary,
         iconColor: textSecondary,
+        titleTextStyle: GoogleFonts.poppins(
+          color: textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+        subtitleTextStyle: GoogleFonts.poppins(
+          color: textSecondary,
+          fontSize: 12,
+        ),
         tileColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
-  static ThemeData get lightTheme {
+  static ThemeData get lightTheme => _cachedLightTheme ??= _buildLightTheme();
+
+  static ThemeData _buildLightTheme() {
     final base = ThemeData.light();
     return base.copyWith(
       colorScheme: const ColorScheme.light(
@@ -202,6 +233,13 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1A1A2E),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.poppins(

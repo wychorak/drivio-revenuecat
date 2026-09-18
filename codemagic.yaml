@@ -37,7 +37,9 @@ workflows:
           : "${CONTACT_EMAIL:?Missing CONTACT_EMAIL in variable group 'drivio secrets'}"
 
       - name: Get Flutter packages
-        script: flutter pub get
+        script: |
+          touch .env
+          flutter pub get
 
       - name: Create iOS secrets configuration
         script: |

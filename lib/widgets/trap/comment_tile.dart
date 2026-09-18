@@ -8,12 +8,14 @@ class CommentTile extends StatefulWidget {
   final CommentModel comment;
   final Future<void> Function(String reason)? onReport;
   final Future<void> Function()? onBlock;
+  final Future<void> Function()? onDelete;
 
   const CommentTile({
     super.key,
     required this.comment,
     this.onReport,
     this.onBlock,
+    this.onDelete,
   });
 
   @override
@@ -66,11 +68,26 @@ class _CommentTileState extends State<CommentTile> {
                   ),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    if (widget.onReport != null) {
-                      await widget.onReport!(r);
-                    }
-                    if (mounted) {
-                      setState(() => _reported = true);
+                    try {
+                      if (widget.onReport != null) {
+                        await widget.onReport!(r);
+                      }
+                      if (mounted) {
+                        setState(() => _reported = true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Komentarz został zgłoszony.'),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Nie udało się wysłać zgłoszenia.'),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
@@ -84,10 +101,36 @@ class _CommentTileState extends State<CommentTile> {
   Future<void> _blockAuthor() async {
     if (widget.onBlock == null) return;
     await widget.onBlock!();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Użytkownik został zablokowany.')),
-      );
+  }
+
+  Future<void> _deleteComment() async {
+    if (widget.onDelete == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Usunąć komentarz?'),
+        content: const Text('Tej operacji nie można cofnąć.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Anuluj'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Usuń'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.onDelete!();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się usunąć komentarza.')),
+        );
+      }
     }
   }
 
@@ -144,7 +187,7 @@ class _CommentTileState extends State<CommentTile> {
                   ],
                 ),
               ),
-              if (_reported)
+              if (_reported) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -161,8 +204,12 @@ class _CommentTileState extends State<CommentTile> {
                       fontSize: 10,
                     ),
                   ),
-                )
-              else
+                ),
+                const SizedBox(width: 4),
+              ],
+              if (widget.onReport != null ||
+                  widget.onBlock != null ||
+                  widget.onDelete != null)
                 PopupMenuButton<String>(
                   icon: const Icon(
                     Icons.more_horiz,
@@ -175,22 +222,33 @@ class _CommentTileState extends State<CommentTile> {
                       _showReportDialog();
                     } else if (value == 'block') {
                       _blockAuthor();
+                    } else if (value == 'delete') {
+                      _deleteComment();
                     }
                   },
                   itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'report',
-                      child: Text(
-                        'Zgłoś komentarz',
-                        style: GoogleFonts.poppins(color: Colors.white),
+                    if (widget.onReport != null && !_reported)
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Text(
+                          'Zgłoś komentarz',
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
                       ),
-                    ),
                     if (widget.onBlock != null)
                       PopupMenuItem(
                         value: 'block',
                         child: Text(
                           'Zablokuj autora',
                           style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                      ),
+                    if (widget.onDelete != null)
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          'Usuń komentarz',
+                          style: GoogleFonts.poppins(color: AppTheme.primary),
                         ),
                       ),
                   ],

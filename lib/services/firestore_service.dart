@@ -43,6 +43,21 @@ class FirestoreService {
     await _db.collection('traps').doc(id).update(data);
   }
 
+  Stream<List<TrapModel>> getAllTraps() {
+    return _db
+        .collection('traps')
+        .orderBy('createdAt', descending: true)
+        .limit(300)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => TrapModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> deleteTrap(String id) => _deleteContent('trap', id);
+
   // ─── SCHOOLS ─────────────────────────────────────────────────────────────
 
   Stream<List<SchoolModel>> getSchools(String city) {
@@ -53,8 +68,19 @@ class FirestoreService {
         .map(
           (snap) => snap.docs
               .map((doc) => SchoolModel.fromMap(doc.data(), doc.id))
+              .where((school) => school.city == city)
               .toList(),
         );
+  }
+
+  Stream<List<SchoolModel>> getAllSchools() {
+    return _db.collection('schools').limit(200).snapshots().map((snap) {
+      final schools = snap.docs
+          .map((doc) => SchoolModel.fromMap(doc.data(), doc.id))
+          .toList();
+      schools.sort((a, b) => a.name.compareTo(b.name));
+      return schools;
+    });
   }
 
   Future<SchoolModel?> getSchoolById(String id) async {
@@ -62,6 +88,17 @@ class FirestoreService {
     if (!doc.exists) return null;
     return SchoolModel.fromMap(doc.data()!, doc.id);
   }
+
+  Future<String> addSchool(SchoolModel school) async {
+    final ref = await _db.collection('schools').add(school.toMap());
+    return ref.id;
+  }
+
+  Future<void> updateSchool(String id, SchoolModel school) async {
+    await _db.collection('schools').doc(id).update(school.toMap());
+  }
+
+  Future<void> deleteSchool(String id) => _deleteContent('school', id);
 
   // ─── COMMENTS ────────────────────────────────────────────────────────────
 
@@ -85,11 +122,35 @@ class FirestoreService {
     await _db.collection('comments').add(data);
   }
 
+  Stream<List<CommentModel>> getRecentComments() {
+    return _db
+        .collection('comments')
+        .orderBy('timestamp', descending: true)
+        .limit(200)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => CommentModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> deleteComment(String id) async {
+    await _db.collection('comments').doc(id).delete();
+  }
+
   // ─── REPORTS ─────────────────────────────────────────────────────────────
 
   Future<void> reportContent(ReportModel report) async {
     final data = report.toMap()..['timestamp'] = FieldValue.serverTimestamp();
-    await _db.collection('reports').add(data);
+    final id = '${report.reporterId}_${report.itemType}_${report.itemId}';
+    final ref = _db.collection('reports').doc(id);
+    await _db.runTransaction((transaction) async {
+      if ((await transaction.get(ref)).exists) {
+        throw StateError('Ta treść została już zgłoszona.');
+      }
+      transaction.set(ref, data);
+    });
   }
 
   Stream<List<ReportModel>> getModerationReports() {
@@ -109,19 +170,44 @@ class FirestoreService {
     ReportModel report, {
     required bool deleteContent,
   }) async {
-    final batch = _db.batch();
     if (deleteContent) {
-      final collection = switch (report.itemType) {
-        'trap' => 'traps',
-        'school' => 'schools',
-        'comment' => 'comments',
-        _ => null,
-      };
-      if (collection != null) {
-        batch.delete(_db.collection(collection).doc(report.itemId));
+      await _deleteContent(report.itemType, report.itemId);
+    }
+    await _db.collection('reports').doc(report.id).delete();
+  }
+
+  Future<void> _deleteContent(String itemType, String itemId) async {
+    final collection = switch (itemType) {
+      'trap' => 'traps',
+      'school' => 'schools',
+      'comment' => 'comments',
+      _ => throw ArgumentError.value(itemType, 'itemType'),
+    };
+
+    final batch = _db.batch();
+    batch.delete(_db.collection(collection).doc(itemId));
+
+    if (itemType != 'comment') {
+      final comments = await _db
+          .collection('comments')
+          .where('itemId', isEqualTo: itemId)
+          .where('itemType', isEqualTo: itemType)
+          .limit(400)
+          .get();
+      for (final comment in comments.docs) {
+        batch.delete(comment.reference);
       }
     }
-    batch.delete(_db.collection('reports').doc(report.id));
+
+    final reports = await _db
+        .collection('reports')
+        .where('itemId', isEqualTo: itemId)
+        .where('itemType', isEqualTo: itemType)
+        .limit(80)
+        .get();
+    for (final report in reports.docs) {
+      batch.delete(report.reference);
+    }
     await batch.commit();
   }
 

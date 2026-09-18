@@ -153,7 +153,7 @@ class RevenueCatService {
       _events.add(
         const PremiumPurchaseEvent(
           type: PremiumPurchaseEventType.pending,
-          message: 'Otwieranie płatności App Store…',
+          message: 'Otwieranie płatności w sklepie…',
         ),
       );
 
@@ -204,7 +204,7 @@ class RevenueCatService {
         type: PremiumPurchaseEventType.restored,
         message: hasPremium(info)
             ? 'Zakupy zostały przywrócone.'
-            : 'Nie znaleziono aktywnego Premium dla tego Apple ID.',
+            : 'Nie znaleziono aktywnego Premium dla tego konta sklepu.',
       ),
     );
   }

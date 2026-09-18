@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/premium_provider.dart';
+import 'package:drivio/providers/settings_provider.dart';
 import 'package:drivio/screens/splash/splash_screen.dart';
 import 'package:drivio/screens/onboarding/city_select_screen.dart';
 import 'package:drivio/screens/auth/login_screen.dart';
@@ -22,6 +23,10 @@ import 'package:drivio/screens/legal/terms_screen.dart';
 import 'package:drivio/screens/legal/privacy_screen.dart';
 import 'package:drivio/screens/ranking/ranking_screen.dart';
 import 'package:drivio/screens/admin/admin_moderation_screen.dart';
+import 'package:drivio/screens/admin/admin_school_form_screen.dart';
+import 'package:drivio/screens/settings/settings_screen.dart';
+import 'package:drivio/screens/guides/parking_screen.dart';
+import 'package:drivio/screens/guides/car_screen.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -57,7 +62,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
         return citySelected == null ? '/city-select' : '/login';
       }
 
-      if (citySelected == null && !onCitySelect) return '/city-select';
+      if (citySelected == null) {
+        return onCitySelect ? null : '/city-select';
+      }
 
       if (loggingIn || onCitySelect) return '/map';
 
@@ -106,6 +113,15 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/parking',
+        builder: (context, state) => const ParkingScreen(),
+      ),
+      GoRoute(path: '/car', builder: (context, state) => const CarScreen()),
+      GoRoute(
         path: '/premium',
         builder: (context, state) => const PremiumScreen(),
       ),
@@ -121,6 +137,15 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin',
         builder: (context, state) => const AdminModerationScreen(),
+      ),
+      GoRoute(
+        path: '/admin/school/add',
+        builder: (context, state) => const AdminSchoolFormScreen(),
+      ),
+      GoRoute(
+        path: '/admin/school/:id/edit',
+        builder: (context, state) =>
+            AdminSchoolFormScreen(schoolId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
@@ -147,13 +172,14 @@ class DrivioApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(premiumIapBootstrapProvider);
     final router = ref.watch(_routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'Drivio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       routerConfig: router,
     );
   }

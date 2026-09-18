@@ -11,6 +11,7 @@ import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/traps_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/content_moderation_service.dart';
+import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
@@ -28,6 +29,7 @@ class TrapDetailScreen extends ConsumerStatefulWidget {
 class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
   TrapModel? _trap;
   bool _isLoading = true;
+  bool _isSaving = false;
   bool _isSaved = false;
   final _commentController = TextEditingController();
   bool _accessDenied = false;
@@ -101,6 +103,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
   }
 
   Future<void> _toggleSave() async {
+    if (_isSaving) return;
     if (ref.read(devLoginProvider)) {
       if (_trap == null) return;
       setState(() => _isSaved = !_isSaved);
@@ -114,13 +117,38 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     final user = authState.value;
     if (user == null || _trap == null) return;
 
-    final fs = ref.read(firestoreServiceProvider);
-    if (_isSaved) {
-      await fs.unsaveTrap(user.uid, _trap!.id);
-    } else {
-      await fs.saveTrap(user.uid, _trap!.id);
+    final willSave = !_isSaved;
+    setState(() => _isSaving = true);
+    try {
+      final fs = ref.read(firestoreServiceProvider);
+      if (_isSaved) {
+        await fs.unsaveTrap(user.uid, _trap!.id);
+      } else {
+        await fs.saveTrap(user.uid, _trap!.id);
+      }
+      if (mounted) {
+        setState(() => _isSaved = willSave);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              willSave
+                  ? 'Pułapka dodana do zapisanych.'
+                  : 'Pułapka usunięta z zapisanych.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nie udało się zapisać pułapki. Spróbuj ponownie.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-    setState(() => _isSaved = !_isSaved);
   }
 
   Future<void> _addComment() async {
@@ -165,9 +193,17 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
       timestamp: DateTime.now(),
     );
 
-    await ref.read(firestoreServiceProvider).addComment(comment);
-    _commentController.clear();
-    if (mounted) Navigator.pop(context);
+    try {
+      await ref.read(firestoreServiceProvider).addComment(comment);
+      _commentController.clear();
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się dodać komentarza.')),
+        );
+      }
+    }
   }
 
   Future<void> _blockUser(String blockedUid) async {
@@ -229,6 +265,16 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         ],
       ),
     );
+  }
+
+  void _showCommentAccessMessage() {
+    final user = ref.read(authStateProvider).value;
+    final message = user?.isAnonymous == true
+        ? 'Komentarze są dostępne po założeniu konta.'
+        : 'Potwierdź adres e-mail, aby dodawać komentarze.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _reportTrap() {
@@ -414,6 +460,9 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
     final trap = _trap!;
     final isPremium = ref.watch(isPremiumProvider);
+    final authUser = ref.watch(authStateProvider).value;
+    final canComment = authUser != null && authUser.emailVerified;
+    final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
     final commentsAsync = ref.watch(commentsProvider(trap.id));
 
     return Scaffold(
@@ -447,13 +496,22 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                     color: AppTheme.bgCard.withAlpha(200),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _isSaved ? Icons.bookmark : Icons.bookmark_outline,
-                    color: _isSaved ? AppTheme.primary : Colors.white,
-                    size: 22,
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _isSaved ? Icons.bookmark : Icons.bookmark_outline,
+                          color: _isSaved ? AppTheme.primary : Colors.white,
+                          size: 22,
+                        ),
                 ),
-                onPressed: _toggleSave,
+                onPressed: _isSaving ? null : _toggleSave,
               ),
               IconButton(
                 icon: Container(
@@ -599,7 +657,9 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                           children: [
                             _sectionTitle('Komentarze (${comments.length})'),
                             TextButton.icon(
-                              onPressed: _showCommentDialog,
+                              onPressed: canComment
+                                  ? _showCommentDialog
+                                  : _showCommentAccessMessage,
                               icon: const Icon(Icons.add, size: 16),
                               label: const Text('Dodaj'),
                             ),
@@ -623,36 +683,49 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                           ...comments.map(
                             (c) => CommentTile(
                               comment: c,
-                              onBlock: c.userId.isNotEmpty
+                              onBlock:
+                                  c.userId.isNotEmpty &&
+                                      c.userId != authUser?.uid
                                   ? () => _blockUser(c.userId)
                                   : null,
-                              onReport: (reason) async {
-                                if (ref.read(devLoginProvider)) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'DEV: zgloszenie komentarza nie zapisuje Firestore',
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                final authState = ref.read(authStateProvider);
-                                final user = authState.value;
-                                if (user == null) return;
-                                await ref
-                                    .read(firestoreServiceProvider)
-                                    .reportContent(
-                                      ReportModel(
-                                        id: '',
-                                        itemId: c.id,
-                                        itemType: 'comment',
-                                        reason: reason,
-                                        reporterId: user.uid,
-                                        timestamp: DateTime.now(),
-                                      ),
-                                    );
-                              },
+                              onDelete: c.userId == authUser?.uid || isAdmin
+                                  ? () => ref
+                                        .read(firestoreServiceProvider)
+                                        .deleteComment(c.id)
+                                  : null,
+                              onReport: !canComment || c.userId == authUser.uid
+                                  ? null
+                                  : (reason) async {
+                                      if (ref.read(devLoginProvider)) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'DEV: zgloszenie komentarza nie zapisuje Firestore',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      final authState = ref.read(
+                                        authStateProvider,
+                                      );
+                                      final user = authState.value;
+                                      if (user == null) return;
+                                      await ref
+                                          .read(firestoreServiceProvider)
+                                          .reportContent(
+                                            ReportModel(
+                                              id: '',
+                                              itemId: c.id,
+                                              itemType: 'comment',
+                                              reason: reason,
+                                              reporterId: user.uid,
+                                              timestamp: DateTime.now(),
+                                            ),
+                                          );
+                                    },
                             ),
                           ),
                       ],

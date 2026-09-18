@@ -48,9 +48,9 @@ class ExamRegistrationScreen extends StatelessWidget {
             iconColor: AppTheme.successColor,
             title: 'Jak opłacić prawo jazdy',
             children: [
-              _infoItem('Opłata za egzamin teorii: 30 zł'),
-              _infoItem('Opłata za egzamin praktyki: 140 zł'),
-              _infoItem('Łącznie: 170 zł (przy pierwszym podejściu)'),
+              _infoItem('Kategoria B — teoria: 59 zł'),
+              _infoItem('Kategoria B — praktyka: 239 zł'),
+              _infoItem('Cały egzamin kategorii B: 298 zł'),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -70,11 +70,10 @@ class ExamRegistrationScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    _bankRow('Bank:', 'WORD Szczecin'),
-                    _bankRow('Nr konta:', 'XX XXXX XXXX XXXX XXXX XXXX XXXX'),
+                    _bankRow('Aktualność:', 'cennik od 16 czerwca 2026 r.'),
                     _bankRow(
-                      'Tytuł:',
-                      'Egzamin kat. B – [Twoje imię nazwisko]',
+                      'Weryfikacja:',
+                      'sprawdź dane przelewu na stronie WORD przed wpłatą',
                     ),
                   ],
                 ),

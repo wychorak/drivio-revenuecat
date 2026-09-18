@@ -55,3 +55,6 @@ ios/Flutter/Secrets.xcconfig
 graphify-out/
 android/.kotlin/
 firebase/rules-tests/node_modules/
+functions/node_modules/
+functions/lib/
+/artifacts/

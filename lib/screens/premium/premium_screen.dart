@@ -241,6 +241,7 @@ class PremiumScreen extends ConsumerWidget {
     Package? iapProduct,
   ) async {
     final premiumService = ref.read(premiumServiceProvider);
+    final authUser = ref.read(authStateProvider).value;
     final uid = _currentUid(ref);
 
     try {
@@ -249,11 +250,23 @@ class PremiumScreen extends ConsumerWidget {
           context.push('/login');
           return;
         }
+        if (authUser?.isAnonymous == true) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Załóż konto przed zakupem, aby nie utracić Premium.',
+                ),
+              ),
+            );
+          }
+          return;
+        }
         if (iapProduct == null) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Produkt App Store nie jest jeszcze gotowy.'),
+                content: Text('Produkt w sklepie nie jest jeszcze gotowy.'),
               ),
             );
           }
@@ -273,9 +286,16 @@ class PremiumScreen extends ConsumerWidget {
   }
 
   Future<void> _restorePurchases(BuildContext context, WidgetRef ref) async {
+    final authUser = ref.read(authStateProvider).value;
     final uid = _currentUid(ref);
     if (uid == null) {
       context.push('/login');
+      return;
+    }
+    if (authUser?.isAnonymous == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Załóż konto, aby przywrócić zakupy.')),
+      );
       return;
     }
     try {
@@ -285,7 +305,7 @@ class PremiumScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Nie udało się przywrócić zakupów. Sprawdź połączenie i Apple ID.',
+            'Nie udało się przywrócić zakupów. Sprawdź połączenie i konto sklepu.',
           ),
         ),
       );

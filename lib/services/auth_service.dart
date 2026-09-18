@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -10,6 +10,9 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'europe-west1',
+  );
   bool _googleInitialized = false;
 
   User? get currentUser => _auth.currentUser;
@@ -122,18 +125,24 @@ class AuthService {
     final user = credential.user;
     if (user != null) {
       await user.updateDisplayName(displayName);
-      await _createUserDocument(user, displayName);
+      await _createUserDocument(user, displayName, legalConsentsAccepted: true);
       await user.sendEmailVerification();
       await _auth.signOut();
     }
     return user;
   }
 
-  Future<void> _createUserDocument(User user, String displayName) async {
+  Future<void> _createUserDocument(
+    User user,
+    String displayName, {
+    bool isGuest = false,
+    bool legalConsentsAccepted = false,
+  }) async {
     await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'email': user.email ?? '',
       'displayName': displayName,
+      'isGuest': isGuest,
       'isPremium': false,
       'premiumUntil': null,
       'savedTraps': [],
@@ -142,7 +151,27 @@ class AuthService {
       'dailyTrapViews': {},
       'photoUrl': null,
       'createdAt': FieldValue.serverTimestamp(),
+      if (legalConsentsAccepted) ...{
+        'acceptedTermsAt': FieldValue.serverTimestamp(),
+        'acceptedPrivacyAt': FieldValue.serverTimestamp(),
+      },
     }, SetOptions(merge: true));
+  }
+
+  Future<User?> continueAsGuest() async {
+    final credential = await _auth.signInAnonymously();
+    final user = credential.user;
+    if (user != null) {
+      await _createUserDocument(user, 'Gość', isGuest: true);
+    }
+    return user;
+  }
+
+  Future<void> recordLegalConsents(String uid) async {
+    await _firestore.collection('users').doc(uid).update({
+      'acceptedTermsAt': FieldValue.serverTimestamp(),
+      'acceptedPrivacyAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> signOut() async {
@@ -173,43 +202,8 @@ class AuthService {
       );
     }
 
-    await _deleteOwnedDocuments('comments', 'userId', user.uid);
-    await _deleteOwnedDocuments('reports', 'reporterId', user.uid);
-    await _deleteOwnedDocuments('traps', 'createdBy', user.uid);
-    await _deleteUploadedTrapPhotos(user.uid);
-    await _firestore.collection('users').doc(user.uid).delete();
-    await user.delete();
-  }
-
-  Future<void> _deleteOwnedDocuments(
-    String collection,
-    String ownerField,
-    String uid,
-  ) async {
-    while (true) {
-      final snapshot = await _firestore
-          .collection(collection)
-          .where(ownerField, isEqualTo: uid)
-          .limit(400)
-          .get();
-      if (snapshot.docs.isEmpty) return;
-      final batch = _firestore.batch();
-      for (final document in snapshot.docs) {
-        batch.delete(document.reference);
-      }
-      await batch.commit();
-      if (snapshot.docs.length < 400) return;
-    }
-  }
-
-  Future<void> _deleteUploadedTrapPhotos(String uid) async {
-    final folder = FirebaseStorage.instance.ref().child('traps/$uid');
-    try {
-      final files = await folder.listAll();
-      await Future.wait(files.items.map((item) => item.delete()));
-    } on FirebaseException catch (error) {
-      if (error.code != 'object-not-found') rethrow;
-    }
+    await _functions.httpsCallable('deleteAccount').call<void>();
+    await _auth.signOut();
   }
 
   Future<void> updateDisplayName(String displayName) async {

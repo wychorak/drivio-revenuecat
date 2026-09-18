@@ -19,6 +19,7 @@ import {
 
 const PROJECT_ID = 'demo-drivio-rules';
 const ADMIN_EMAIL = 'joa.rycyk@gmail.com';
+const SECOND_ADMIN_EMAIL = 'estlin20@gmail.com';
 
 let testEnv;
 
@@ -140,6 +141,73 @@ describe('users', () => {
       }),
     );
   });
+
+  test('legacy profile may save content without exposing protected fields', async () => {
+    await seed('users/legacy', {
+      uid: 'legacy',
+      email: 'legacy@example.com',
+      displayName: 'Legacy Driver',
+      legacyField: 'kept for migration',
+      createdAt: Timestamp.fromMillis(1_600_000_000_000),
+    });
+
+    await assertSucceeds(
+      updateDoc(doc(auth('legacy'), 'users/legacy'), {
+        savedTraps: ['trap-1'],
+        savedSchools: ['school-1'],
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(auth('legacy'), 'users/legacy'), { isPremium: true }),
+    );
+  });
+
+  test('anonymous auth may create only a guest profile', async () => {
+    const guestDb = testEnv.authenticatedContext('guest-user', {
+      firebase: { sign_in_provider: 'anonymous' },
+    }).firestore();
+    const guestData = {
+      ...baseUser('guest-user', ''),
+      displayName: 'Gość',
+      isGuest: true,
+    };
+
+    await assertSucceeds(
+      setDoc(doc(guestDb, 'users/guest-user'), {
+        ...guestData,
+        createdAt: serverTimestamp(),
+      }),
+    );
+
+    const fakeGuestDb = testEnv.authenticatedContext('fake-guest', {
+      firebase: { sign_in_provider: 'anonymous' },
+    }).firestore();
+    await assertFails(
+      setDoc(doc(fakeGuestDb, 'users/fake-guest'), {
+        ...baseUser('fake-guest', ''),
+        displayName: 'Gość',
+        isGuest: false,
+        createdAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  test('owner may record legal consents once but cannot rewrite them', async () => {
+    await seed('users/alice', baseUser('alice'));
+
+    await assertSucceeds(
+      updateDoc(doc(auth('alice'), 'users/alice'), {
+        acceptedTermsAt: serverTimestamp(),
+        acceptedPrivacyAt: serverTimestamp(),
+      }),
+    );
+
+    await assertFails(
+      updateDoc(doc(auth('alice'), 'users/alice'), {
+        acceptedTermsAt: serverTimestamp(),
+      }),
+    );
+  });
 });
 
 describe('comments', () => {
@@ -158,12 +226,13 @@ describe('comments', () => {
   });
 
   test('owner may edit text but cannot change author data or creation time', async () => {
+    await seed('users/alice', baseUser('alice'));
     await assertSucceeds(
       setDoc(doc(auth('alice'), 'comments/comment-1'), {
         itemId: 'trap-1',
         itemType: 'trap',
         userId: 'alice',
-        userDisplayName: 'Alice',
+        userDisplayName: 'alice',
         text: 'Pierwsza wersja',
         timestamp: serverTimestamp(),
         reported: false,
@@ -252,8 +321,17 @@ describe('daily limits', () => {
 
 describe('reports and admin access', () => {
   test('user creates only their own report; normal users cannot read reports', async () => {
+    await seed('comments/comment-1', {
+      itemId: 'trap-1',
+      itemType: 'trap',
+      userId: 'bob',
+      userDisplayName: 'Bob',
+      text: 'Komentarz do zgłoszenia',
+      timestamp: Timestamp.now(),
+      reported: false,
+    });
     const aliceDb = auth('alice');
-    const reportRef = doc(aliceDb, 'reports/report-1');
+    const reportRef = doc(aliceDb, 'reports/alice_comment_comment-1');
 
     await assertSucceeds(
       setDoc(reportRef, {
@@ -266,7 +344,7 @@ describe('reports and admin access', () => {
     );
     await assertFails(getDoc(reportRef));
     await assertSucceeds(
-      getDoc(doc(adminDb(), 'reports/report-1')),
+      getDoc(doc(adminDb(), 'reports/alice_comment_comment-1')),
     );
   });
 
@@ -283,7 +361,7 @@ describe('reports and admin access', () => {
     );
   });
 
-  test('admin requires both the exact email and verified token', async () => {
+  test('admin requires an allowed email and verified token', async () => {
     await seed('reports/report-1', {
       itemId: 'trap-1',
       itemType: 'trap',
@@ -297,6 +375,9 @@ describe('reports and admin access', () => {
       getDoc(doc(auth('fake-admin', 'other@example.com', true), 'reports/report-1')),
     );
     await assertSucceeds(getDoc(doc(adminDb(true), 'reports/report-1')));
+    await assertSucceeds(
+      getDoc(doc(auth('second-admin', SECOND_ADMIN_EMAIL, true), 'reports/report-1')),
+    );
   });
 });
 
@@ -336,6 +417,44 @@ describe('public catalog and privileged writes', () => {
       setDoc(doc(adminDb(), 'traps/admin-write'), trap),
     );
   });
+
+  test('only admin may create a validated school and delete comments', async () => {
+    const school = {
+      name: 'OSK Drivio',
+      rating: 0,
+      reviewCount: 0,
+      priceFrom: 3200,
+      priceTo: 3800,
+      address: 'ul. Testowa 1',
+      description: 'Szkoła nauki jazdy.',
+      city: 'Szczecin',
+      lat: 53.4289,
+      lng: 14.553,
+      phone: '123456789',
+      website: 'https://example.com',
+      logoUrl: null,
+    };
+
+    await assertFails(
+      setDoc(doc(auth('alice'), 'schools/user-write'), school),
+    );
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'schools/admin-write'), school),
+    );
+
+    await seed('comments/comment-to-remove', {
+      itemId: 'trap-1',
+      itemType: 'trap',
+      userId: 'alice',
+      userDisplayName: 'Alice',
+      text: 'Komentarz do moderacji',
+      timestamp: Timestamp.now(),
+      reported: false,
+    });
+    await assertSucceeds(
+      deleteDoc(doc(adminDb(), 'comments/comment-to-remove')),
+    );
+  });
 });
 
 describe('iapTransactions', () => {
@@ -346,6 +465,22 @@ describe('iapTransactions', () => {
         productId: 'driviolifetime',
         status: 'active',
       }),
+    );
+  });
+
+  test('RevenueCat events are backend-only but visible to admin', async () => {
+    await seed('revenueCatEvents/event-1', {
+      userId: 'alice',
+      type: 'INITIAL_PURCHASE',
+    });
+    await assertFails(
+      setDoc(doc(auth('alice'), 'revenueCatEvents/fake-event'), {
+        userId: 'alice',
+        type: 'INITIAL_PURCHASE',
+      }),
+    );
+    await assertSucceeds(
+      getDoc(doc(adminDb(), 'revenueCatEvents/event-1')),
     );
   });
 });

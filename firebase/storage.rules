@@ -12,12 +12,16 @@ service firebase.storage {
     function isAdmin() {
       return signedIn()
         && request.auth.token.email_verified == true
-        && request.auth.token.email == 'joa.rycyk@gmail.com';
+        && (
+          request.auth.token.admin == true
+          || request.auth.token.email == 'joa.rycyk@gmail.com'
+          || request.auth.token.email == 'estlin20@gmail.com'
+        );
     }
 
     match /traps/{uid}/{fileName} {
       allow read: if signedIn();
-      allow create, update: if verified()
+      allow create, update: if isAdmin()
         && request.auth.uid == uid
         && request.resource.size <= 5 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)');

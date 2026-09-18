@@ -8,6 +8,7 @@ class SchoolModel {
   final double priceTo;
   final String address;
   final String description;
+  final String city;
   final double lat;
   final double lng;
   final String? phone;
@@ -23,6 +24,7 @@ class SchoolModel {
     required this.priceTo,
     required this.address,
     required this.description,
+    this.city = 'Szczecin',
     required this.lat,
     required this.lng,
     this.phone,
@@ -40,6 +42,7 @@ class SchoolModel {
       priceTo: (map['priceTo'] as num?)?.toDouble() ?? 0.0,
       address: map['address'] as String? ?? '',
       description: map['description'] as String? ?? '',
+      city: map['city'] as String? ?? 'Szczecin',
       lat: (map['lat'] as num?)?.toDouble() ?? 53.4289,
       lng: (map['lng'] as num?)?.toDouble() ?? 14.5530,
       phone: map['phone'] as String?,
@@ -57,6 +60,7 @@ class SchoolModel {
       'priceTo': priceTo,
       'address': address,
       'description': description,
+      'city': city,
       'lat': lat,
       'lng': lng,
       'phone': phone,
@@ -74,6 +78,7 @@ class SchoolModel {
     double? priceTo,
     String? address,
     String? description,
+    String? city,
     double? lat,
     double? lng,
     String? phone,
@@ -89,6 +94,7 @@ class SchoolModel {
       priceTo: priceTo ?? this.priceTo,
       address: address ?? this.address,
       description: description ?? this.description,
+      city: city ?? this.city,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       phone: phone ?? this.phone,

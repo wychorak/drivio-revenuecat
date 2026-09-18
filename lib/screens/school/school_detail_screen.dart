@@ -11,6 +11,7 @@ import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/traps_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/content_moderation_service.dart';
+import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
@@ -27,6 +28,8 @@ class SchoolDetailScreen extends ConsumerStatefulWidget {
 class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
   SchoolModel? _school;
   bool _isLoading = true;
+  bool _isSaved = false;
+  bool _isSaving = false;
   final _commentController = TextEditingController();
 
   @override
@@ -52,6 +55,59 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
         _school = school;
         _isLoading = false;
       });
+      _checkSaved();
+    }
+  }
+
+  void _checkSaved() {
+    final user = ref.read(currentUserProvider).value;
+    if (mounted && user != null && _school != null) {
+      setState(() => _isSaved = user.isSchoolSavedById(_school!.id));
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    if (_isSaving || _school == null) return;
+    if (ref.read(devLoginProvider)) {
+      setState(() => _isSaved = !_isSaved);
+      return;
+    }
+    final user = ref.read(authStateProvider).value;
+    if (user == null) {
+      if (mounted) context.go('/login');
+      return;
+    }
+    final willSave = !_isSaved;
+    setState(() => _isSaving = true);
+    try {
+      final service = ref.read(firestoreServiceProvider);
+      if (_isSaved) {
+        await service.unsaveSchool(user.uid, _school!.id);
+      } else {
+        await service.saveSchool(user.uid, _school!.id);
+      }
+      if (mounted) {
+        setState(() => _isSaved = willSave);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              willSave
+                  ? 'Szkoła dodana do zapisanych.'
+                  : 'Szkoła usunięta z zapisanych.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nie udało się zapisać szkoły. Spróbuj ponownie.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -100,22 +156,30 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     final userAsync = ref.read(currentUserProvider);
     final userData = userAsync.value;
 
-    await ref
-        .read(firestoreServiceProvider)
-        .addComment(
-          CommentModel(
-            id: '',
-            itemId: _school!.id,
-            itemType: 'school',
-            userId: user.uid,
-            userDisplayName:
-                userData?.displayName ?? user.displayName ?? 'Użytkownik',
-            text: text,
-            timestamp: DateTime.now(),
-          ),
+    try {
+      await ref
+          .read(firestoreServiceProvider)
+          .addComment(
+            CommentModel(
+              id: '',
+              itemId: _school!.id,
+              itemType: 'school',
+              userId: user.uid,
+              userDisplayName:
+                  userData?.displayName ?? user.displayName ?? 'Użytkownik',
+              text: text,
+              timestamp: DateTime.now(),
+            ),
+          );
+      _commentController.clear();
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się dodać opinii.')),
         );
-    _commentController.clear();
-    if (mounted) Navigator.pop(context);
+      }
+    }
   }
 
   Future<void> _blockUser(String blockedUid) async {
@@ -179,6 +243,16 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     );
   }
 
+  void _showCommentAccessMessage() {
+    final user = ref.read(authStateProvider).value;
+    final message = user?.isAnonymous == true
+        ? 'Opinie są dostępne po założeniu konta.'
+        : 'Potwierdź adres e-mail, aby dodawać opinie.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -202,6 +276,9 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     }
 
     final school = _school!;
+    final authUser = ref.watch(authStateProvider).value;
+    final canComment = authUser != null && authUser.emailVerified;
+    final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
     final commentsAsync = ref.watch(schoolCommentsProvider(school.id));
 
     return Scaffold(
@@ -227,6 +304,17 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
               ),
               onPressed: () => context.pop(),
             ),
+            actions: [
+              IconButton(
+                tooltip: _isSaved ? 'Usuń z zapisanych' : 'Zapisz szkołę',
+                onPressed: _isSaving ? null : _toggleSave,
+                icon: Icon(
+                  _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: _isSaved ? AppTheme.primary : Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 color: AppTheme.bgCard,
@@ -368,7 +456,9 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                               ),
                             ),
                             TextButton.icon(
-                              onPressed: _showCommentDialog,
+                              onPressed: canComment
+                                  ? _showCommentDialog
+                                  : _showCommentAccessMessage,
                               icon: const Icon(Icons.add, size: 16),
                               label: const Text('Dodaj'),
                             ),
@@ -392,36 +482,49 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                           ...comments.map(
                             (c) => CommentTile(
                               comment: c,
-                              onBlock: c.userId.isNotEmpty
+                              onBlock:
+                                  c.userId.isNotEmpty &&
+                                      c.userId != authUser?.uid
                                   ? () => _blockUser(c.userId)
                                   : null,
-                              onReport: (reason) async {
-                                if (ref.read(devLoginProvider)) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'DEV: zgloszenie komentarza nie zapisuje Firestore',
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                final authState = ref.read(authStateProvider);
-                                final user = authState.value;
-                                if (user == null) return;
-                                await ref
-                                    .read(firestoreServiceProvider)
-                                    .reportContent(
-                                      ReportModel(
-                                        id: '',
-                                        itemId: c.id,
-                                        itemType: 'comment',
-                                        reason: reason,
-                                        reporterId: user.uid,
-                                        timestamp: DateTime.now(),
-                                      ),
-                                    );
-                              },
+                              onDelete: c.userId == authUser?.uid || isAdmin
+                                  ? () => ref
+                                        .read(firestoreServiceProvider)
+                                        .deleteComment(c.id)
+                                  : null,
+                              onReport: !canComment || c.userId == authUser.uid
+                                  ? null
+                                  : (reason) async {
+                                      if (ref.read(devLoginProvider)) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'DEV: zgloszenie komentarza nie zapisuje Firestore',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      final authState = ref.read(
+                                        authStateProvider,
+                                      );
+                                      final user = authState.value;
+                                      if (user == null) return;
+                                      await ref
+                                          .read(firestoreServiceProvider)
+                                          .reportContent(
+                                            ReportModel(
+                                              id: '',
+                                              itemId: c.id,
+                                              itemType: 'comment',
+                                              reason: reason,
+                                              reporterId: user.uid,
+                                              timestamp: DateTime.now(),
+                                            ),
+                                          );
+                                    },
                             ),
                           ),
                       ],

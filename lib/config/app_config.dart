@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConfig {
   static const String appName = 'Drivio';
   static const String defaultCity = 'Szczecin';
@@ -6,11 +8,19 @@ class AppConfig {
   static const int maxSavedSchools = 100;
 
   // Public build-time configuration. These values are not secrets.
-  static const String adminEmailsRaw = String.fromEnvironment('ADMIN_EMAILS');
-  static const String contactEmail = String.fromEnvironment(
-    'CONTACT_EMAIL',
-    defaultValue: 'kontakt@drivio.app',
-  );
+  static String get adminEmailsRaw {
+    const fromDefine = String.fromEnvironment('ADMIN_EMAILS');
+    return fromDefine.isNotEmpty
+        ? fromDefine
+        : dotenv.env['ADMIN_EMAILS'] ?? '';
+  }
+
+  static String get contactEmail {
+    const fromDefine = String.fromEnvironment('CONTACT_EMAIL');
+    return fromDefine.isNotEmpty
+        ? fromDefine
+        : dotenv.env['CONTACT_EMAIL'] ?? 'kontakt@drivio.app';
+  }
 
   static Set<String> get adminEmails => adminEmailsRaw
       .split(RegExp(r'[,;\s]+'))

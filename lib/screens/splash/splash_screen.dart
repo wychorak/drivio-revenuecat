@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -92,14 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1600));
     await _exitController.forward();
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final citySelected = prefs.getString('selectedCity');
-    if (!mounted) return;
-    if (citySelected != null) {
-      context.go('/map');
-    } else {
-      context.go('/city-select');
-    }
+    context.go('/login');
   }
 
   @override

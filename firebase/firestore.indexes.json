@@ -24,6 +24,14 @@
         { "fieldPath": "itemType", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "itemId", "order": "ASCENDING" },
+        { "fieldPath": "itemType", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -5,6 +5,7 @@ class UserModel {
   final String email;
   final String displayName;
   final bool isPremium;
+  final bool isGuest;
   final DateTime? premiumUntil;
   final List<String> savedTraps;
   final List<String> savedSchools;
@@ -17,6 +18,7 @@ class UserModel {
     required this.email,
     required this.displayName,
     this.isPremium = false,
+    this.isGuest = false,
     this.premiumUntil,
     this.savedTraps = const [],
     this.savedSchools = const [],
@@ -31,6 +33,7 @@ class UserModel {
       email: map['email'] as String? ?? '',
       displayName: map['displayName'] as String? ?? '',
       isPremium: map['isPremium'] as bool? ?? false,
+      isGuest: map['isGuest'] as bool? ?? false,
       premiumUntil: map['premiumUntil'] != null
           ? (map['premiumUntil'] as Timestamp).toDate()
           : null,
@@ -52,6 +55,7 @@ class UserModel {
       'email': email,
       'displayName': displayName,
       'isPremium': isPremium,
+      'isGuest': isGuest,
       'premiumUntil': premiumUntil != null
           ? Timestamp.fromDate(premiumUntil!)
           : null,
@@ -68,6 +72,7 @@ class UserModel {
     String? email,
     String? displayName,
     bool? isPremium,
+    bool? isGuest,
     DateTime? premiumUntil,
     List<String>? savedTraps,
     List<String>? savedSchools,
@@ -80,6 +85,7 @@ class UserModel {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       isPremium: isPremium ?? this.isPremium,
+      isGuest: isGuest ?? this.isGuest,
       premiumUntil: premiumUntil ?? this.premiumUntil,
       savedTraps: savedTraps ?? this.savedTraps,
       savedSchools: savedSchools ?? this.savedSchools,

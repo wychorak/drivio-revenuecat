@@ -115,6 +115,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final trapsAsync = ref.watch(trapsProvider(_selectedCity));
     final schoolsAsync = ref.watch(schoolsProvider(_selectedCity));
     final isPremium = ref.watch(isPremiumProvider);
+    final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
     final remainingAsync = ref.watch(remainingViewsProvider);
 
     final traps = trapsAsync.value ?? [];
@@ -242,19 +243,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final authState = ref.read(authStateProvider);
-          final devLogin = ref.read(devLoginProvider);
-          if (authState.value == null && !devLogin) {
-            context.push('/login');
-          } else {
-            context.push('/trap/add');
-          }
-        },
-        backgroundColor: AppTheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              tooltip: 'Dodaj pułapkę',
+              onPressed: () => context.push('/trap/add'),
+              backgroundColor: AppTheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -292,6 +288,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Widget _buildDrawer() {
     final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
+    final user = ref.watch(currentUserProvider).value;
     return Drawer(
       backgroundColor: AppTheme.bgCard,
       child: SafeArea(
@@ -336,77 +333,175 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ],
               ),
             ),
-            const Divider(color: AppTheme.dividerColor),
-            _drawerItem(
-              icon: Icons.school_outlined,
-              title: 'Wyszukaj szkołę jazdy',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/schools');
-              },
-            ),
-            _drawerItem(
-              icon: Icons.person_outline,
-              title: 'Mój profil',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/profile');
-              },
-            ),
-            if (isAdmin)
-              _drawerItem(
-                icon: Icons.admin_panel_settings_outlined,
-                title: 'Moderacja',
-                iconColor: Colors.orangeAccent,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/admin');
-                },
+            if (user != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/profile');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: AppTheme.primary,
+                          child: Text(
+                            user.displayName.isEmpty
+                                ? 'U'
+                                : user.displayName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                user.isGuest ? 'Tryb gościa' : user.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            _drawerItem(
-              icon: Icons.emoji_events_outlined,
-              title: 'Pro tipy',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/pro-tips');
-              },
-            ),
-            _drawerItem(
-              icon: Icons.star_outline_rounded,
-              title: 'Premium',
-              iconColor: AppTheme.premiumGold,
-              titleColor: AppTheme.premiumGold,
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/premium');
-              },
-            ),
-            _drawerItem(
-              icon: Icons.leaderboard_outlined,
-              title: 'Ranking',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/ranking');
-              },
-            ),
             const Divider(color: AppTheme.dividerColor),
-            _drawerItem(
-              icon: Icons.description_outlined,
-              title: 'Regulamin',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/terms');
-              },
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _drawerItem(
+                    icon: Icons.school_outlined,
+                    title: 'Wyszukaj szkołę jazdy',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/schools');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.person_outline,
+                    title: 'Mój profil',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/profile');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.settings_outlined,
+                    title: 'Ustawienia',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/settings');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.assignment_outlined,
+                    title: 'WORD i egzamin',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/exam');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.local_parking_outlined,
+                    title: 'Parkowanie',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/parking');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.directions_car_outlined,
+                    title: 'Samochód',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/car');
+                    },
+                  ),
+                  if (isAdmin)
+                    _drawerItem(
+                      icon: Icons.admin_panel_settings_outlined,
+                      title: 'Moderacja',
+                      iconColor: Colors.orangeAccent,
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/admin');
+                      },
+                    ),
+                  _drawerItem(
+                    icon: Icons.emoji_events_outlined,
+                    title: 'Pro tipy',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/pro-tips');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.star_outline_rounded,
+                    title: 'Premium',
+                    iconColor: AppTheme.premiumGold,
+                    titleColor: AppTheme.premiumGold,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/premium');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.leaderboard_outlined,
+                    title: 'Ranking',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/ranking');
+                    },
+                  ),
+                  const Divider(color: AppTheme.dividerColor),
+                  _drawerItem(
+                    icon: Icons.description_outlined,
+                    title: 'Regulamin',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/terms');
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.privacy_tip_outlined,
+                    title: 'Polityka prywatności',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/privacy');
+                    },
+                  ),
+                ],
+              ),
             ),
-            _drawerItem(
-              icon: Icons.privacy_tip_outlined,
-              title: 'Polityka prywatności',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/privacy');
-              },
-            ),
-            const Spacer(),
             const Divider(color: AppTheme.dividerColor),
             _drawerItem(
               icon: Icons.logout_rounded,

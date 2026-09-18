@@ -47,9 +47,7 @@ class AdService {
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(
           maxAdContentRating: MaxAdContentRating.pg,
-          tagForChildDirectedTreatment:
-              TagForChildDirectedTreatment.unspecified,
-          tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.unspecified,
+          ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         ),
       );
       await MobileAds.instance.initialize();
