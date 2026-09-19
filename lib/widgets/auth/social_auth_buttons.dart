@@ -30,18 +30,18 @@ class SocialAuthButtons extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Divider(color: AppTheme.dividerColor)),
+            const Expanded(child: Divider(color: AppTheme.dividerColor)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'lub',
+                'lub kontynuuj przez',
                 style: GoogleFonts.poppins(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
                 ),
               ),
             ),
-            Expanded(child: Divider(color: AppTheme.dividerColor)),
+            const Expanded(child: Divider(color: AppTheme.dividerColor)),
           ],
         ),
         const SizedBox(height: 20),
@@ -52,6 +52,7 @@ class SocialAuthButtons extends StatelessWidget {
             onPressed: enabled ? onGoogle : null,
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
+              backgroundColor: AppTheme.bgElevated.withAlpha(210),
               side: BorderSide(color: AppTheme.dividerColor),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -89,7 +90,8 @@ class SocialAuthButtons extends StatelessWidget {
               onPressed: enabled ? onApple : null,
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white),
+                backgroundColor: AppTheme.bgElevated.withAlpha(210),
+                side: const BorderSide(color: AppTheme.dividerColor),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

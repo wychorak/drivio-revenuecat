@@ -180,6 +180,10 @@ class DrivioApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      // A platform map and an animating Theme can briefly rebuild against
+      // different inherited trees. Switching atomically avoids the Flutter
+      // descendant assertion and also makes rapid theme taps deterministic.
+      themeAnimationDuration: Duration.zero,
       routerConfig: router,
     );
   }

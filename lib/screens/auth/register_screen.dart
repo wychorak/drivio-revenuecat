@@ -9,6 +9,7 @@ import 'package:drivio/services/session_preference_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/auth/social_auth_buttons.dart';
+import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -139,7 +140,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Scaffold(
           backgroundColor: AppTheme.bgDark,
           appBar: AppBar(
-            backgroundColor: AppTheme.bgDark,
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_rounded,
@@ -148,220 +150,260 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: _isLoading ? null : () => context.pop(),
             ),
           ),
-          body: SafeArea(
-            child: AutofillGroup(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 12),
-                          Text(
-                            'Utwórz konto',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Dołącz do społeczności Drivio',
-                            style: GoogleFonts.poppins(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          TextFormField(
-                            controller: _nameController,
-                            cursorColor: AppTheme.primary,
-                            autofillHints: const [AutofillHints.name],
-                            style: const TextStyle(color: Colors.white),
-                            textCapitalization: TextCapitalization.words,
-                            decoration: const InputDecoration(
-                              labelText: 'Imię i nazwisko',
-                              prefixIcon: Icon(
-                                Icons.person_outline,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Podaj imię i nazwisko';
-                              }
-                              if (value.trim().length > 80) {
-                                return 'Nazwa może mieć maks. 80 znaków';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _emailController,
-                            cursorColor: AppTheme.primary,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [
-                              AutofillHints.newUsername,
-                              AutofillHints.email,
-                            ],
-                            autocorrect: false,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'E-mail',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Podaj adres e-mail';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Nieprawidłowy e-mail';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            cursorColor: AppTheme.primary,
-                            obscureText: _obscurePassword,
-                            autofillHints: const [AutofillHints.newPassword],
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'Hasło',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: AppTheme.textSecondary,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: AppTheme.textSecondary,
-                                ),
-                                onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword,
-                                ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Podaj hasło';
-                              }
-                              if (value.length < 6) {
-                                return 'Hasło musi mieć min. 6 znaków';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            cursorColor: AppTheme.primary,
-                            obscureText: _obscureConfirm,
-                            autofillHints: const [AutofillHints.newPassword],
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'Potwierdź hasło',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: AppTheme.textSecondary,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureConfirm
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: AppTheme.textSecondary,
-                                ),
-                                onPressed: () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm,
-                                ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value != _passwordController.text) {
-                                return 'Hasła nie są zgodne';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 22),
-                          _ConsentTile(
-                            value: _acceptedTerms,
-                            onChanged: (value) =>
-                                setState(() => _acceptedTerms = value),
-                            prefix: 'Akceptuję ',
-                            linkText: 'Regulamin aplikacji Drivio',
-                            onOpen: () => context.push('/terms'),
-                          ),
-                          const SizedBox(height: 8),
-                          _ConsentTile(
-                            value: _acceptedRodo,
-                            onChanged: (value) =>
-                                setState(() => _acceptedRodo = value),
-                            prefix: 'Akceptuję ',
-                            linkText: 'Politykę prywatności',
-                            onOpen: () => context.push('/privacy'),
-                          ),
-                          const SizedBox(height: 26),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton(
-                              onPressed: canRegister && !_isLoading
-                                  ? _register
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primary,
-                                disabledBackgroundColor: AppTheme.primary
-                                    .withAlpha(80),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Zarejestruj się e-mailem'),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SocialAuthButtons(
-                            enabled: !_isLoading,
-                            onGoogle: _registerWithGoogle,
-                            onApple: _registerWithApple,
-                            googleLabel: 'Zarejestruj przez Google',
-                            appleLabel: 'Zarejestruj przez Apple',
-                          ),
-                          if (!canRegister) ...[
+          body: DrivioBackdrop(
+            child: SafeArea(
+              top: false,
+              child: AutofillGroup(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             const SizedBox(height: 12),
-                            Center(
-                              child: Text(
-                                'Przed rejestracją zaakceptuj oba dokumenty.',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
-                                ),
+                            const DrivioBrandMark(size: 46, compact: true),
+                            const SizedBox(height: 28),
+                            Text(
+                              'Utwórz konto',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Zapisuj miejsca, komentuj i ucz się skuteczniej.',
+                              style: GoogleFonts.poppins(
+                                color: AppTheme.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.successColor.withAlpha(14),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppTheme.successColor.withAlpha(60),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.verified_user_outlined,
+                                    color: AppTheme.successColor,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Flexible(
+                                    child: Text(
+                                      'Twoje dane chroni Firebase Authentication',
+                                      style: GoogleFonts.poppins(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 26),
+                            TextFormField(
+                              controller: _nameController,
+                              cursorColor: AppTheme.primary,
+                              autofillHints: const [AutofillHints.name],
+                              style: const TextStyle(color: Colors.white),
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Nazwa użytkownika',
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Podaj nazwę użytkownika';
+                                }
+                                if (value.trim().length > 80) {
+                                  return 'Nazwa może mieć maks. 80 znaków';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              cursorColor: AppTheme.primary,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [
+                                AutofillHints.newUsername,
+                                AutofillHints.email,
+                              ],
+                              autocorrect: false,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                labelText: 'E-mail',
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Podaj adres e-mail';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Nieprawidłowy e-mail';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              cursorColor: AppTheme.primary,
+                              obscureText: _obscurePassword,
+                              autofillHints: const [AutofillHints.newPassword],
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Hasło',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Podaj hasło';
+                                }
+                                if (value.length < 6) {
+                                  return 'Hasło musi mieć min. 6 znaków';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              cursorColor: AppTheme.primary,
+                              obscureText: _obscureConfirm,
+                              autofillHints: const [AutofillHints.newPassword],
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Potwierdź hasło',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirm
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscureConfirm = !_obscureConfirm,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value != _passwordController.text) {
+                                  return 'Hasła nie są zgodne';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 22),
+                            _ConsentTile(
+                              value: _acceptedTerms,
+                              onChanged: (value) =>
+                                  setState(() => _acceptedTerms = value),
+                              prefix: 'Akceptuję ',
+                              linkText: 'Regulamin aplikacji Drivio',
+                              onOpen: () => context.push('/terms'),
+                            ),
+                            const SizedBox(height: 8),
+                            _ConsentTile(
+                              value: _acceptedRodo,
+                              onChanged: (value) =>
+                                  setState(() => _acceptedRodo = value),
+                              prefix: 'Akceptuję ',
+                              linkText: 'Politykę prywatności',
+                              onOpen: () => context.push('/privacy'),
+                            ),
+                            const SizedBox(height: 26),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: canRegister && !_isLoading
+                                    ? _register
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primary,
+                                  disabledBackgroundColor: AppTheme.primary
+                                      .withAlpha(80),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Zarejestruj się e-mailem'),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            SocialAuthButtons(
+                              enabled: !_isLoading,
+                              onGoogle: _registerWithGoogle,
+                              onApple: _registerWithApple,
+                              googleLabel: 'Zarejestruj przez Google',
+                              appleLabel: 'Zarejestruj przez Apple',
+                            ),
+                            if (!canRegister) ...[
+                              const SizedBox(height: 12),
+                              Center(
+                                child: Text(
+                                  'Przed rejestracją zaakceptuj oba dokumenty.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 32),
                           ],
-                          const SizedBox(height: 32),
-                        ],
+                        ),
                       ),
                     ),
                   ),

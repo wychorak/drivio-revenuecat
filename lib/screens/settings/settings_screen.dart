@@ -8,6 +8,7 @@ import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/settings_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/common/edit_name_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -22,21 +23,53 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Ustawienia')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          _SettingsHero(
+            displayName: user?.displayName ?? 'Kierowco',
+            email: user?.email ?? 'Dostosuj aplikację do siebie',
+            isPremium: isPremium,
+          ),
+          const SizedBox(height: 24),
           const _Label('WYGLĄD'),
           Card(
             margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Motyw aplikacji',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  Row(
+                    children: [
+                      _IconBox(
+                        icon: Icons.palette_outlined,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Motyw aplikacji',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'Wybierz wygląd wygodny dla Twoich oczu',
+                              style: GoogleFonts.poppins(
+                                color: colors.onSurfaceVariant,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   SegmentedButton<ThemeMode>(
                     style: ButtonStyle(
                       visualDensity: VisualDensity.compact,
@@ -88,6 +121,7 @@ class SettingsScreen extends ConsumerWidget {
           const _Label('KONTO'),
           Card(
             margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
             child: user == null
                 ? ListTile(
                     leading: const Icon(Icons.login),
@@ -109,17 +143,21 @@ class SettingsScreen extends ConsumerWidget {
                         title: Text(user.displayName),
                         subtitle: Text(user.email),
                       ),
+                      const Divider(height: 1, indent: 62),
                       ListTile(
                         leading: const Icon(Icons.edit_outlined),
                         title: const Text('Edytuj nazwę profilu'),
                         onTap: () => _editName(context, ref, user.displayName),
                       ),
-                      if (user.email.isNotEmpty)
+                      if (user.email.isNotEmpty) ...[
+                        const Divider(height: 1, indent: 62),
                         ListTile(
                           leading: const Icon(Icons.lock_reset),
                           title: const Text('Wyślij link do zmiany hasła'),
                           onTap: () => _resetPassword(context, ref, user.email),
                         ),
+                      ],
+                      const Divider(height: 1, indent: 62),
                       ListTile(
                         leading: const Icon(Icons.logout),
                         title: const Text('Wyloguj się'),
@@ -128,6 +166,7 @@ class SettingsScreen extends ConsumerWidget {
                           if (context.mounted) context.go('/login');
                         },
                       ),
+                      const Divider(height: 1, indent: 62),
                       ListTile(
                         leading: const Icon(
                           Icons.delete_outline,
@@ -146,6 +185,7 @@ class SettingsScreen extends ConsumerWidget {
           const _Label('PREMIUM'),
           Card(
             margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 ListTile(
@@ -165,6 +205,7 @@ class SettingsScreen extends ConsumerWidget {
           const _Label('POMOC I PRAWO'),
           Card(
             margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 ListTile(
@@ -172,11 +213,13 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('Regulamin'),
                   onTap: () => context.push('/terms'),
                 ),
+                const Divider(height: 1, indent: 62),
                 ListTile(
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Polityka prywatności'),
                   onTap: () => context.push('/privacy'),
                 ),
+                const Divider(height: 1, indent: 62),
                 ListTile(
                   leading: const Icon(Icons.mail_outline),
                   title: const Text('Kontakt'),
@@ -207,30 +250,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     String current,
   ) async {
-    final controller = TextEditingController(text: current);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Edytuj profil'),
-        content: TextField(
-          controller: controller,
-          maxLength: 50,
-          decoration: const InputDecoration(labelText: 'Nazwa użytkownika'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Anuluj'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Zapisz'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
+    final value = await showEditNameDialog(context, initialValue: current);
     if (value == null || value.length < 2 || !context.mounted) return;
     await ref.read(authServiceProvider).updateDisplayName(value);
     if (context.mounted) {
@@ -304,4 +324,133 @@ class _Label extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _SettingsHero extends StatelessWidget {
+  final String displayName;
+  final String email;
+  final bool isPremium;
+
+  const _SettingsHero({
+    required this.displayName,
+    required this.email,
+    required this.isPremium,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primary.withAlpha(36),
+            colors.surface,
+            colors.secondary.withAlpha(18),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.outline.withAlpha(120)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              gradient: AppTheme.brandGradient,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withAlpha(55),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.tune_rounded,
+              color: Colors.white,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Twoje Drivio',
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  displayName.isEmpty ? 'Kierowco' : displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isPremium)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.premiumGold.withAlpha(22),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.premiumGold.withAlpha(100)),
+              ),
+              child: Text(
+                'PRO',
+                style: GoogleFonts.poppins(
+                  color: AppTheme.premiumGold,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconBox extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _IconBox({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withAlpha(18),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Icon(icon, color: color, size: 21),
+    );
+  }
 }

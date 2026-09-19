@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -69,143 +68,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
   }
 
-  Future<void> _editProfile() async {
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) return;
-    if (ref.read(devLoginProvider)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Edycja jest wyłączona w trybie podglądu.'),
-        ),
-      );
-      return;
-    }
-
-    final controller = TextEditingController(text: user.displayName);
-    final newName = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        title: const Text('Edytuj profil'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 50,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(labelText: 'Nazwa użytkownika'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Anuluj'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final value = controller.text.trim();
-              if (value.length >= 2) Navigator.pop(dialogContext, value);
-            },
-            child: const Text('Zapisz'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (newName == null || newName == user.displayName || !mounted) return;
-
-    try {
-      await ref.read(authServiceProvider).updateDisplayName(newName);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil został zaktualizowany.')),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nie udało się zapisać zmian.')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteAccount() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Usuń konto',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna.',
-          style: GoogleFonts.poppins(
-            color: AppTheme.textSecondary,
-            fontSize: 14,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Anuluj'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-            child: const Text('Usuń'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true && mounted) {
-      if (ref.read(devLoginProvider)) {
-        ref.read(devLoginProvider.notifier).state = false;
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return;
-        context.go('/login');
-        return;
-      }
-      try {
-        await ref.read(authServiceProvider).deleteAccount();
-        if (mounted) context.go('/login');
-      } on FirebaseAuthException catch (error) {
-        if (!mounted) return;
-        final requiresLogin = error.code == 'requires-recent-login';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              requiresLogin
-                  ? 'Dla bezpieczeństwa wyloguj się, zaloguj ponownie i od razu ponów usunięcie konta.'
-                  : 'Nie udało się usunąć konta. Spróbuj ponownie.',
-            ),
-          ),
-        );
-      } catch (_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nie udało się usunąć konta. Spróbuj ponownie.'),
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final isPremium = ref.watch(isPremiumProvider);
     final adminAccess = ref.watch(adminAccessProvider).value;
+    final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
         title: const Text('Mój profil'),
-        backgroundColor: AppTheme.bgDark,
         actions: [
           IconButton(
             tooltip: 'Ustawienia',
@@ -271,7 +143,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       Text(
                         user.displayName,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: colors.onSurface,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
@@ -279,7 +151,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       Text(
                         user.email,
                         style: GoogleFonts.poppins(
-                          color: AppTheme.textSecondary,
+                          color: colors.onSurfaceVariant,
                           fontSize: 14,
                         ),
                       ),
@@ -309,8 +181,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                 : 'Brak claimu administratora',
                             style: GoogleFonts.poppins(
                               color: adminAccess?.isAdmin == true
-                                  ? Colors.greenAccent
-                                  : Colors.orangeAccent,
+                                  ? AppTheme.successColor
+                                  : Colors.orange,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -405,33 +277,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           );
         },
         loading: () => const LoadingWidget(),
-        error: (_, _) => const Center(
+        error: (_, _) => Center(
           child: Text(
             'Błąd ładowania profilu',
-            style: TextStyle(color: AppTheme.textSecondary),
+            style: TextStyle(color: colors.onSurfaceVariant),
           ),
         ),
       ),
-      bottomSheet: _buildSettingsSheet(),
     );
   }
 
   Widget _buildSavedTraps() {
+    final colors = Theme.of(context).colorScheme;
     if (_savedTraps.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.bookmark_outline,
-              color: AppTheme.textSecondary,
+              color: colors.onSurfaceVariant,
               size: 48,
             ),
             const SizedBox(height: 12),
             Text(
               'Brak zapisanych pułapek',
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: colors.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -443,7 +315,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.85,
+        childAspectRatio: 1.05,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -454,9 +326,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           onTap: () => context.push('/trap/${trap.id}'),
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.bgCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.dividerColor),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: colors.outline.withAlpha(120)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,7 +336,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 if (trap.photoUrl != null)
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                      top: Radius.circular(18),
                     ),
                     child: Image.network(
                       trap.photoUrl!,
@@ -473,7 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => Container(
                         height: 100,
-                        color: AppTheme.bgDark,
+                        color: colors.surfaceContainerHighest,
                         child: const Icon(
                           Icons.warning_amber_rounded,
                           color: AppTheme.primary,
@@ -485,10 +357,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   Container(
                     height: 80,
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.bgDark,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(12),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(18),
                       ),
                     ),
                     child: const Icon(
@@ -507,7 +379,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: colors.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -535,21 +407,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildSavedSchools() {
+    final colors = Theme.of(context).colorScheme;
     if (_savedSchools.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.school_outlined,
-              color: AppTheme.textSecondary,
+              color: colors.onSurfaceVariant,
               size: 48,
             ),
             const SizedBox(height: 12),
             Text(
               'Brak zapisanych szkół',
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: colors.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -568,22 +441,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.bgCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.dividerColor),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: colors.outline.withAlpha(120)),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppTheme.bgDark,
+                  backgroundColor: colors.surfaceContainerHighest,
                   backgroundImage: school.logoUrl != null
                       ? NetworkImage(school.logoUrl!)
                       : null,
                   child: school.logoUrl == null
-                      ? const Icon(
+                      ? Icon(
                           Icons.school_rounded,
-                          color: AppTheme.textSecondary,
+                          color: colors.onSurfaceVariant,
                         )
                       : null,
                 ),
@@ -595,7 +468,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       Text(
                         school.name,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: colors.onSurface,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -606,7 +479,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           Text(
                             ' ${school.rating.toStringAsFixed(1)}',
                             style: GoogleFonts.poppins(
-                              color: AppTheme.textSecondary,
+                              color: colors.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -615,7 +488,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
               ],
             ),
           ),
@@ -625,20 +498,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildVideosTab() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.play_circle_outline,
-            color: AppTheme.textSecondary,
+            color: colors.onSurfaceVariant,
             size: 64,
           ),
           const SizedBox(height: 12),
           Text(
             'Wideo – wkrótce dostępne',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: colors.onSurfaceVariant,
               fontSize: 14,
             ),
           ),
@@ -648,6 +522,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildLockedTab() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -656,13 +531,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           const SizedBox(height: 12),
           Text(
             'Filmy instruktażowe w Premium',
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 15),
+            style: GoogleFonts.poppins(color: colors.onSurface, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Text(
             'Odblokuj nieograniczony dostęp do filmów',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: colors.onSurfaceVariant,
               fontSize: 13,
             ),
           ),
@@ -676,49 +551,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             child: const Text('Kup Premium'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsSheet() {
-    return Container(
-      color: AppTheme.bgCard,
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Divider(height: 1, color: AppTheme.dividerColor),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: _editProfile,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Edytuj profil'),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: _deleteAccount,
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: AppTheme.primary,
-                      ),
-                      label: const Text(
-                        'Usuń konto',
-                        style: TextStyle(color: AppTheme.primary),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

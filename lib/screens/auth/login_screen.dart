@@ -9,6 +9,7 @@ import 'package:drivio/services/session_preference_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/auth/social_auth_buttons.dart';
+import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -161,235 +162,236 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         child: Scaffold(
           backgroundColor: AppTheme.bgDark,
-          body: SafeArea(
-            child: AutofillGroup(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 18),
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFE30613), Color(0xFFB00010)],
+          body: DrivioBackdrop(
+            child: SafeArea(
+              child: AutofillGroup(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 18),
+                            const DrivioBrandMark(),
+                            const SizedBox(height: 30),
+                            Text(
+                              'Witaj z powrotem',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primary.withAlpha(80),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Wróć na swoją drogę do prawa jazdy',
+                              style: GoogleFonts.poppins(
+                                color: AppTheme.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            const Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _FeaturePill(
+                                  icon: Icons.map_outlined,
+                                  label: 'Pułapki',
+                                ),
+                                _FeaturePill(
+                                  icon: Icons.school_outlined,
+                                  label: 'Szkoły',
+                                ),
+                                _FeaturePill(
+                                  icon: Icons.fact_check_outlined,
+                                  label: 'Egzamin',
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.directions_car_rounded,
-                              color: Colors.white,
-                              size: 34,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'drivio',
-                            style: GoogleFonts.poppins(
-                              color: AppTheme.primary,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          Text(
-                            'Witaj z powrotem',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Zaloguj się, aby kontynuować',
-                            style: GoogleFonts.poppins(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          TextFormField(
-                            controller: _emailController,
-                            cursorColor: AppTheme.primary,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [
-                              AutofillHints.username,
-                              AutofillHints.email,
-                            ],
-                            autocorrect: false,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'E-mail',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Podaj adres e-mail';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Nieprawidłowy e-mail';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            cursorColor: AppTheme.primary,
-                            obscureText: _obscurePassword,
-                            autofillHints: const [AutofillHints.password],
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'Hasło',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: AppTheme.textSecondary,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                            const SizedBox(height: 28),
+                            TextFormField(
+                              controller: _emailController,
+                              cursorColor: AppTheme.primary,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [
+                                AutofillHints.username,
+                                AutofillHints.email,
+                              ],
+                              autocorrect: false,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                labelText: 'E-mail',
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
                                   color: AppTheme.textSecondary,
                                 ),
-                                onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Podaj adres e-mail';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Nieprawidłowy e-mail';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              cursorColor: AppTheme.primary,
+                              obscureText: _obscurePassword,
+                              autofillHints: const [AutofillHints.password],
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Hasło',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
                                 ),
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Podaj hasło';
+                                }
+                                if (value.length < 6) {
+                                  return 'Hasło musi mieć min. 6 znaków';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Podaj hasło';
-                              }
-                              if (value.length < 6) {
-                                return 'Hasło musi mieć min. 6 znaków';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberAccount,
-                                activeColor: AppTheme.primary,
-                                onChanged: _isLoading
-                                    ? null
-                                    : (value) => setState(
-                                        () => _rememberAccount = value ?? true,
-                                      ),
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: _isLoading
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _rememberAccount,
+                                  activeColor: AppTheme.primary,
+                                  onChanged: _isLoading
                                       ? null
-                                      : () => setState(
-                                          () => _rememberAccount =
-                                              !_rememberAccount,
+                                      : (value) => setState(
+                                          () =>
+                                              _rememberAccount = value ?? true,
                                         ),
-                                  child: Text(
-                                    'Zapamiętaj konto na tym urządzeniu',
-                                    style: GoogleFonts.poppins(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 12,
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: _isLoading
+                                        ? null
+                                        : () => setState(
+                                            () => _rememberAccount =
+                                                !_rememberAccount,
+                                          ),
+                                    child: Text(
+                                      'Zapamiętaj konto na tym urządzeniu',
+                                      style: GoogleFonts.poppins(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _isLoading ? null : _sendPasswordReset,
-                              child: const Text('Nie pamiętasz hasła?'),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Zaloguj się'),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SocialAuthButtons(
-                            enabled: !_isLoading,
-                            onGoogle: _loginWithGoogle,
-                            onApple: _loginWithApple,
-                            googleLabel: 'Zaloguj się przez Google',
-                            appleLabel: 'Zaloguj się przez Apple',
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: TextButton(
-                              onPressed: _isLoading ? null : _continueAsGuest,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppTheme.textSecondary,
-                              ),
-                              child: const Text('Wejdź bez logowania'),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Nie masz konta? ',
-                                style: GoogleFonts.poppins(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: _isLoading
-                                    ? null
-                                    : () => context.push('/register'),
-                                child: Text(
-                                  'Zarejestruj się →',
-                                  style: GoogleFonts.poppins(
-                                    color: AppTheme.primary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                TextButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : _sendPasswordReset,
+                                  child: const Text(
+                                    'Nie pamiętasz?',
+                                    style: TextStyle(fontSize: 12),
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _login,
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Zaloguj się'),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 28),
-                        ],
+                            ),
+                            const SizedBox(height: 24),
+                            SocialAuthButtons(
+                              enabled: !_isLoading,
+                              onGoogle: _loginWithGoogle,
+                              onApple: _loginWithApple,
+                              googleLabel: 'Zaloguj się przez Google',
+                              appleLabel: 'Zaloguj się przez Apple',
+                            ),
+                            const SizedBox(height: 14),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: TextButton(
+                                onPressed: _isLoading ? null : _continueAsGuest,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppTheme.textSecondary,
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.explore_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Przeglądaj bez logowania'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Nie masz konta? ',
+                                  style: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: _isLoading
+                                      ? null
+                                      : () => context.push('/register'),
+                                  child: Text(
+                                    'Zarejestruj się →',
+                                    style: GoogleFonts.poppins(
+                                      color: AppTheme.primary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 28),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -398,6 +400,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _FeaturePill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.bgElevated.withAlpha(210),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppTheme.primaryBright, size: 15),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: AppTheme.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
