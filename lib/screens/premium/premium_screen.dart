@@ -114,7 +114,9 @@ class PremiumScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     _SectionHeader(
                       title: 'Wybierz dostęp',
-                      subtitle: useIap
+                      subtitle: premiumService.isUsingTestStore
+                          ? 'Tryb testowy RevenueCat — bez prawdziwej opłaty.'
+                          : useIap
                           ? 'Zakup obsłuży sklep urządzenia.'
                           : 'W podglądzie web używamy płatności Stripe.',
                     ),
@@ -140,7 +142,7 @@ class PremiumScreen extends ConsumerWidget {
                       ),
                       error: (_, _) => Column(
                         children: [
-                          _storeErrorNotice(),
+                          _storeErrorNotice(premiumService),
                           _buildPlanCards(
                             context,
                             ref,
@@ -333,11 +335,12 @@ class PremiumScreen extends ConsumerWidget {
     );
   }
 
-  Widget _storeErrorNotice() {
-    return const _NoticeBox(
+  Widget _storeErrorNotice(RevenueCatService service) {
+    return _NoticeBox(
       icon: Icons.error_outline_rounded,
       text:
-          'Nie udało się pobrać offeringu driviooffers. Sprawdź RevenueCat i App Store Connect.',
+          service.configurationIssue ??
+          'Nie udało się pobrać offeringu driviooffers. Sprawdź konfigurację RevenueCat.',
     );
   }
 }

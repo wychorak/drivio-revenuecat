@@ -89,6 +89,16 @@ export const refreshAdminClaim = onCall(
       ...(user.customClaims ?? {}),
       admin: true,
     });
+    await getFirestore().collection('users').doc(uid).set(
+      {
+        isPremium: true,
+        premiumUntil: null,
+        premiumPlan: 'admin',
+        premiumSource: 'admin',
+        premiumUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      {merge: true},
+    );
     return {success: true, refreshToken: true};
   },
 );

@@ -36,6 +36,7 @@
 
 - Dodać Crashlytics lub Sentry i alerty budżetowe Firebase/Google Maps przed ruchem produkcyjnym.
 - Skonfigurować URL i nagłówek autoryzacji dołączonego webhooka RevenueCat; bez tego Firestore nie będzie serwerowym fallbackiem Premium.
+- Debug może używać `REVENUECAT_TEST_API_KEY`; kod wybiera go tylko w buildzie debug. Przed wydaniem Androida ustawić osobny `REVENUECAT_ANDROID_API_KEY` i nie przekazywać klucza `test_` do release.
 - Dodać istniejące testy do CI. Lokalnie przechodzi 10 testów Flutter, 22 testy reguł i 7 testów backendu RevenueCat.
 - Włączyć alerty Firebase Usage and billing oraz ograniczyć Google Maps API key do Bundle ID `com.drivio.com` i właściwych API.
 - Zweryfikować publiczne URL-e: support, privacy policy, marketing oraz procedurę odpowiedzi na zgłoszenia UGC.

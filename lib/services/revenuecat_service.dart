@@ -39,11 +39,15 @@ class RevenueCatService {
       StreamController<PremiumPurchaseEvent>.broadcast();
 
   bool _configured = false;
+  bool _usingTestStore = false;
+  String? _configurationIssue;
   Future<void>? _initializing;
   String? _activeUid;
 
   bool _purchaseInFlight = false;
   bool get isConfigured => _configured;
+  bool get isUsingTestStore => _usingTestStore;
+  String? get configurationIssue => _configurationIssue;
   String? get activeUid => _activeUid;
   bool get shouldUseIAP =>
       !kIsWeb &&
@@ -72,29 +76,41 @@ class RevenueCatService {
   Future<void> _configure() async {
     final apiKey = _apiKey;
     if (apiKey.isEmpty) {
-      debugPrint('RevenueCat: missing public SDK key for this platform.');
+      _configurationIssue = defaultTargetPlatform == TargetPlatform.android
+          ? 'Brakuje klucza RevenueCat dla Androida.'
+          : 'Brakuje klucza RevenueCat dla tej platformy.';
+      debugPrint('RevenueCat: $_configurationIssue');
       return;
     }
 
     try {
+      _usingTestStore = apiKey.startsWith('test_');
       if (kDebugMode) {
         await Purchases.setLogLevel(LogLevel.debug);
       }
       await Purchases.configure(PurchasesConfiguration(apiKey));
       Purchases.addCustomerInfoUpdateListener(_onCustomerInfo);
       _configured = true;
+      _configurationIssue = null;
       try {
         _onCustomerInfo(await Purchases.getCustomerInfo());
       } catch (error) {
         debugPrint('RevenueCat: initial customer info unavailable: $error');
       }
     } catch (error, stackTrace) {
+      _configurationIssue = 'Nie udało się połączyć z RevenueCat.';
       debugPrint('RevenueCat initialization failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
   }
 
   String get _apiKey {
+    const testFromDefine = String.fromEnvironment('REVENUECAT_TEST_API_KEY');
+    final testKey = testFromDefine.isNotEmpty
+        ? testFromDefine
+        : dotenv.env['REVENUECAT_TEST_API_KEY'] ?? '';
+    if (kDebugMode && testKey.isNotEmpty) return testKey;
+
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       const fromDefine = String.fromEnvironment('REVENUECAT_IOS_API_KEY');
       return fromDefine.isNotEmpty
@@ -117,7 +133,11 @@ class RevenueCatService {
 
   Future<List<Package>> getProducts() async {
     await initialize();
-    if (!_configured) return const [];
+    if (!_configured) {
+      throw StateError(
+        _configurationIssue ?? 'Sklep RevenueCat nie jest skonfigurowany.',
+      );
+    }
 
     final offerings = await Purchases.getOfferings();
     final offering =

@@ -3,7 +3,8 @@
 Backend contains:
 
 - `deleteAccount` — App Check-protected account and owned-data cleanup;
-- `refreshAdminClaim` — grants the `admin` claim only to a verified allowlisted account;
+- `refreshAdminClaim` — grants the `admin` claim only to a verified allowlisted
+  account and marks that account Premium;
 - `revenueCatWebhook` — idempotent RevenueCat-to-Firestore Premium sync.
 
 Before deployment, configure the RevenueCat authorization header secret:
