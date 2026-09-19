@@ -8,6 +8,7 @@ import {logger} from 'firebase-functions';
 
 import {
   firebaseUidCandidates,
+  isValidRevenueCatAuthorization,
   premiumStateForEvent,
   RevenueCatEvent,
 } from './revenuecat';
@@ -123,7 +124,10 @@ export const revenueCatWebhook = onRequest(
       response.status(405).send('Method Not Allowed');
       return;
     }
-    if (request.get('authorization') !== revenueCatWebhookAuth.value()) {
+    if (!isValidRevenueCatAuthorization(
+      request.get('authorization'),
+      revenueCatWebhookAuth.value(),
+    )) {
       response.status(401).send('Unauthorized');
       return;
     }

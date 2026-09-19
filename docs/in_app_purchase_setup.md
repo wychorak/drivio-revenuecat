@@ -17,6 +17,10 @@ Drivio uses RevenueCat offering `driviooffers` and these App Store products:
 5. Add the App Store Connect In-App Purchase key in RevenueCat so RevenueCat can validate StoreKit transactions.
 6. Never put an App Store `.p8` private key in the mobile app or repository.
 
+The App Store Connect and In-App Purchase keys are configured and validated.
+Apple Server Notifications are applied to both production and sandbox, and the
+authenticated Firebase webhook has been verified from RevenueCat with HTTP 200.
+
 The client reads prices and periods from StoreKit through RevenueCat. It purchases the package, restores purchases on user request, and treats RevenueCat `CustomerInfo` as the immediate Premium source of truth. The Firebase UID is used as RevenueCat `appUserID`.
 
 ## App Store Connect
@@ -37,7 +41,7 @@ Before deployment:
 
 1. Set `REVENUECAT_WEBHOOK_AUTH` with `firebase functions:secrets:set`.
 2. Deploy Firebase Functions.
-3. Configure the deployed HTTPS endpoint and exactly the same Authorization
+3. Configure the deployed HTTPS endpoint and the `Bearer <secret>` Authorization
    header in RevenueCat.
 4. Test initial purchase, renewal, cancellation, expiration, refund, billing
    grace period and lifetime purchase in sandbox.

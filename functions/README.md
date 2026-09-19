@@ -16,6 +16,8 @@ firebase functions:secrets:set REVENUECAT_WEBHOOK_AUTH
 Deployments are intentionally not automatic. Build and test locally first with
 `npm test`. After deployment, use the HTTPS URL of `revenueCatWebhook` in the
 RevenueCat dashboard and configure exactly the same authorization header there.
+Use the standard `Bearer <REVENUECAT_WEBHOOK_AUTH>` format. The function trims
+accidental trailing newlines from the Secret Manager value before comparing it.
 
 Both callable functions enforce App Check. Register the local debug token in
 Firebase before testing them on an emulator. Deploy Functions before deploying

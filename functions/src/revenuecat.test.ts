@@ -3,8 +3,17 @@ import {test} from 'node:test';
 
 import {
   firebaseUidCandidates,
+  isValidRevenueCatAuthorization,
   premiumStateForEvent,
 } from './revenuecat';
+
+test('accepts only the configured RevenueCat bearer token', () => {
+  equal(isValidRevenueCatAuthorization('Bearer webhook-secret', 'webhook-secret'), true);
+  equal(isValidRevenueCatAuthorization('Bearer webhook-secret', 'webhook-secret\r\n'), true);
+  equal(isValidRevenueCatAuthorization('webhook-secret', 'webhook-secret'), false);
+  equal(isValidRevenueCatAuthorization('Bearer wrong-secret', 'webhook-secret'), false);
+  equal(isValidRevenueCatAuthorization(undefined, 'webhook-secret'), false);
+});
 
 test('prefers Firebase ids and removes RevenueCat anonymous ids', () => {
   deepEqual(

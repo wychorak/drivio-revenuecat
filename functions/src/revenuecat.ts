@@ -24,6 +24,15 @@ export interface PremiumState {
   premiumPlan: string | null;
 }
 
+export function isValidRevenueCatAuthorization(
+  authorizationHeader: string | undefined,
+  secret: string,
+): boolean {
+  const normalizedSecret = secret.trim();
+  if (authorizationHeader == null || normalizedSecret.length === 0) return false;
+  return authorizationHeader === `Bearer ${normalizedSecret}`;
+}
+
 export function firebaseUidCandidates(event: RevenueCatEvent): string[] {
   const values = [
     event.app_user_id,

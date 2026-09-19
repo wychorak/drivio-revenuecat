@@ -31,7 +31,7 @@ Copy `.env.example` to `.env`. For iOS Maps, copy `ios/Flutter/Secrets.example.x
 
 ## Quality and release status
 
-The current source passes `flutter analyze`, 10 Flutter tests, 22 Firestore Rules tests and 7 RevenueCat backend tests. Store submission still requires the Firebase, Apple, RevenueCat, AdMob and App Store Connect steps documented in [`docs/app_store_launch_checklist.md`](docs/app_store_launch_checklist.md).
+The current source passes `flutter analyze`, 11 Flutter tests, 22 Firestore Rules tests and 8 RevenueCat backend tests. Store submission still requires the remaining Apple, AdMob and App Store Connect steps documented in [`docs/app_store_launch_checklist.md`](docs/app_store_launch_checklist.md).
 
 Additional documentation:
 
