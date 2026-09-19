@@ -35,10 +35,8 @@ class AdminModerationScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: AppTheme.bgDark,
         appBar: AppBar(
           title: const Text('Panel administratora'),
-          backgroundColor: AppTheme.bgDark,
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
@@ -110,18 +108,18 @@ class _CommentsTab extends ConsumerWidget {
                   itemBuilder: (_, index) {
                     final comment = comments[index];
                     return Card(
-                      color: AppTheme.bgCard,
                       child: ListTile(
                         title: Text(
                           comment.userDisplayName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         subtitle: Text(
                           '${comment.text}\n${comment.itemType} • ${comment.itemId}',
-                          style: const TextStyle(color: AppTheme.textSecondary),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         isThreeLine: true,
                         trailing: IconButton(
@@ -171,17 +169,20 @@ class _TrapsTab extends ConsumerWidget {
                         itemBuilder: (_, index) {
                           final trap = traps[index];
                           return Card(
-                            color: AppTheme.bgCard,
                             child: ListTile(
                               onTap: () => context.push('/trap/${trap.id}'),
                               title: Text(
                                 trap.title,
-                                style: const TextStyle(color: Colors.white),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               subtitle: Text(
                                 trap.city,
-                                style: const TextStyle(
-                                  color: AppTheme.textSecondary,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               trailing: IconButton(
@@ -234,19 +235,22 @@ class _SchoolsTab extends ConsumerWidget {
                         itemBuilder: (_, index) {
                           final school = schools[index];
                           return Card(
-                            color: AppTheme.bgCard,
                             child: ListTile(
                               onTap: () => context.push(
                                 '/admin/school/${school.id}/edit',
                               ),
                               title: Text(
                                 school.name,
-                                style: const TextStyle(color: Colors.white),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               subtitle: Text(
                                 '${school.city} • ${school.address}',
-                                style: const TextStyle(
-                                  color: AppTheme.textSecondary,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               trailing: IconButton(
@@ -300,7 +304,10 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Text(text, style: const TextStyle(color: Colors.white70)),
+    child: Text(
+      text,
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    ),
   );
 }
 
@@ -308,13 +315,13 @@ class _LoadError extends StatelessWidget {
   const _LoadError();
 
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       child: Text(
         'Nie udało się pobrać danych. Sprawdź reguły Firestore i uprawnienia administratora.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white70),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     ),
   );
@@ -362,7 +369,6 @@ class _ReportCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      color: AppTheme.bgCard,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -377,7 +383,7 @@ class _ReportCard extends ConsumerWidget {
                     '${report.itemType} • ${report.itemId}',
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -388,7 +394,7 @@ class _ReportCard extends ConsumerWidget {
             Text(
               report.reason,
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),
@@ -457,13 +463,15 @@ class _AccessDenied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Text(
-          'Brak dostępu. Konto musi znajdować się w ADMIN_EMAILS i mieć zweryfikowany adres e-mail.',
+          'Brak dostępu. Konto musi mieć aktywne uprawnienie administratora.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );

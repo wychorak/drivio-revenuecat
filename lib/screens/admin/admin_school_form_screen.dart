@@ -6,7 +6,6 @@ import 'package:drivio/config/app_config.dart';
 import 'package:drivio/models/school_model.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/admin_access_service.dart';
-import 'package:drivio/theme/app_theme.dart';
 
 class AdminSchoolFormScreen extends ConsumerStatefulWidget {
   final String? schoolId;
@@ -147,29 +146,23 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
   Widget build(BuildContext context) {
     final access = ref.watch(adminAccessProvider);
     if (access.isLoading || _initializing) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (access.value?.isAdmin != true) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
+      return Scaffold(
         body: Center(
           child: Text(
             'Brak uprawnień administratora.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
-      appBar: AppBar(
-        title: Text(_editing ? 'Edytuj szkołę' : 'Dodaj szkołę'),
-        backgroundColor: AppTheme.bgDark,
-      ),
+      appBar: AppBar(title: Text(_editing ? 'Edytuj szkołę' : 'Dodaj szkołę')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -202,10 +195,10 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
             ),
             _field(_phone, 'Telefon (opcjonalnie)'),
             _field(_website, 'Strona WWW (opcjonalnie)'),
-            const Text(
+            Text(
               'Położenie pinezki',
               style: TextStyle(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -263,7 +256,7 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
         keyboardType: number
             ? const TextInputType.numberWithOptions(decimal: true)
             : null,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(labelText: label),
         validator: validator,
       ),

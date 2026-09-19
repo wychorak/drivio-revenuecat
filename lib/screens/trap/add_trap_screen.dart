@@ -212,33 +212,28 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final access = ref.watch(adminAccessProvider);
     if (!ref.read(devLoginProvider) && access.isLoading) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (!ref.read(devLoginProvider) && access.value?.isAdmin != true) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
+      return Scaffold(
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
               'Tylko administrator może dodawać pułapki.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: colors.onSurfaceVariant),
             ),
           ),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
         title: const Text('Dodaj pułapkę'),
-        backgroundColor: AppTheme.bgDark,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: _requestPop,
@@ -263,7 +258,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.dividerColor),
+                    border: Border.all(color: colors.outlineVariant),
                   ),
                   child: GoogleMap(
                     initialCameraPosition: CameraPosition(
@@ -291,7 +286,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 Text(
                   'Dotknij mapę lub przeciągnij pin, aby ustawić lokalizację',
                   style: GoogleFonts.poppins(
-                    color: AppTheme.textSecondary,
+                    color: colors.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -300,12 +295,12 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: colors.onSurface),
+                  decoration: InputDecoration(
                     hintText: 'np. Rondo przy CH Galaxy',
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
-                      color: AppTheme.textSecondary,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                   maxLength: 100,
@@ -322,15 +317,15 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _descriptionController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: colors.onSurface),
                   maxLines: 4,
                   maxLength: 1500,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Opisz pułapkę, którą zauważyłeś na egzaminie...',
                     alignLabelWithHint: true,
                     prefixIcon: Icon(
                       Icons.warning_amber_outlined,
-                      color: AppTheme.textSecondary,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                   validator: (value) {
@@ -346,15 +341,15 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _ruleController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: colors.onSurface),
                   maxLines: 3,
                   maxLength: 1000,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Jaka zasada tu obowiązuje?',
                     alignLabelWithHint: true,
                     prefixIcon: Icon(
                       Icons.info_outline,
-                      color: AppTheme.textSecondary,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -372,7 +367,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                           star <= _difficulty ? Icons.star : Icons.star_outline,
                           color: star <= _difficulty
                               ? AppTheme.primary
-                              : AppTheme.textSecondary,
+                              : colors.onSurfaceVariant,
                           size: 36,
                         ),
                       ),
@@ -452,6 +447,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
   }
 
   Widget _buildProgressGuide() {
+    final colors = Theme.of(context).colorScheme;
     const steps = [
       (Icons.place_outlined, 'Miejsce'),
       (Icons.edit_note_rounded, 'Opis'),
@@ -461,9 +457,9 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -475,14 +471,16 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                     steps[index].$1,
                     color: index == 0
                         ? AppTheme.primary
-                        : AppTheme.textSecondary,
+                        : colors.onSurfaceVariant,
                     size: 20,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${index + 1}. ${steps[index].$2}',
                     style: GoogleFonts.poppins(
-                      color: index == 0 ? Colors.white : AppTheme.textSecondary,
+                      color: index == 0
+                          ? colors.onSurface
+                          : colors.onSurfaceVariant,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -491,9 +489,9 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
               ),
             ),
             if (index < steps.length - 1)
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.dividerColor,
+                color: colors.outlineVariant,
                 size: 18,
               ),
           ],
@@ -503,10 +501,11 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
   }
 
   Widget _sectionLabel(String text) {
+    final colors = Theme.of(context).colorScheme;
     return Text(
       text,
       style: GoogleFonts.poppins(
-        color: Colors.white,
+        color: colors.onSurface,
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
@@ -518,23 +517,24 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.dividerColor),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppTheme.textSecondary, size: 22),
+            Icon(icon, color: colors.onSurfaceVariant, size: 22),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: colors.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),
