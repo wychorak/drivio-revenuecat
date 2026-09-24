@@ -1,3 +1,6 @@
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,11 +14,18 @@ import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/common/edit_name_dialog.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _deletingAccount = false;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
     final mode = ref.watch(themeModeProvider);
     final isPremium = ref.watch(isPremiumProvider);
@@ -173,11 +183,22 @@ class SettingsScreen extends ConsumerWidget {
                           Icons.delete_outline,
                           color: AppTheme.primary,
                         ),
-                        title: const Text(
-                          'Usuń konto',
-                          style: TextStyle(color: AppTheme.primary),
+                        title: Text(
+                          _deletingAccount ? 'Usuwanie konta…' : 'Usuń konto',
+                          style: const TextStyle(color: AppTheme.primary),
                         ),
-                        onTap: () => _deleteAccount(context, ref),
+                        trailing: _deletingAccount
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                        onTap: _deletingAccount
+                            ? null
+                            : () => _deleteAccount(context, ref),
                       ),
                     ],
                   ),
@@ -275,14 +296,52 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    if (_deletingAccount) return;
+    final onIos = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+    final hasAppleLogin =
+        onIos &&
+        (ref
+                .read(authServiceProvider)
+                .currentUser
+                ?.providerData
+                .any((provider) => provider.providerId == 'apple.com') ??
+            false);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: const Text('Usunąć konto?'),
-        content: const Text(
-          'Konto, komentarze, zgłoszenia i zapisane miejsca zostaną trwale '
-          'usunięte. Aktywną subskrypcję anulujesz osobno w ustawieniach '
-          'Apple ID (Subskrypcje).',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Konto, komentarze, zgłoszenia i zapisane miejsca zostaną '
+              'trwale usunięte.',
+            ),
+            if (hasAppleLogin) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Przed usunięciem potwierdzisz tożsamość przez Apple.',
+              ),
+            ],
+            if (onIos) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Jeśli masz aktywną subskrypcję, usunięcie konta jej nie anuluje. '
+                'Anuluj ją osobno w ustawieniach Apple.',
+              ),
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse('https://apps.apple.com/account/subscriptions'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: const Text('Zarządzaj subskrypcją'),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -297,6 +356,7 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
+    setState(() => _deletingAccount = true);
     try {
       await ref
           .read(authServiceProvider)
@@ -308,22 +368,14 @@ class SettingsScreen extends ConsumerWidget {
         context.go('/login');
       }
     } catch (error) {
-      if (!context.mounted || isAuthCancellation(error)) return;
-      final value = error.toString().toLowerCase();
-      final message =
-          value.contains('wrong-password') ||
-              value.contains('invalid-credential')
-          ? 'Nieprawidłowe hasło.'
-          : value.contains('requires-recent-login') ||
-                value.contains('failed-precondition')
-          ? 'Wyloguj się, zaloguj ponownie i spróbuj jeszcze raz.'
-          : value.contains('network')
-          ? 'Brak połączenia z internetem.'
-          : 'Nie udało się usunąć konta. Spróbuj ponownie lub napisz na '
-                '${AppConfig.contactEmail}.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      if (isAuthCancellation(error)) return;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_accountDeletionErrorMessage(error))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _deletingAccount = false);
     }
   }
 
@@ -356,6 +408,34 @@ class SettingsScreen extends ConsumerWidget {
     );
     // Not disposed here: the dialog's exit animation still reads it.
     return password;
+  }
+
+  String _accountDeletionErrorMessage(Object error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+          return 'Nieprawidłowe hasło.';
+        case 'requires-recent-login':
+          return 'Zaloguj się ponownie, a następnie usuń konto.';
+        case 'apple-authorization-code-unavailable':
+          return 'Apple nie potwierdziło usunięcia konta. Spróbuj ponownie.';
+        case 'app-check-unavailable':
+          return 'Nie udało się potwierdzić urządzenia. Spróbuj ponownie.';
+        case 'network-request-failed':
+          return 'Brak połączenia z internetem.';
+      }
+    }
+    if (error is FirebaseFunctionsException &&
+        (error.code == 'unauthenticated' ||
+            error.code == 'failed-precondition')) {
+      return 'Potwierdź ponownie logowanie i spróbuj usunąć konto.';
+    }
+    if (error is FirebaseException && error.plugin == 'firebase_app_check') {
+      return 'Nie udało się potwierdzić urządzenia przez App Check.';
+    }
+    return 'Nie udało się usunąć konta. Spróbuj ponownie lub napisz na '
+        '${AppConfig.contactEmail}.';
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -187,18 +188,45 @@ class AuthService {
     required Future<String?> Function() askPassword,
   }) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Zaloguj się przed usunięciem konta.',
+      );
+    }
+
+    // Obtain a valid App Check token before revoking the Apple authorization.
+    // The callable function enforces App Check for every account deletion.
+    final appCheckToken = await FirebaseAppCheck.instance.getToken(true);
+    if (appCheckToken == null || appCheckToken.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'app-check-unavailable',
+        message: 'Nie udało się potwierdzić urządzenia przez App Check.',
+      );
+    }
 
     final providers = user.providerData.map((info) => info.providerId).toSet();
-    if (providers.contains('apple.com') && !kIsWeb) {
-      // Apple requires apps to revoke Sign in with Apple tokens when an
-      // account is deleted, which needs a fresh authorization code.
+    final isAppleAccount =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS) &&
+        providers.contains('apple.com');
+
+    String? appleAuthorizationCode;
+    if (isAppleAccount) {
+      // Apple requires a fresh authorization code to revoke the account's
+      // Sign in with Apple token before deleting its Firebase identity.
       final credential = await user.reauthenticateWithProvider(
-        AppleAuthProvider(),
+        AppleAuthProvider()
+          ..addScope('email')
+          ..addScope('name'),
       );
-      final code = credential.additionalUserInfo?.authorizationCode;
-      if (code != null && code.isNotEmpty) {
-        await _auth.revokeTokenWithAuthorizationCode(code);
+      appleAuthorizationCode = credential.additionalUserInfo?.authorizationCode;
+      if (appleAuthorizationCode == null || appleAuthorizationCode.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'apple-authorization-code-unavailable',
+          message: 'Apple nie zwróciło kodu potrzebnego do usunięcia konta.',
+        );
       }
     } else if (!_hasRecentLogin(user)) {
       if (providers.contains('google.com')) {
@@ -221,6 +249,9 @@ class AuthService {
 
     // The callable checks auth_time, so send a token minted after re-auth.
     await user.getIdToken(true);
+    if (appleAuthorizationCode != null) {
+      await _auth.revokeTokenWithAuthorizationCode(appleAuthorizationCode);
+    }
     await _functions.httpsCallable('deleteAccount').call<void>();
     await signOut();
   }
