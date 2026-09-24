@@ -18,7 +18,7 @@
 - Limit darmowych pułapek jest transakcyjnym, nieusuwalnym licznikiem w 24-godzinnym oknie, a nie tylko kontrolą UI.
 - Reguły backendu uznają administratora wyłącznie po custom claimie `admin=true`; `ADMIN_EMAILS` służy tylko chronionej funkcji nadającej claim i filtrowaniu UI.
 - Admin ma kolejkę zgłoszeń i może odrzucić zgłoszenie lub usunąć zgłoszoną treść.
-- Chroniona przez App Check funkcja usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase; starsza sesja wymaga ponownego logowania.
+- Chroniona przez App Check funkcja usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase. Na iOS konto połączone z Apple wymaga ponownej autoryzacji, a aplikacja cofa token Apple przed usunięciem. Ekran ostrzega, że usunięcie konta nie anuluje subskrypcji Apple.
 - Finalne ikony Drivio i splash screen zostały wygenerowane dla iOS, Androida, macOS, Windows i web.
 - Polityka prywatności, manifest prywatności i regulamin opisują AdMob oraz brak reklamy behawioralnej.
 
@@ -29,7 +29,7 @@
 3. **Apple login:** w Firebase Authentication włączyć Apple i uzupełnić Team ID, Key ID `6D43VGP33F` oraz prywatny `.p8` klucza `driviokey`. W Apple Developer włączyć capability dla App ID `com.drivio.com` i odświeżyć profile.
 4. **AdMob:** w sekcji Privacy & messaging opublikować komunikat GDPR/UMP dla aplikacji, uzupełnić dane płatności i `app-ads.txt`. Bez opublikowanego komunikatu UMP baner może legalnie się nie załadować.
 5. **App Store Connect:** dodać trzy IAP do wersji wysyłanej do review, uzupełnić Agreements/Tax/Banking, lokalizacje, screenshot review i ceny. W App Privacy zaznaczyć m.in. Purchase History, User Content, Precise Location, Device ID i Advertising Data zgodnie z finalnym użyciem.
-6. **Test urządzenia:** wykonać na fizycznym iPhonie: pierwsze/ponowne logowanie Apple, email relay, zakup każdego planu, restore, anulowanie, odnowienie sandbox, refund, zmianę konta, Pro bez reklam, konto darmowe z UMP i banerem, usunięcie konta.
+6. **Test urządzenia:** wykonać na fizycznym iPhonie: pierwsze/ponowne logowanie Apple, email relay, zakup każdego planu, restore, anulowanie, odnowienie sandbox, refund, zmianę konta, Pro bez reklam, konto darmowe z UMP i banerem. Na osobnym koncie testowym sprawdzić usunięcie po zalogowaniu Apple: ponowną autoryzację, cofnięcie tokenu, poprawny token App Check i usunięcie konta oraz danych Firebase. Nie używać do tego konta administratora.
 
 ## Ważne, ale nie blokuje pierwszego TestFlight
 
