@@ -38,7 +38,9 @@ workflows:
 
       - name: Get Flutter packages
         script: |
-          touch .env
+          # Release config comes from --dart-define; .env only has to exist
+          # as a bundled asset, and flutter_dotenv rejects an empty file.
+          echo "# Values are passed with --dart-define" > .env
           flutter pub get
 
       - name: Create iOS secrets configuration

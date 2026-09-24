@@ -13,7 +13,7 @@ import 'services/session_preference_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env', isOptional: true);
+  await _loadLocalEnv();
   await initializeDateFormatting('pl', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseAuth.instance.setLanguageCode('pl');
@@ -21,6 +21,17 @@ Future<void> main() async {
   await _activateAppCheck();
   await RevenueCatService.instance.initialize();
   runApp(const ProviderScope(child: DrivioApp()));
+}
+
+/// Release builds get their config from --dart-define and ship an empty
+/// `.env`, which flutter_dotenv rejects even when the file is optional.
+Future<void> _loadLocalEnv() async {
+  try {
+    await dotenv.load(fileName: '.env', isOptional: true);
+  } catch (error) {
+    debugPrint('Local .env not loaded: $error');
+    dotenv.testLoad();
+  }
 }
 
 Future<void> _activateAppCheck() async {

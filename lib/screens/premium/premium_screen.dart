@@ -626,15 +626,18 @@ class _PlanCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _InlineBadge(
-                icon: plan.highlighted
-                    ? Icons.local_fire_department_rounded
-                    : Icons.check_circle_outline_rounded,
-                text: plan.badge,
-                strong: plan.highlighted,
+              Flexible(
+                child: _InlineBadge(
+                  icon: plan.highlighted
+                      ? Icons.local_fire_department_rounded
+                      : Icons.check_circle_outline_rounded,
+                  text: plan.badge,
+                  strong: plan.highlighted,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 plan.period,
                 style: GoogleFonts.poppins(
@@ -757,12 +760,15 @@ class _InlineBadge extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 14),
           const SizedBox(width: 5),
-          Text(
-            text,
-            style: GoogleFonts.poppins(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
+          Flexible(
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -57,19 +58,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       return;
     }
     final fs = ref.read(firestoreServiceProvider);
-    final traps = await fs.getSavedTraps(user.savedTraps);
-    final schools = await fs.getSavedSchools(user.savedSchools);
-    if (mounted) {
-      setState(() {
-        _savedTraps = traps;
-        _savedSchools = schools;
-        _loadingSaved = false;
-      });
+    try {
+      final traps = await fs.getSavedTraps(user.savedTraps);
+      final schools = await fs.getSavedSchools(user.savedSchools);
+      if (mounted) {
+        setState(() {
+          _savedTraps = traps;
+          _savedSchools = schools;
+        });
+      }
+    } catch (error) {
+      debugPrint('Profile: saved items unavailable: $error');
+    } finally {
+      if (mounted) setState(() => _loadingSaved = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // The user document often arrives after the first frame, and saving from
+    // another screen changes these lists, so reload when they change.
+    ref.listen(currentUserProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      if (after == null) return;
+      if (before == null ||
+          !listEquals(before.savedTraps, after.savedTraps) ||
+          !listEquals(before.savedSchools, after.savedSchools)) {
+        _loadSaved();
+      }
+    });
     final userAsync = ref.watch(currentUserProvider);
     final isPremium = ref.watch(isPremiumProvider);
     final adminAccess = ref.watch(adminAccessProvider).value;
@@ -315,7 +333,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.05,
+        // Fixed height: photo (100) + two title lines + stars, on any width.
+        mainAxisExtent: 176,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),

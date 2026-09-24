@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/models/comment_model.dart';
 import 'package:drivio/models/report_model.dart';
 import 'package:drivio/models/trap_model.dart';
@@ -643,10 +644,12 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   const SizedBox(height: 24),
                   _sectionTitle('Wskazówka wideo'),
                   const SizedBox(height: 8),
-                  if (isPremium && trap.videoUrl != null)
-                    _videoPremiumPlayer(trap.videoUrl!)
+                  if (!isPremium)
+                    _videoPremiumLock(isPremium)
+                  else if (trap.videoUrl?.trim().isNotEmpty == true)
+                    _videoPremiumPlayer(trap.videoUrl!.trim())
                   else
-                    _videoPremiumLock(isPremium),
+                    _videoUnavailable(),
                   const SizedBox(height: 24),
                   commentsAsync.when(
                     data: (comments) => Column(
@@ -777,30 +780,83 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     );
   }
 
+  Future<void> _openVideo(String url) async {
+    final uri = Uri.tryParse(url);
+    final opened =
+        uri != null &&
+        uri.hasScheme &&
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nie udało się otworzyć wideo.')),
+      );
+    }
+  }
+
   Widget _videoPremiumPlayer(String url) {
+    return Material(
+      color: AppTheme.bgCard,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openVideo(url),
+        child: Container(
+          height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.dividerColor),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.play_circle_rounded,
+                  color: AppTheme.primary,
+                  size: 48,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Odtwórz wideo',
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _videoUnavailable() {
     return Container(
-      height: 120,
+      height: 96,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.dividerColor),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.play_circle_rounded,
-              color: AppTheme.primary,
-              size: 48,
+      child: Row(
+        children: [
+          const Icon(
+            Icons.videocam_off_outlined,
+            color: AppTheme.textSecondary,
+            size: 28,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'Dla tego miejsca nie ma jeszcze wskazówki wideo.',
+              style: GoogleFonts.poppins(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Odtwórz wideo',
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

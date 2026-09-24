@@ -447,12 +447,14 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Opinie kursantów (${comments.length})',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                            Flexible(
+                              child: Text(
+                                'Opinie kursantów (${comments.length})',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                             TextButton.icon(

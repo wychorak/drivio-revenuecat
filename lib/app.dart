@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,15 +74,21 @@ final _routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const _DarkOnly(child: SplashScreen()),
+      ),
       GoRoute(
         path: '/city-select',
-        builder: (context, state) => const CitySelectScreen(),
+        builder: (context, state) => const _DarkOnly(child: CitySelectScreen()),
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const _DarkOnly(child: LoginScreen()),
+      ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => const _DarkOnly(child: RegisterScreen()),
       ),
       GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
       GoRoute(
@@ -90,8 +97,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/trap/:id',
-        builder: (context, state) =>
-            TrapDetailScreen(trapId: state.pathParameters['id']!),
+        builder: (context, state) => _DarkOnly(
+          child: TrapDetailScreen(trapId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/schools',
@@ -99,16 +107,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/school/:id',
-        builder: (context, state) =>
-            SchoolDetailScreen(schoolId: state.pathParameters['id']!),
+        builder: (context, state) => _DarkOnly(
+          child: SchoolDetailScreen(schoolId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/pro-tips',
-        builder: (context, state) => const ProTipsScreen(),
+        builder: (context, state) => const _DarkOnly(child: ProTipsScreen()),
       ),
       GoRoute(
         path: '/exam',
-        builder: (context, state) => const ExamRegistrationScreen(),
+        builder: (context, state) =>
+            const _DarkOnly(child: ExamRegistrationScreen()),
       ),
       GoRoute(
         path: '/profile',
@@ -125,16 +135,19 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/car', builder: (context, state) => const CarScreen()),
       GoRoute(
         path: '/premium',
-        builder: (context, state) => const PremiumScreen(),
+        builder: (context, state) => const _DarkOnly(child: PremiumScreen()),
       ),
-      GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const _DarkOnly(child: TermsScreen()),
+      ),
       GoRoute(
         path: '/privacy',
-        builder: (context, state) => const PrivacyScreen(),
+        builder: (context, state) => const _DarkOnly(child: PrivacyScreen()),
       ),
       GoRoute(
         path: '/ranking',
-        builder: (context, state) => const RankingScreen(),
+        builder: (context, state) => const _DarkOnly(child: RankingScreen()),
       ),
       GoRoute(
         path: '/admin',
@@ -176,6 +189,22 @@ final _routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+/// Screens drawn with fixed dark colors. Giving them the dark theme keeps app
+/// bars, inputs and status bar icons readable when the app runs in light mode.
+class _DarkOnly extends StatelessWidget {
+  const _DarkOnly({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Theme(data: AppTheme.darkTheme, child: child),
+    );
+  }
+}
 
 class DrivioApp extends ConsumerWidget {
   const DrivioApp({super.key});
