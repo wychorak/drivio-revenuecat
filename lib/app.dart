@@ -34,7 +34,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) async {
       final authState = ref.read(authStateProvider);
       final devLogin = ref.read(devLoginProvider);
-      final isLoggedIn = authState.value != null || devLogin;
+      // Anonymous sessions from older builds no longer count as signed in.
+      final user = authState.value;
+      final isLoggedIn = (user != null && !user.isAnonymous) || devLogin;
       final isLoading = authState.isLoading && !devLogin;
 
       if (isLoading) return null;
@@ -151,9 +153,19 @@ final _routerProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => Scaffold(
       backgroundColor: AppTheme.bgDark,
       body: Center(
-        child: Text(
-          'Strona nie istnieje: ${state.error}',
-          style: const TextStyle(color: Colors.white),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Nie znaleziono tej strony.',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => context.go('/map'),
+              child: const Text('Wróć do mapy'),
+            ),
+          ],
         ),
       ),
     ),

@@ -83,19 +83,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> _continueAsGuest() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-    try {
-      final user = await ref.read(authServiceProvider).continueAsGuest();
-      if (user != null && mounted) context.go('/map');
-    } catch (error) {
-      _showAuthError(error);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _loginWithProvider(Future<User?> Function() authenticate) async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
@@ -344,26 +331,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               googleLabel: 'Zaloguj się przez Google',
                               appleLabel: 'Zaloguj się przez Apple',
                             ),
-                            const SizedBox(height: 14),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: TextButton(
-                                onPressed: _isLoading ? null : _continueAsGuest,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppTheme.textSecondary,
+                            const SizedBox(height: 10),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'Logując się, akceptujesz',
+                                  style: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 11,
+                                  ),
                                 ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.explore_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Przeglądaj bez logowania'),
-                                  ],
+                                TextButton(
+                                  onPressed: () => context.push('/terms'),
+                                  child: const Text(
+                                    'Regulamin',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
                                 ),
-                              ),
+                                Text(
+                                  'i',
+                                  style: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => context.push('/privacy'),
+                                  child: const Text(
+                                    'Politykę prywatności',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 14),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

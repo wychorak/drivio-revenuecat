@@ -78,17 +78,19 @@ class TermsScreen extends StatelessWidget {
           _section(
             '§4. Subskrypcja Premium',
             '''1. Aplikacja oferuje płatne plany Premium:
-   a) Plan tygodniowy – 5,99 zł / 7 dni,
-   b) Plan miesięczny – 20,99 zł / 30 dni,
-   c) Plan „Na zawsze” – zakup jednorazowy w cenie wyświetlanej przez sklep.
+   a) Plan tygodniowy – subskrypcja odnawiana co tydzień,
+   b) Plan miesięczny – subskrypcja odnawiana co miesiąc,
+   c) Plan „Na zawsze” – zakup jednorazowy.
 
-2. Płatności w aplikacji mobilnej są realizowane przez Google Play lub App Store. Płatności Stripe mogą być używane wyłącznie w wersji webowej, jeśli jest dostępna.
+2. Aktualna cena każdego planu jest wyświetlana na ekranie Premium i w oknie zakupu sklepu przed potwierdzeniem płatności. Ceny zawierają podatek VAT.
 
-3. Plany tygodniowy i miesięczny odnawiają się automatycznie, chyba że użytkownik anuluje je przed końcem okresu rozliczeniowego. Plan „Na zawsze” nie odnawia się.
+3. Płatności w aplikacji mobilnej są realizowane przez sklep z aplikacjami (App Store lub Google Play) i obciążają konto sklepu użytkownika. Płatności Stripe mogą być używane wyłącznie w wersji webowej, jeśli jest dostępna.
 
-4. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta.
+4. Plany tygodniowy i miesięczny odnawiają się automatycznie, jeśli nie zostaną anulowane co najmniej 24 godziny przed końcem bieżącego okresu. Opłata za kolejny okres jest pobierana w ciągu 24 godzin przed jego rozpoczęciem. Plan „Na zawsze” nie odnawia się.
 
-5. Ceny podane są w złotych polskich i zawierają podatek VAT.''',
+5. Subskrypcją można zarządzać i ją anulować w ustawieniach konta sklepu (na iPhonie: Ustawienia → Apple ID → Subskrypcje). Usunięcie konta w Aplikacji nie anuluje subskrypcji.
+
+6. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta. Zwroty za zakupy w App Store obsługuje Apple.''',
           ),
           _section(
             '§5. Treści użytkowników',
@@ -101,11 +103,16 @@ class TermsScreen extends StatelessWidget {
    b) zawierających wulgaryzmy i mowę nienawiści,
    c) będących reklamą lub spamem,
    d) niezgodnych z prawem,
-   e) fałszywych lub wprowadzających w błąd.
+   e) fałszywych lub wprowadzających w błąd,
+   f) obraźliwych, nękających, o charakterze seksualnym lub przedstawiających przemoc.
 
-4. Usługodawca zastrzega sobie prawo do usunięcia treści naruszających Regulamin bez uprzedniego powiadomienia użytkownika.
+4. Obowiązuje zasada zerowej tolerancji dla treści niedozwolonych i nadużyć wobec innych użytkowników. Konta, które je publikują, mogą zostać zablokowane.
 
-5. Usługodawca nie weryfikuje dokładności informacji dodawanych przez użytkowników.''',
+5. Każdy użytkownik może zgłosić komentarz lub zablokować jego autora bezpośrednio w Aplikacji. Zgłoszenia są weryfikowane w ciągu 24 godzin, a naruszające treści usuwane.
+
+6. Usługodawca zastrzega sobie prawo do usunięcia treści naruszających Regulamin bez uprzedniego powiadomienia użytkownika.
+
+7. Usługodawca nie weryfikuje dokładności informacji dodawanych przez użytkowników.''',
           ),
           _section(
             '§6. Prawa autorskie i własność intelektualna',

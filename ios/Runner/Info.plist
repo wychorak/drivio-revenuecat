@@ -45,6 +45,13 @@
 		<false/>
 		<key>GADApplicationIdentifier</key>
 		<string>ca-app-pub-8263324816746737~5489467107</string>
+		<key>SKAdNetworkItems</key>
+		<array>
+			<dict>
+				<key>SKAdNetworkIdentifier</key>
+				<string>cstr6suwn9.skadnetwork</string>
+			</dict>
+		</array>
 		<key>NSCameraUsageDescription</key>
 		<string>Drivio pozwala dodać zdjęcie miejsca egzaminacyjnego, jeśli wybierzesz aparat.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

@@ -142,7 +142,10 @@ class PremiumScreen extends ConsumerWidget {
                       ),
                       error: (_, _) => Column(
                         children: [
-                          _storeErrorNotice(premiumService),
+                          _storeErrorNotice(
+                            premiumService,
+                            onRetry: () => ref.invalidate(productsProvider),
+                          ),
                           _buildPlanCards(
                             context,
                             ref,
@@ -327,7 +330,8 @@ class PremiumScreen extends ConsumerWidget {
     final missing = RevenueCatService.productOrder
         .where((id) => !productIds.contains(id))
         .toList();
-    if (missing.isEmpty) return const SizedBox.shrink();
+    // Store configuration details are only useful to developers.
+    if (missing.isEmpty || !kDebugMode) return const SizedBox.shrink();
 
     return _NoticeBox(
       icon: Icons.storefront_outlined,
@@ -335,12 +339,20 @@ class PremiumScreen extends ConsumerWidget {
     );
   }
 
-  Widget _storeErrorNotice(RevenueCatService service) {
+  Widget _storeErrorNotice(
+    RevenueCatService service, {
+    required VoidCallback onRetry,
+  }) {
+    final debugDetails =
+        service.configurationIssue ??
+        'Nie udało się pobrać offeringu ${AppConfig.revenueCatOfferingId}.';
     return _NoticeBox(
       icon: Icons.error_outline_rounded,
-      text:
-          service.configurationIssue ??
-          'Nie udało się pobrać offeringu driviooffers. Sprawdź konfigurację RevenueCat.',
+      text: kDebugMode
+          ? debugDetails
+          : 'Nie udało się połączyć ze sklepem. Sprawdź połączenie z internetem i spróbuj ponownie.',
+      actionLabel: 'Spróbuj ponownie',
+      onAction: onRetry,
     );
   }
 }
@@ -677,7 +689,7 @@ class _PlanCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    productUnavailable ? 'skonfiguruj sklep' : 'brutto',
+                    productUnavailable ? 'spróbuj później' : 'brutto',
                     style: GoogleFonts.poppins(
                       color: AppTheme.textSecondary,
                       fontSize: 10,
@@ -762,8 +774,15 @@ class _InlineBadge extends StatelessWidget {
 class _NoticeBox extends StatelessWidget {
   final IconData icon;
   final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
-  const _NoticeBox({required this.icon, required this.text});
+  const _NoticeBox({
+    required this.icon,
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -782,13 +801,24 @@ class _NoticeBox extends StatelessWidget {
           Icon(icon, color: AppTheme.primary, size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 12,
-                height: 1.4,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+                if (actionLabel != null && onAction != null)
+                  TextButton(
+                    onPressed: onAction,
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                    child: Text(actionLabel!),
+                  ),
+              ],
             ),
           ),
         ],
@@ -808,7 +838,7 @@ class _Footnote extends StatelessWidget {
       children: [
         Text(
           useIap
-              ? 'Plan tygodniowy i miesięczny odnawia się automatycznie, dopóki nie zostanie anulowany co najmniej 24 godziny przed końcem okresu. Płatność obciąża Apple ID. Plan „Na zawsze” jest zakupem jednorazowym.'
+              ? 'Plan tygodniowy i miesięczny odnawia się automatycznie, dopóki nie zostanie anulowany co najmniej 24 godziny przed końcem okresu. Płatność obciąża Apple ID po potwierdzeniu zakupu. Subskrypcją zarządzasz w Ustawieniach → Apple ID → Subskrypcje. Plan „Na zawsze” jest zakupem jednorazowym.'
               : 'Wersja web otwiera bezpieczną stronę płatności. W aplikacji iOS zakup przejmuje App Store.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(

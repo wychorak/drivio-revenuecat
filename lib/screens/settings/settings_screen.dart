@@ -8,6 +8,7 @@ import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/settings_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/common/edit_name_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -278,7 +279,11 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Usunąć konto?'),
-        content: const Text('Konto i jego dane zostaną trwale usunięte.'),
+        content: const Text(
+          'Konto, komentarze, zgłoszenia i zapisane miejsca zostaną trwale '
+          'usunięte. Aktywną subskrypcję anulujesz osobno w ustawieniach '
+          'Apple ID (Subskrypcje).',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -293,17 +298,64 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      await ref.read(authServiceProvider).deleteAccount();
-      if (context.mounted) context.go('/login');
-    } catch (_) {
+      await ref
+          .read(authServiceProvider)
+          .deleteAccount(askPassword: () => _askPassword(context));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Zaloguj się ponownie i spróbuj jeszcze raz.'),
-          ),
+          const SnackBar(content: Text('Konto zostało usunięte.')),
         );
+        context.go('/login');
       }
+    } catch (error) {
+      if (!context.mounted || isAuthCancellation(error)) return;
+      final value = error.toString().toLowerCase();
+      final message =
+          value.contains('wrong-password') ||
+              value.contains('invalid-credential')
+          ? 'Nieprawidłowe hasło.'
+          : value.contains('requires-recent-login') ||
+                value.contains('failed-precondition')
+          ? 'Wyloguj się, zaloguj ponownie i spróbuj jeszcze raz.'
+          : value.contains('network')
+          ? 'Brak połączenia z internetem.'
+          : 'Nie udało się usunąć konta. Spróbuj ponownie lub napisz na '
+                '${AppConfig.contactEmail}.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  Future<String?> _askPassword(BuildContext context) async {
+    if (!context.mounted) return null;
+    final controller = TextEditingController();
+    final password = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Potwierdź hasło'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          obscureText: true,
+          autofillHints: const [AutofillHints.password],
+          decoration: const InputDecoration(labelText: 'Hasło'),
+          onSubmitted: (value) => Navigator.pop(dialogContext, value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Anuluj'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Usuń konto'),
+          ),
+        ],
+      ),
+    );
+    // Not disposed here: the dialog's exit animation still reads it.
+    return password;
   }
 }
 

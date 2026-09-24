@@ -135,14 +135,13 @@ class AuthService {
   Future<void> _createUserDocument(
     User user,
     String displayName, {
-    bool isGuest = false,
     bool legalConsentsAccepted = false,
   }) async {
     await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'email': user.email ?? '',
       'displayName': displayName,
-      'isGuest': isGuest,
+      'isGuest': false,
       'isPremium': false,
       'premiumUntil': null,
       'savedTraps': [],
@@ -156,15 +155,6 @@ class AuthService {
         'acceptedPrivacyAt': FieldValue.serverTimestamp(),
       },
     }, SetOptions(merge: true));
-  }
-
-  Future<User?> continueAsGuest() async {
-    final credential = await _auth.signInAnonymously();
-    final user = credential.user;
-    if (user != null) {
-      await _createUserDocument(user, 'Gość', isGuest: true);
-    }
-    return user;
   }
 
   Future<void> recordLegalConsents(String uid) async {
@@ -189,21 +179,75 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  Future<void> deleteAccount() async {
+  /// Deletes the signed-in account after confirming the user's identity.
+  ///
+  /// [askPassword] is used for e-mail accounts whose session is too old for
+  /// the backend's recent-login check; returning null cancels the deletion.
+  Future<void> deleteAccount({
+    required Future<String?> Function() askPassword,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final lastSignIn = user.metadata.lastSignInTime;
-    if (lastSignIn == null ||
-        DateTime.now().difference(lastSignIn) > const Duration(minutes: 4)) {
-      throw FirebaseAuthException(
-        code: 'requires-recent-login',
-        message: 'Zaloguj się ponownie przed usunięciem konta.',
+    final providers = user.providerData.map((info) => info.providerId).toSet();
+    if (providers.contains('apple.com') && !kIsWeb) {
+      // Apple requires apps to revoke Sign in with Apple tokens when an
+      // account is deleted, which needs a fresh authorization code.
+      final credential = await user.reauthenticateWithProvider(
+        AppleAuthProvider(),
       );
+      final code = credential.additionalUserInfo?.authorizationCode;
+      if (code != null && code.isNotEmpty) {
+        await _auth.revokeTokenWithAuthorizationCode(code);
+      }
+    } else if (!_hasRecentLogin(user)) {
+      if (providers.contains('google.com')) {
+        await _reauthenticateWithGoogle(user);
+      } else if (providers.contains('password') && user.email != null) {
+        final password = await askPassword();
+        if (password == null || password.isEmpty) {
+          throw FirebaseAuthException(code: 'cancelled');
+        }
+        await user.reauthenticateWithCredential(
+          EmailAuthProvider.credential(email: user.email!, password: password),
+        );
+      } else {
+        throw FirebaseAuthException(
+          code: 'requires-recent-login',
+          message: 'Zaloguj się ponownie przed usunięciem konta.',
+        );
+      }
     }
 
+    // The callable checks auth_time, so send a token minted after re-auth.
+    await user.getIdToken(true);
     await _functions.httpsCallable('deleteAccount').call<void>();
-    await _auth.signOut();
+    await signOut();
+  }
+
+  bool _hasRecentLogin(User user) {
+    final lastSignIn = user.metadata.lastSignInTime;
+    return lastSignIn != null &&
+        DateTime.now().difference(lastSignIn) < const Duration(minutes: 4);
+  }
+
+  Future<void> _reauthenticateWithGoogle(User user) async {
+    if (kIsWeb) {
+      await user.reauthenticateWithPopup(GoogleAuthProvider());
+      return;
+    }
+    await _initializeGoogleSignIn();
+    final googleUser = await GoogleSignIn.instance.authenticate();
+    final idToken = googleUser.authentication.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'invalid-oauth-response',
+        message: 'Google did not return an ID token.',
+      );
+    }
+    await user.reauthenticateWithCredential(
+      GoogleAuthProvider.credential(idToken: idToken),
+    );
   }
 
   Future<void> updateDisplayName(String displayName) async {
