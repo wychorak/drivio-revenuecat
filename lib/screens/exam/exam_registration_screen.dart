@@ -4,9 +4,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/config/app_config.dart';
 import 'package:drivio/theme/app_theme.dart';
 
-class ExamRegistrationScreen extends StatelessWidget {
+class ExamRegistrationScreen extends StatefulWidget {
   const ExamRegistrationScreen({super.key});
 
+  @override
+  State<ExamRegistrationScreen> createState() => _ExamRegistrationScreenState();
+}
+
+class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
   Future<void> _openWord() async {
     final uri = Uri.parse(AppConfig.wordUrl);
     if (await canLaunchUrl(uri)) {
@@ -17,10 +22,10 @@ class ExamRegistrationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Rejestracja na egzamin'),
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -55,7 +60,7 @@ class ExamRegistrationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgDark,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
@@ -64,7 +69,7 @@ class ExamRegistrationScreen extends StatelessWidget {
                     Text(
                       'Przelew bankowy:',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -201,7 +206,7 @@ class ExamRegistrationScreen extends StatelessWidget {
                 Text(
                   'Egzamin na prawo jazdy',
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -209,7 +214,7 @@ class ExamRegistrationScreen extends StatelessWidget {
                 Text(
                   'Wszystko, co musisz wiedzieć',
                   style: GoogleFonts.poppins(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),
@@ -229,9 +234,9 @@ class ExamRegistrationScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,7 +259,7 @@ class ExamRegistrationScreen extends StatelessWidget {
                   child: Text(
                     title,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -263,7 +268,10 @@ class ExamRegistrationScreen extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -305,7 +313,7 @@ class ExamRegistrationScreen extends StatelessWidget {
             child: Text(
               text,
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 height: 1.5,
               ),
@@ -330,7 +338,7 @@ class ExamRegistrationScreen extends StatelessWidget {
             child: Text(
               text,
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 height: 1.5,
               ),
@@ -349,7 +357,7 @@ class ExamRegistrationScreen extends StatelessWidget {
           Text(
             '$label ',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -357,7 +365,7 @@ class ExamRegistrationScreen extends StatelessWidget {
             child: Text(
               value,
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -383,7 +391,9 @@ class ExamRegistrationScreen extends StatelessWidget {
             child: Text(
               text,
               style: GoogleFonts.poppins(
-                color: required ? Colors.white : AppTheme.textSecondary,
+                color: required
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 fontWeight: required ? FontWeight.w600 : FontWeight.w400,
               ),

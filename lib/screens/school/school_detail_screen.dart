@@ -208,24 +208,26 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Dodaj opinię',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         content: TextField(
           controller: _commentController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           maxLines: 4,
           decoration: InputDecoration(
             hintText: 'Twoja opinia...',
-            hintStyle: GoogleFonts.poppins(color: AppTheme.textSecondary),
+            hintStyle: GoogleFonts.poppins(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             filled: true,
-            fillColor: AppTheme.bgDark,
+            fillColor: Theme.of(context).scaffoldBackgroundColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -256,20 +258,20 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        body: LoadingWidget(),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const LoadingWidget(),
       );
     }
 
     if (_school == null) {
       return Scaffold(
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(title: const Text('Nie znaleziono')),
-        body: const Center(
+        body: Center(
           child: Text(
             'Szkoła nie istnieje',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
         ),
       );
@@ -282,18 +284,18 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     final commentsAsync = ref.watch(schoolCommentsProvider(school.id));
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
-            backgroundColor: AppTheme.bgCard,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard.withAlpha(200),
+                  color: Colors.black.withAlpha(170),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -310,14 +312,16 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                 onPressed: _isSaving ? null : _toggleSave,
                 icon: Icon(
                   _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                  color: _isSaved ? AppTheme.primary : Colors.white,
+                  color: _isSaved
+                      ? AppTheme.primary
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                color: AppTheme.bgCard,
+                color: Theme.of(context).colorScheme.surface,
                 child: Center(
                   child: school.logoUrl != null
                       ? CachedNetworkImage(
@@ -325,15 +329,17 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                           height: 100,
                           width: 100,
                           fit: BoxFit.contain,
-                          errorWidget: (_, _, _) => const Icon(
+                          errorWidget: (_, _, _) => Icon(
                             Icons.school_rounded,
-                            color: AppTheme.textSecondary,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             size: 64,
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.school_rounded,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 64,
                         ),
                 ),
@@ -349,7 +355,7 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                   Text(
                     school.name,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
@@ -373,7 +379,7 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                       Text(
                         '${school.rating.toStringAsFixed(1)} (${school.reviewCount} opinii)',
                         style: GoogleFonts.poppins(
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -407,7 +413,7 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                   Text(
                     'Opis szkoły',
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -418,7 +424,7 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                         ? school.description
                         : 'Brak opisu.',
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 14,
                       height: 1.6,
                     ),
@@ -451,7 +457,9 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                               child: Text(
                                 'Opinie kursantów (${comments.length})',
                                 style: GoogleFonts.poppins(
-                                  color: Colors.white,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -474,7 +482,9 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                               child: Text(
                                 'Brak opinii. Bądź pierwszy!',
                                 style: GoogleFonts.poppins(
-                                  color: AppTheme.textSecondary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontSize: 13,
                                 ),
                               ),
@@ -550,21 +560,22 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
     required IconData icon,
     required String text,
     VoidCallback? onTap,
-    Color color = AppTheme.textSecondary,
+    Color? color,
   }) {
+    final rowColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 18),
+            Icon(icon, color: rowColor, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 text,
                 style: GoogleFonts.poppins(
-                  color: onTap != null ? color : AppTheme.textSecondary,
+                  color: rowColor,
                   fontSize: 14,
                   decoration: onTap != null ? TextDecoration.underline : null,
                 ),

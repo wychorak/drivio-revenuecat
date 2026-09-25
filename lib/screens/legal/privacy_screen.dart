@@ -10,10 +10,10 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Polityka prywatności'),
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -21,7 +21,7 @@ class PrivacyScreen extends StatelessWidget {
           Text(
             'Polityka Prywatności Drivio',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -30,12 +30,13 @@ class PrivacyScreen extends StatelessWidget {
           Text(
             'Ostatnia aktualizacja: 19 września 2026',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
           const SizedBox(height: 24),
           _section(
+            context,
             '1. Administrator danych',
             '''Administratorem danych jest operator aplikacji Drivio. Przed publiczną publikacją operator uzupełni pełną nazwę lub imię i nazwisko oraz adres wymagany przez prawo.
 
@@ -46,6 +47,7 @@ Strona: www.drivio.app
 W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt pod powyższymi adresami.''',
           ),
           _section(
+            context,
             '2. Jakie dane zbieramy',
             '''W zależności od sposobu korzystania z Aplikacji możemy zbierać następujące dane:
 
@@ -70,6 +72,7 @@ DANE DOTYCZĄCE KONTA:
 • Status subskrypcji Premium''',
           ),
           _section(
+            context,
             '3. W jakim celu przetwarzamy dane',
             '''Twoje dane osobowe przetwarzamy w następujących celach:
 
@@ -92,6 +95,7 @@ d) OBOWIĄZEK PRAWNY (art. 6 ust. 1 lit. c RODO):
    – przestrzeganie przepisów podatkowych.''',
           ),
           _section(
+            context,
             '4. Komu udostępniamy dane',
             '''Twoje dane mogą być udostępniane następującym podmiotom:
 
@@ -109,6 +113,7 @@ Nie sprzedajemy Twoich danych osobowych podmiotom trzecim.
 Dane mogą być przekazywane do państw trzecich (USA) na podstawie standardowych klauzul umownych zatwierdzonych przez Komisję Europejską.''',
           ),
           _section(
+            context,
             '5. Jak długo przechowujemy dane',
             '''• Dane konta i treści użytkownika: przez okres korzystania z Aplikacji, a następnie usuwane w procesie usunięcia konta
 • Dane o zakupach: zgodnie z obowiązkami prawnymi i okresami dostawców płatności; aplikacja przechowuje wyłącznie niezbędne informacje o uprawnieniu
@@ -118,6 +123,7 @@ Dane mogą być przekazywane do państw trzecich (USA) na podstawie standardowyc
 Po upływie powyższych terminów dane są trwale usuwane lub anonimizowane.''',
           ),
           _section(
+            context,
             '6. Twoje prawa',
             '''Na podstawie RODO przysługują Ci następujące prawa:
 
@@ -134,6 +140,7 @@ Aby skorzystać ze swoich praw, skontaktuj się z nami: ${AppConfig.contactEmail
 Masz również prawo wniesienia skargi do Urzędu Ochrony Danych Osobowych (UODO).''',
           ),
           _section(
+            context,
             '7. Bezpieczeństwo danych',
             '''Stosujemy następujące środki bezpieczeństwa:
 
@@ -147,6 +154,7 @@ Masz również prawo wniesienia skargi do Urzędu Ochrony Danych Osobowych (UODO
 W przypadku naruszenia bezpieczeństwa danych poinformujemy Cię i właściwe organy zgodnie z wymogami RODO.''',
           ),
           _section(
+            context,
             '8. Pliki cookie i śledzenie',
             '''Aplikacja mobilna nie używa plików cookie. Jednak stosujemy podobne technologie:
 
@@ -157,6 +165,7 @@ W przypadku naruszenia bezpieczeństwa danych poinformujemy Cię i właściwe or
 Wersja webowa Aplikacji może używać plików cookie niezbędnych do funkcjonowania.''',
           ),
           _section(
+            context,
             '9. Reklamy w wersji bezpłatnej',
             '''W bezpłatnej wersji Drivio wyświetlamy dyskretny baner Google AdMob. Użytkownicy Drivio Pro nie widzą reklam.
 
@@ -177,6 +186,7 @@ Przed załadowaniem reklamy Google User Messaging Platform sprawdza wymagane zgo
             },
           ),
           _section(
+            context,
             '10. Zmiany polityki prywatności',
             '''1. Zastrzegamy sobie prawo do zmiany niniejszej Polityki Prywatności.
 
@@ -196,7 +206,7 @@ Drivio – Szczecin, Polska''',
     );
   }
 
-  Widget _section(String title, String content) {
+  Widget _section(BuildContext context, String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -212,13 +222,13 @@ Drivio – Szczecin, Polska''',
         Text(
           content,
           style: GoogleFonts.poppins(
-            color: AppTheme.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 13,
             height: 1.7,
           ),
         ),
         const SizedBox(height: 20),
-        const Divider(color: AppTheme.dividerColor),
+        Divider(color: Theme.of(context).colorScheme.outlineVariant),
         const SizedBox(height: 12),
       ],
     );

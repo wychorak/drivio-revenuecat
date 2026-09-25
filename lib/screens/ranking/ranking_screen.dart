@@ -60,10 +60,10 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Ranking'),
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -91,7 +91,9 @@ class _TrapsRankingTab extends ConsumerWidget {
           return Center(
             child: Text(
               'Brak danych',
-              style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           );
         }
@@ -111,7 +113,9 @@ class _TrapsRankingTab extends ConsumerWidget {
       error: (_, _) => Center(
         child: Text(
           'Błąd ładowania rankingu',
-          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+          style: GoogleFonts.poppins(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -126,7 +130,7 @@ class _TrapRankItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color rankColor = AppTheme.textSecondary;
+    Color rankColor = Theme.of(context).colorScheme.onSurfaceVariant;
     if (rank == 1) rankColor = const Color(0xFFFFD700);
     if (rank == 2) rankColor = const Color(0xFFC0C0C0);
     if (rank == 3) rankColor = const Color(0xFFCD7F32);
@@ -137,10 +141,12 @@ class _TrapRankItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: rank <= 3 ? rankColor.withAlpha(60) : AppTheme.dividerColor,
+            color: rank <= 3
+                ? rankColor.withAlpha(60)
+                : Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Row(
@@ -167,7 +173,7 @@ class _TrapRankItem extends StatelessWidget {
                   errorWidget: (_, _, _) => Container(
                     width: 52,
                     height: 52,
-                    color: AppTheme.bgDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     child: const Icon(
                       Icons.warning_amber_rounded,
                       color: AppTheme.primary,
@@ -181,7 +187,7 @@ class _TrapRankItem extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppTheme.bgDark,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -200,7 +206,7 @@ class _TrapRankItem extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -218,9 +224,9 @@ class _TrapRankItem extends StatelessWidget {
                       ),
                       ...List.generate(
                         5 - trap.difficulty,
-                        (_) => const Icon(
+                        (_) => Icon(
                           Icons.star_outline,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 13,
                         ),
                       ),
@@ -228,7 +234,7 @@ class _TrapRankItem extends StatelessWidget {
                       Text(
                         trap.city,
                         style: GoogleFonts.poppins(
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                       ),
@@ -237,9 +243,9 @@ class _TrapRankItem extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 20,
             ),
           ],
@@ -260,7 +266,9 @@ class _SchoolsRankingTab extends ConsumerWidget {
           return Center(
             child: Text(
               'Brak danych',
-              style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           );
         }
@@ -280,7 +288,9 @@ class _SchoolsRankingTab extends ConsumerWidget {
       error: (_, _) => Center(
         child: Text(
           'Błąd ładowania rankingu',
-          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+          style: GoogleFonts.poppins(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -295,7 +305,7 @@ class _SchoolRankItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color rankColor = AppTheme.textSecondary;
+    Color rankColor = Theme.of(context).colorScheme.onSurfaceVariant;
     if (rank == 1) rankColor = const Color(0xFFFFD700);
     if (rank == 2) rankColor = const Color(0xFFC0C0C0);
     if (rank == 3) rankColor = const Color(0xFFCD7F32);
@@ -306,10 +316,12 @@ class _SchoolRankItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: rank <= 3 ? rankColor.withAlpha(60) : AppTheme.dividerColor,
+            color: rank <= 3
+                ? rankColor.withAlpha(60)
+                : Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Row(
@@ -327,14 +339,14 @@ class _SchoolRankItem extends StatelessWidget {
             ),
             CircleAvatar(
               radius: 26,
-              backgroundColor: AppTheme.bgDark,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               backgroundImage: school.logoUrl != null
                   ? CachedNetworkImageProvider(school.logoUrl!)
                   : null,
               child: school.logoUrl == null
-                  ? const Icon(
+                  ? Icon(
                       Icons.school_rounded,
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 22,
                     )
                   : null,
@@ -349,7 +361,7 @@ class _SchoolRankItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -369,7 +381,7 @@ class _SchoolRankItem extends StatelessWidget {
                       Text(
                         '${school.rating.toStringAsFixed(1)} (${school.reviewCount})',
                         style: GoogleFonts.poppins(
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                       ),
@@ -378,9 +390,9 @@ class _SchoolRankItem extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 20,
             ),
           ],

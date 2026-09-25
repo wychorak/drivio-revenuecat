@@ -29,7 +29,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadSaved());
   }
 
@@ -229,16 +229,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.star_rounded,
-                                color: AppTheme.premiumGold,
+                                color: AppTheme.premiumAccent(context),
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Drivio Premium',
                                 style: GoogleFonts.poppins(
-                                  color: AppTheme.premiumGold,
+                                  color: AppTheme.premiumAccent(context),
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
@@ -248,7 +248,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                 Text(
                                   'do ${user.premiumUntil!.day}.${user.premiumUntil!.month.toString().padLeft(2, '0')}.${user.premiumUntil!.year}',
                                   style: GoogleFonts.poppins(
-                                    color: AppTheme.premiumGold.withAlpha(180),
+                                    color: colors.onSurfaceVariant,
                                     fontSize: 11,
                                   ),
                                 ),
@@ -276,7 +276,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         tabs: const [
                           Tab(text: 'Miejsca'),
                           Tab(text: 'Szkoły'),
-                          Tab(text: 'Wideo'),
                         ],
                       ),
                     ],
@@ -289,7 +288,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               children: [
                 _loadingSaved ? const LoadingWidget() : _buildSavedTraps(),
                 _loadingSaved ? const LoadingWidget() : _buildSavedSchools(),
-                isPremium ? _buildVideosTab() : _buildLockedTab(),
               ],
             ),
           );
@@ -513,64 +511,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildVideosTab() {
-    final colors = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.play_circle_outline,
-            color: colors.onSurfaceVariant,
-            size: 64,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Wideo – wkrótce dostępne',
-            style: GoogleFonts.poppins(
-              color: colors.onSurfaceVariant,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLockedTab() {
-    final colors = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.lock_rounded, color: AppTheme.premiumGold, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            'Filmy instruktażowe w Premium',
-            style: GoogleFonts.poppins(color: colors.onSurface, fontSize: 15),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Odblokuj nieograniczony dostęp do filmów',
-            style: GoogleFonts.poppins(
-              color: colors.onSurfaceVariant,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => context.push('/premium'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.premiumGold,
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('Kup Premium'),
-          ),
-        ],
-      ),
     );
   }
 }

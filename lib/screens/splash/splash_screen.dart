@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -151,30 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       );
                     },
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFE30613), Color(0xFFB00010)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFE30613).withAlpha(100),
-                            blurRadius: 40,
-                            spreadRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.directions_car_rounded,
-                        color: Colors.white,
-                        size: 52,
-                      ),
-                    ),
+                    child: const DrivioLogo(size: 100),
                   ),
                   const SizedBox(height: 32),
                   SlideTransition(

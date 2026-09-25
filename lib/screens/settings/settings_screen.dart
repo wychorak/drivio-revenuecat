@@ -257,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Text(
               'Drivio v1.0.0',
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: colors.onSurfaceVariant,
                 fontSize: 11,
               ),
             ),

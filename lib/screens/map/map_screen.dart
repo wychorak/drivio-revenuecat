@@ -15,6 +15,7 @@ import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
 import 'package:drivio/services/admin_access_service.dart';
+import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -365,25 +366,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
               child: Row(
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: AppTheme.brandGradient,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primary.withAlpha(60),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.directions_car_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
+                  const DrivioLogo(size: 48),
                   const SizedBox(width: 12),
                   Text(
                     'drivio',

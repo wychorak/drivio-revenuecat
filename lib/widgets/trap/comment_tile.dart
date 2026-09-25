@@ -40,12 +40,12 @@ class _CommentTileState extends State<CommentTile> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Zgłoś komentarz',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -57,7 +57,7 @@ class _CommentTileState extends State<CommentTile> {
                   title: Text(
                     r,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                     ),
                   ),
@@ -140,9 +140,9 @@ class _CommentTileState extends State<CommentTile> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +169,7 @@ class _CommentTileState extends State<CommentTile> {
                     Text(
                       widget.comment.userDisplayName,
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -180,7 +180,7 @@ class _CommentTileState extends State<CommentTile> {
                         'pl',
                       ).format(widget.comment.timestamp),
                       style: GoogleFonts.poppins(
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 11,
                       ),
                     ),
@@ -194,13 +194,15 @@ class _CommentTileState extends State<CommentTile> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.textSecondary.withAlpha(20),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withAlpha(20),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     'Zgłoszono',
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                     ),
                   ),
@@ -211,12 +213,12 @@ class _CommentTileState extends State<CommentTile> {
                   widget.onBlock != null ||
                   widget.onDelete != null)
                 PopupMenuButton<String>(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_horiz,
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 18,
                   ),
-                  color: AppTheme.bgCard,
+                  color: Theme.of(context).colorScheme.surface,
                   onSelected: (value) {
                     if (value == 'report') {
                       _showReportDialog();
@@ -232,7 +234,9 @@ class _CommentTileState extends State<CommentTile> {
                         value: 'report',
                         child: Text(
                           'Zgłoś komentarz',
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     if (widget.onBlock != null)
@@ -240,7 +244,9 @@ class _CommentTileState extends State<CommentTile> {
                         value: 'block',
                         child: Text(
                           'Zablokuj autora',
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     if (widget.onDelete != null)
@@ -264,7 +270,7 @@ class _CommentTileState extends State<CommentTile> {
           Text(
             widget.comment.text,
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 13,
               height: 1.5,
             ),

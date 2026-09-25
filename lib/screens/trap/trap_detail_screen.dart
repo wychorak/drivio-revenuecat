@@ -233,24 +233,26 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Dodaj komentarz',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         content: TextField(
           controller: _commentController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           maxLines: 4,
           decoration: InputDecoration(
             hintText: 'Twój komentarz...',
-            hintStyle: GoogleFonts.poppins(color: AppTheme.textSecondary),
+            hintStyle: GoogleFonts.poppins(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             filled: true,
-            fillColor: AppTheme.bgDark,
+            fillColor: Theme.of(context).scaffoldBackgroundColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -283,12 +285,12 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Zgłoś pułapkę',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -299,7 +301,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
               (r) => ListTile(
                 title: Text(
                   r,
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14,
+                  ),
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -339,7 +344,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 leading: const Icon(Icons.block, color: AppTheme.primary),
                 title: Text(
                   'Zablokuj autora',
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14,
+                  ),
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -355,16 +363,18 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        body: LoadingWidget(),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const LoadingWidget(),
       );
     }
 
     if (_accessDenied) {
       return Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        appBar: AppBar(backgroundColor: AppTheme.bgDark),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -381,7 +391,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   'Dzienny limit został wykorzystany',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                   ),
@@ -391,7 +401,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   'Wróć jutro albo odblokuj nielimitowany dostęp w Premium.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.5,
                   ),
                 ),
@@ -409,24 +419,28 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
     if (_loadError != null) {
       return Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        appBar: AppBar(backgroundColor: AppTheme.bgDark),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.cloud_off_outlined,
-                  color: AppTheme.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   size: 56,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _loadError!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 OutlinedButton(
@@ -448,12 +462,12 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
     if (_trap == null) {
       return Scaffold(
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(title: const Text('Nie znaleziono')),
-        body: const Center(
+        body: Center(
           child: Text(
             'Pułapka nie istnieje',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
         ),
       );
@@ -467,18 +481,18 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     final commentsAsync = ref.watch(commentsProvider(trap.id));
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
-            backgroundColor: AppTheme.bgDark,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard.withAlpha(200),
+                  color: Colors.black.withAlpha(170),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -494,7 +508,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.bgCard.withAlpha(200),
+                    color: Colors.black.withAlpha(170),
                     shape: BoxShape.circle,
                   ),
                   child: _isSaving
@@ -518,7 +532,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.bgCard.withAlpha(200),
+                    color: Colors.black.withAlpha(170),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -536,7 +550,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                       imageUrl: trap.photoUrl!,
                       fit: BoxFit.cover,
                       placeholder: (_, _) => Container(
-                        color: AppTheme.bgCard,
+                        color: Theme.of(context).colorScheme.surface,
                         child: const Center(
                           child: CircularProgressIndicator(
                             color: AppTheme.primary,
@@ -544,16 +558,16 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                         ),
                       ),
                       errorWidget: (_, _, _) => Container(
-                        color: AppTheme.bgCard,
-                        child: const Icon(
+                        color: Theme.of(context).colorScheme.surface,
+                        child: Icon(
                           Icons.image_not_supported_outlined,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: 48,
                         ),
                       ),
                     )
                   : Container(
-                      color: AppTheme.bgCard,
+                      color: Theme.of(context).colorScheme.surface,
                       child: const Icon(
                         Icons.warning_amber_rounded,
                         color: AppTheme.primary,
@@ -572,14 +586,17 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                     children: [
                       _badge('Pułapka', AppTheme.primary),
                       const SizedBox(width: 8),
-                      _badge(trap.city, AppTheme.textSecondary),
+                      _badge(
+                        trap.city,
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
                     trap.title,
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
@@ -590,7 +607,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   Text(
                     DateFormat('d MMMM yyyy', 'pl').format(trap.createdAt),
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 12,
                     ),
                   ),
@@ -600,7 +617,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   Text(
                     trap.description,
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 14,
                       height: 1.6,
                     ),
@@ -611,7 +628,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.bgCard,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: AppTheme.routeBlue.withAlpha(60),
@@ -632,7 +649,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                                 ? trap.ruleDescription
                                 : 'Brak opisu zasady',
                             style: GoogleFonts.poppins(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 13,
                               height: 1.5,
                             ),
@@ -676,7 +693,9 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                               child: Text(
                                 'Bądź pierwszy i dodaj komentarz!',
                                 style: GoogleFonts.poppins(
-                                  color: AppTheme.textSecondary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontSize: 13,
                                 ),
                               ),
@@ -735,9 +754,11 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                     ),
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (_, _) => const Text(
+                    error: (_, _) => Text(
                       'Błąd ładowania komentarzy',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -773,7 +794,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     return Text(
       title,
       style: GoogleFonts.poppins(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 16,
         fontWeight: FontWeight.w700,
       ),
@@ -795,7 +816,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
   Widget _videoPremiumPlayer(String url) {
     return Material(
-      color: AppTheme.bgCard,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -804,7 +825,9 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
           height: 120,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.dividerColor),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: Center(
             child: Column(
@@ -818,7 +841,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Odtwórz wideo',
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -834,15 +860,15 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.videocam_off_outlined,
-            color: AppTheme.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             size: 28,
           ),
           const SizedBox(width: 14),
@@ -850,7 +876,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
             child: Text(
               'Dla tego miejsca nie ma jeszcze wskazówki wideo.',
               style: GoogleFonts.poppins(
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -867,13 +893,13 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         Container(
           height: 120,
           decoration: BoxDecoration(
-            color: AppTheme.bgCard,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Center(
+          child: Center(
             child: Icon(
               Icons.play_circle_rounded,
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 48,
             ),
           ),
@@ -881,7 +907,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.bgDark.withAlpha(200),
+              color: Colors.black.withAlpha(190),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.premiumGold.withAlpha(80)),
             ),
@@ -907,7 +933,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   child: Text(
                     'Odblokuj teraz →',
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 12,
                     ),
                   ),

@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
 
-class ProTipsScreen extends ConsumerWidget {
+class ProTipsScreen extends StatelessWidget {
   const ProTipsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isPremium = ref.watch(isPremiumProvider);
-
+  Widget build(BuildContext context) {
     final tips = [
       _TipData(
         icon: '🔄',
         title: 'Jak prawidłowo przejechać rondo',
-        premium: false,
         content:
             '''Rondo to jedno z najtrudniejszych miejsc na egzaminie. Oto jak je pokonać:
 
@@ -31,7 +25,6 @@ class ProTipsScreen extends ConsumerWidget {
       _TipData(
         icon: '✅',
         title: 'Checklist przed egzaminem',
-        premium: false,
         content: '''Sprawdź te rzeczy przed wyjazdem na egzamin:
 
 □ Dowód osobisty lub paszport
@@ -48,7 +41,6 @@ class ProTipsScreen extends ConsumerWidget {
       _TipData(
         icon: '🚦',
         title: 'Pierwszeństwo przejazdu',
-        premium: false,
         content: '''Zasady pierwszeństwa przejazdu na skrzyżowaniach:
 
 ZASADA PODSTAWOWA: Droga z pierwszeństwem > droga podporządkowana
@@ -68,7 +60,6 @@ Sygnały świetlne zawsze mają pierwszeństwo przed znakami!''',
       _TipData(
         icon: '🅿️',
         title: 'Parkowanie równoległe krok po kroku',
-        premium: false,
         content: '''Parkowanie równoległe – klasyczny sposób:
 
 1. Ustaw się równolegle do pojazdu z przodu, ok. 0,5–1 m od niego
@@ -83,7 +74,6 @@ Sygnały świetlne zawsze mają pierwszeństwo przed znakami!''',
       _TipData(
         icon: '⚠️',
         title: 'Najczęstsze błędy na egzaminie',
-        premium: true,
         content: '''8 najczęstszych błędów zdających:
 
 1. NIEDOSTATECZNA OBSERWACJA – nie sprawdzają lusterek i martwych kątów
@@ -98,7 +88,6 @@ Sygnały świetlne zawsze mają pierwszeństwo przed znakami!''',
       _TipData(
         icon: '🚗',
         title: 'Jak się zachować na egzaminie',
-        premium: true,
         content: '''Praktyczne wskazówki na dzień egzaminu:
 
 • Przywitaj się z egzaminatorem – zrób dobre pierwsze wrażenie
@@ -114,7 +103,6 @@ Sygnały świetlne zawsze mają pierwszeństwo przed znakami!''',
       _TipData(
         icon: '📋',
         title: 'Co zabrać na egzamin',
-        premium: true,
         content: '''Lista dokumentów i rzeczy na egzamin:
 
 OBOWIĄZKOWE:
@@ -135,10 +123,10 @@ PAMIĘTAJ:
     ];
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Pro Tipy'),
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -171,7 +159,7 @@ PAMIĘTAJ:
                       Text(
                         'Porady ekspertów',
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                         ),
@@ -179,7 +167,7 @@ PAMIĘTAJ:
                       Text(
                         'Wszystko, co musisz wiedzieć przed egzaminem',
                         style: GoogleFonts.poppins(
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -189,7 +177,7 @@ PAMIĘTAJ:
               ],
             ),
           ),
-          ...tips.map((tip) => _TipCard(tip: tip, isPremium: isPremium)),
+          ...tips.map((tip) => _TipCard(tip: tip)),
         ],
       ),
     );
@@ -199,37 +187,28 @@ PAMIĘTAJ:
 class _TipData {
   final String icon;
   final String title;
-  final bool premium;
   final String content;
 
   const _TipData({
     required this.icon,
     required this.title,
-    required this.premium,
     required this.content,
   });
 }
 
-class _TipCard extends ConsumerWidget {
+class _TipCard extends StatelessWidget {
   final _TipData tip;
-  final bool isPremium;
 
-  const _TipCard({required this.tip, required this.isPremium});
+  const _TipCard({required this.tip});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLocked = tip.premium && !isPremium;
-
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: tip.premium
-              ? AppTheme.premiumGold.withAlpha(40)
-              : AppTheme.dividerColor,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -243,107 +222,23 @@ class _TipCard extends ConsumerWidget {
                 child: Text(
                   tip.title,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              if (tip.premium)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.premiumGold.withAlpha(20),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: AppTheme.premiumGold.withAlpha(60),
-                    ),
-                  ),
-                  child: Text(
-                    'PRO',
-                    style: GoogleFonts.poppins(
-                      color: AppTheme.premiumGold,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
             ],
           ),
           children: [
-            if (isLocked)
-              Stack(
-                children: [
-                  Text(
-                    tip.content,
-                    style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
-                      height: 1.6,
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppTheme.bgCard.withAlpha(0),
-                            AppTheme.bgCard,
-                          ],
-                          stops: const [0.0, 0.7],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const Icon(
-                            Icons.lock_rounded,
-                            color: AppTheme.premiumGold,
-                            size: 28,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Odblokuj w Premium',
-                            style: GoogleFonts.poppins(
-                              color: AppTheme.premiumGold,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: 160,
-                            child: ElevatedButton(
-                              onPressed: () => context.push('/premium'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.premiumGold,
-                                foregroundColor: Colors.black,
-                                minimumSize: const Size(0, 40),
-                              ),
-                              child: const Text('Kup Premium'),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            else
-              Text(
-                tip.content,
-                style: GoogleFonts.poppins(
-                  color: AppTheme.textSecondary,
-                  fontSize: 13,
-                  height: 1.6,
-                ),
+            Text(
+              tip.content,
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13,
+                height: 1.6,
               ),
+            ),
           ],
         ),
       ),

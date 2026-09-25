@@ -13,6 +13,10 @@ class AppTheme {
   static const Color schoolPin = Color(0xFF00C853);
   static const Color routeBlue = Color(0xFF2979FF);
   static const Color premiumGold = Color(0xFFFFD700);
+  static Color premiumAccent(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light
+      ? const Color(0xFF8A6400)
+      : premiumGold;
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFA7B0C8);
   static const Color dividerColor = Color(0xFF282D3D);

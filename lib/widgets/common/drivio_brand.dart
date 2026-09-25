@@ -82,27 +82,7 @@ class DrivioBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mark = Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * .31),
-        gradient: AppTheme.brandGradient,
-        border: Border.all(color: Colors.white.withAlpha(26)),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withAlpha(72),
-            blurRadius: size * .42,
-            offset: Offset(0, size * .14),
-          ),
-        ],
-      ),
-      child: Icon(
-        Icons.directions_car_rounded,
-        color: Colors.white,
-        size: size * .49,
-      ),
-    );
+    final mark = DrivioLogo(size: size);
 
     if (!showWordmark) return mark;
 
@@ -127,6 +107,37 @@ class DrivioBrandMark extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [mark, const SizedBox(height: 13), wordmark],
+    );
+  }
+}
+
+class DrivioLogo extends StatelessWidget {
+  final double size;
+
+  const DrivioLogo({super.key, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * .24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.routeBlue.withAlpha(48),
+            blurRadius: size * .32,
+            offset: Offset(0, size * .1),
+          ),
+        ],
+      ),
+      child: Image.asset(
+        'assets/images/app_icon.png',
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+      ),
     );
   }
 }

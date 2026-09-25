@@ -39,17 +39,19 @@ class PremiumScreen extends ConsumerWidget {
 
     if (isPremium && !showCheckoutPreview) {
       return Scaffold(
-        backgroundColor: AppTheme.bgDark,
-        appBar: AppBar(backgroundColor: AppTheme.bgDark),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.verified_rounded,
-                  color: AppTheme.premiumGold,
+                  color: AppTheme.premiumAccent(context),
                   size: 76,
                 ),
                 const SizedBox(height: 16),
@@ -57,7 +59,7 @@ class PremiumScreen extends ConsumerWidget {
                   'Jesteś już Premium',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 23,
                     fontWeight: FontWeight.w800,
                   ),
@@ -67,7 +69,7 @@ class PremiumScreen extends ConsumerWidget {
                   'Pełny dostęp do Drivio jest aktywny na tym koncie.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -80,13 +82,16 @@ class PremiumScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           tooltip: 'Zamknij',
-          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          icon: Icon(
+            Icons.close_rounded,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
@@ -368,7 +373,7 @@ class _PremiumHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.premiumGold.withAlpha(90)),
       ),
@@ -384,9 +389,9 @@ class _PremiumHero extends StatelessWidget {
                   color: AppTheme.premiumGold.withAlpha(24),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.workspace_premium_rounded,
-                  color: AppTheme.premiumGold,
+                  color: AppTheme.premiumAccent(context),
                   size: 24,
                 ),
               ),
@@ -395,7 +400,7 @@ class _PremiumHero extends StatelessWidget {
                 child: Text(
                   'Drivio Premium',
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 25,
                     fontWeight: FontWeight.w800,
                     height: 1.1,
@@ -408,7 +413,7 @@ class _PremiumHero extends StatelessWidget {
           Text(
             'Mniej limitów, więcej przygotowania do egzaminu.',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 17,
               fontWeight: FontWeight.w700,
               height: 1.25,
@@ -418,7 +423,7 @@ class _PremiumHero extends StatelessWidget {
           Text(
             'Odblokuj pełny dostęp do pułapek, tras i materiałów premium w jednym miejscu.',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 13,
               height: 1.5,
             ),
@@ -496,7 +501,7 @@ class _BenefitRow extends StatelessWidget {
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -505,7 +510,7 @@ class _BenefitRow extends StatelessWidget {
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -537,7 +542,7 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                 ),
@@ -546,7 +551,7 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 subtitle,
                 style: GoogleFonts.poppins(
-                  color: AppTheme.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                 ),
               ),
@@ -606,10 +611,10 @@ class _PlanCard extends StatelessWidget {
         : iapProduct?.storeProduct.priceString ?? plan.price;
 
     final borderColor = productUnavailable
-        ? AppTheme.dividerColor
+        ? Theme.of(context).colorScheme.outlineVariant
         : plan.highlighted
         ? AppTheme.primary
-        : AppTheme.dividerColor;
+        : Theme.of(context).colorScheme.outlineVariant;
 
     return Container(
       width: double.infinity,
@@ -618,7 +623,7 @@ class _PlanCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: plan.highlighted
             ? AppTheme.primary.withAlpha(18)
-            : AppTheme.bgCard,
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: borderColor, width: plan.highlighted ? 2 : 1),
       ),
@@ -641,7 +646,7 @@ class _PlanCard extends StatelessWidget {
               Text(
                 plan.period,
                 style: GoogleFonts.poppins(
-                  color: AppTheme.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -659,7 +664,7 @@ class _PlanCard extends StatelessWidget {
                     Text(
                       plan.label,
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
@@ -668,7 +673,7 @@ class _PlanCard extends StatelessWidget {
                     Text(
                       plan.note,
                       style: GoogleFonts.poppins(
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                         height: 1.35,
                       ),
@@ -685,8 +690,8 @@ class _PlanCard extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: GoogleFonts.poppins(
                       color: productUnavailable
-                          ? AppTheme.textSecondary
-                          : Colors.white,
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
                       fontSize: productUnavailable ? 16 : 21,
                       fontWeight: FontWeight.w800,
                     ),
@@ -694,7 +699,7 @@ class _PlanCard extends StatelessWidget {
                   Text(
                     productUnavailable ? 'spróbuj później' : 'brutto',
                     style: GoogleFonts.poppins(
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                     ),
                   ),
@@ -711,15 +716,23 @@ class _PlanCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: plan.highlighted
                     ? AppTheme.primary
-                    : AppTheme.bgDark,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppTheme.dividerColor,
-                disabledForegroundColor: AppTheme.textSecondary,
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                foregroundColor: plan.highlighted
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
+                disabledBackgroundColor: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant,
+                disabledForegroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: plan.highlighted
                       ? BorderSide.none
-                      : const BorderSide(color: AppTheme.dividerColor),
+                      : BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
                 ),
               ),
               child: Text(
@@ -747,7 +760,7 @@ class _InlineBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = strong ? AppTheme.primary : AppTheme.premiumGold;
+    final color = strong ? AppTheme.primary : AppTheme.premiumAccent(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
@@ -813,7 +826,7 @@ class _NoticeBox extends StatelessWidget {
                 Text(
                   text,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -848,7 +861,7 @@ class _Footnote extends StatelessWidget {
               : 'Wersja web otwiera bezpieczną stronę płatności. W aplikacji iOS zakup przejmuje App Store.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
-            color: AppTheme.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 11,
             height: 1.5,
           ),

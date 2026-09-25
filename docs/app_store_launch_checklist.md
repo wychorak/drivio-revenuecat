@@ -1,4 +1,4 @@
-# Drivio — release readiness (24 września 2026)
+# Drivio — release readiness (25 września 2026)
 
 ## Gotowe w kodzie
 
@@ -19,14 +19,14 @@
 - Reguły backendu uznają administratora wyłącznie po custom claimie `admin=true`; `ADMIN_EMAILS` służy tylko chronionej funkcji nadającej claim i filtrowaniu UI.
 - Admin ma kolejkę zgłoszeń i może odrzucić zgłoszenie lub usunąć zgłoszoną treść.
 - Chroniona przez App Check funkcja usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase. Na iOS konto połączone z Apple wymaga ponownej autoryzacji, a aplikacja cofa token Apple przed usunięciem. Ekran ostrzega, że usunięcie konta nie anuluje subskrypcji Apple.
-- Finalne ikony Drivio i splash screen zostały wygenerowane dla iOS, Androida, macOS, Windows i web.
+- Nowe logo Drivio jest w ikonach iOS i Androida oraz w głównych miejscach interfejsu. Ikony macOS, Windows i web nie były częścią tej podmiany.
 - Polityka prywatności, manifest prywatności i regulamin opisują AdMob oraz brak reklamy behawioralnej.
 
 ## Blokery w panelach — wykonać przed TestFlight
 
 1. **Codemagic:** grupa musi nazywać się dokładnie `drivio secrets`. Na załączonym ekranie widać Maps/admin/kontakt, ale build wymaga też `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_PROJECT_ID` i `FIREBASE_STORAGE_BUCKET`.
 2. **App Check:** zarejestrować `com.drivio.com` w Firebase App Check, najpierw obserwować metryki TestFlight, a potem włączyć enforcement dla Firestore, Storage i Authentication. Nie włączać enforcement przed pierwszym poprawnym tokenem z TestFlight.
-3. **Apple login — nieustawione, do wykonania przez współpracownika:** w Firebase Authentication → Sign-in method → Apple włączyć provider i uzupełnić Service ID, Team ID, Key ID `6D43VGP33F` oraz odpowiadający mu prywatny `.p8` klucza `driviokey`. Na zrzucie ustawień aplikacji iOS w Firebase pole Team ID jest również puste — uzupełnić je właściwą wartością z Apple Developer. Nie używać zamiast tego kluczy App Store Connect ani In-App Purchase z archiwalnych plików. W Apple Developer potwierdzić capability dla App ID `com.drivio.com` i odświeżyć profile. Po konfiguracji przetestować logowanie oraz usunięcie konta Apple na fizycznym iPhonie.
+3. **Apple login — provider włączony, konfiguracja do potwierdzenia:** zrzut z 25.09 pokazuje `Enabled` w Firebase Authentication, ale nie pokazuje zapisanych pól. Otworzyć provider Apple i sprawdzić, czy **Services ID jest identyfikatorem utworzonym w Apple Developer**, a nie adresem e-mail `noreply@...`; czy Team ID, Key ID i prywatny klucz Sign in with Apple należą do tego samego zespołu i klucza; oraz czy sekcja OAuth code flow jest kompletna. W Apple Developer Services ID musi być powiązany z App ID `com.drivio.com`, domeną `drivio-a7d9c.firebaseapp.com` i Return URL `https://drivio-a7d9c.firebaseapp.com/__/auth/handler`. Adres `noreply@drivio-a7d9c.firebaseapp.com` należy tylko do konfiguracji Apple Private Email Relay. Nie umieszczać prywatnego klucza w repozytorium ani na zrzutach ekranu; klucz pokazany wcześniej na zrzucie należy wymienić przed wydaniem. W ustawieniach aplikacji iOS w Firebase osobno potwierdzić Team ID. W Apple Developer potwierdzić capability Sign in with Apple dla App ID i odświeżyć profile. Na fizycznym iPhonie przetestować pierwsze/ponowne logowanie oraz usunięcie konta Apple (ponowna autoryzacja i cofnięcie tokenu).
    **Anonymous można wyłączyć:** tryb gościa został usunięty, aplikacja wymaga logowania (Apple, Google lub e-mail). W App Review Information podać konto demo z potwierdzonym e-mailem.
 4. **AdMob:** w sekcji Privacy & messaging opublikować komunikat GDPR/UMP dla aplikacji, uzupełnić dane płatności i `app-ads.txt`. Bez opublikowanego komunikatu UMP baner może legalnie się nie załadować.
 5. **App Store Connect:** dodać trzy IAP do wersji wysyłanej do review, uzupełnić Agreements/Tax/Banking, lokalizacje, screenshot review i ceny. W App Privacy zaznaczyć m.in. Purchase History, User Content, Precise Location, Device ID i Advertising Data zgodnie z finalnym użyciem.

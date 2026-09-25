@@ -9,10 +9,10 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Regulamin'),
-        backgroundColor: AppTheme.bgDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -20,7 +20,7 @@ class TermsScreen extends StatelessWidget {
           Text(
             'Regulamin aplikacji Drivio',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -29,12 +29,13 @@ class TermsScreen extends StatelessWidget {
           Text(
             'Ostatnia aktualizacja: 19 września 2026',
             style: GoogleFonts.poppins(
-              color: AppTheme.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
           const SizedBox(height: 24),
           _section(
+            context,
             '§1. Postanowienia ogólne',
             '''1. Niniejszy Regulamin określa zasady korzystania z aplikacji mobilnej Drivio (dalej: "Aplikacja"), dostępnej na platformach Android i iOS.
 
@@ -47,6 +48,7 @@ class TermsScreen extends StatelessWidget {
 5. Aplikacja jest przeznaczona dla osób pełnoletnich lub za zgodą rodziców/opiekunów prawnych dla osób powyżej 16. roku życia.''',
           ),
           _section(
+            context,
             '§2. Zakres usług',
             '''1. Aplikacja Drivio udostępnia:
    a) mapę "pułapek egzaminacyjnych" na terenie Szczecina i innych miast,
@@ -62,6 +64,7 @@ class TermsScreen extends StatelessWidget {
 4. Usługodawca nie gwarantuje ciągłości działania usług i zastrzega sobie prawo do czasowego wyłączenia Aplikacji w celach konserwacyjnych.''',
           ),
           _section(
+            context,
             '§3. Rejestracja i konto użytkownika',
             '''1. Korzystanie z pełnych funkcji Aplikacji wymaga utworzenia konta użytkownika.
 
@@ -76,6 +79,7 @@ class TermsScreen extends StatelessWidget {
 6. Użytkownik może usunąć swoje konto w dowolnym momencie z poziomu ustawień Aplikacji.''',
           ),
           _section(
+            context,
             '§4. Subskrypcja Premium',
             '''1. Aplikacja oferuje płatne plany Premium:
    a) Plan tygodniowy – subskrypcja odnawiana co tydzień,
@@ -93,6 +97,7 @@ class TermsScreen extends StatelessWidget {
 6. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta. Zwroty za zakupy w App Store obsługuje Apple.''',
           ),
           _section(
+            context,
             '§5. Treści użytkowników',
             '''1. Użytkownicy mogą dodawać treści do Aplikacji, w tym opisy pułapek egzaminacyjnych, zdjęcia, komentarze i opinie.
 
@@ -115,6 +120,7 @@ class TermsScreen extends StatelessWidget {
 7. Usługodawca nie weryfikuje dokładności informacji dodawanych przez użytkowników.''',
           ),
           _section(
+            context,
             '§6. Prawa autorskie i własność intelektualna',
             '''1. Wszelkie prawa do Aplikacji, w tym kodu źródłowego, szaty graficznej, logotypu i nazwy, należą do Usługodawcy.
 
@@ -123,6 +129,7 @@ class TermsScreen extends StatelessWidget {
 3. Usługodawca szanuje prawa autorskie osób trzecich. W przypadku naruszenia prosimy o kontakt.''',
           ),
           _section(
+            context,
             '§7. Odpowiedzialność',
             '''1. Aplikacja dostarcza informacji o charakterze edukacyjnym i pomocniczym. Nie zastępuje oficjalnych materiałów egzaminacyjnych ani przepisów ruchu drogowego.
 
@@ -135,6 +142,7 @@ class TermsScreen extends StatelessWidget {
 3. Usługodawca nie ponosi odpowiedzialności za wynik egzaminu na prawo jazdy użytkownika.''',
           ),
           _section(
+            context,
             '§8. Ochrona danych osobowych',
             '''1. Zasady przetwarzania danych osobowych opisano w Polityce Prywatności, dostępnej w Aplikacji.
 
@@ -143,6 +151,7 @@ class TermsScreen extends StatelessWidget {
 3. Dane osobowe przetwarzane są zgodnie z RODO (Rozporządzenie Parlamentu Europejskiego i Rady (UE) 2016/679).''',
           ),
           _section(
+            context,
             '§9. Reklamy i śledzenie',
             '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Drivio Pro jest wolne od reklam.
 
@@ -153,6 +162,7 @@ class TermsScreen extends StatelessWidget {
 4. Użytkownik może zarządzać uprawnieniami Aplikacji w ustawieniach urządzenia.''',
           ),
           _section(
+            context,
             '§10. Postępowanie reklamacyjne',
             '''1. Reklamacje dotyczące działania Aplikacji należy kierować na adres: ${AppConfig.contactEmail}
 
@@ -166,6 +176,7 @@ class TermsScreen extends StatelessWidget {
 4. O wyniku rozpatrzenia reklamacji użytkownik zostanie poinformowany drogą elektroniczną.''',
           ),
           _section(
+            context,
             '§11. Rozwiązanie umowy',
             '''1. Użytkownik może w każdej chwili zaprzestać korzystania z Aplikacji i usunąć konto.
 
@@ -174,6 +185,7 @@ class TermsScreen extends StatelessWidget {
 3. Usługodawca może natychmiastowo rozwiązać umowę, gdy użytkownik rażąco narusza Regulamin.''',
           ),
           _section(
+            context,
             '§12. Postanowienia końcowe',
             '''1. W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego.
 
@@ -191,7 +203,7 @@ Drivio – Szczecin, Polska''',
     );
   }
 
-  Widget _section(String title, String content) {
+  Widget _section(BuildContext context, String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -207,13 +219,13 @@ Drivio – Szczecin, Polska''',
         Text(
           content,
           style: GoogleFonts.poppins(
-            color: AppTheme.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 13,
             height: 1.7,
           ),
         ),
         const SizedBox(height: 20),
-        const Divider(color: AppTheme.dividerColor),
+        Divider(color: Theme.of(context).colorScheme.outlineVariant),
         const SizedBox(height: 12),
       ],
     );

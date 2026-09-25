@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/providers/auth_provider.dart';
+import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class CitySelectScreen extends ConsumerStatefulWidget {
   const CitySelectScreen({super.key});
@@ -54,31 +55,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 48),
-              // Logo
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE30613), Color(0xFFB00010)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withAlpha(80),
-                      blurRadius: 24,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.directions_car_rounded,
-                  color: Colors.white,
-                  size: 42,
-                ),
-              ),
+              const DrivioLogo(size: 80),
               const SizedBox(height: 16),
               Text(
                 'drivio',
