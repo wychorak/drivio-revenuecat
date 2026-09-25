@@ -28,7 +28,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 19 września 2026',
+            'Ostatnia aktualizacja: 25 września 2026',
             style: GoogleFonts.poppins(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
@@ -38,11 +38,11 @@ class PrivacyScreen extends StatelessWidget {
           _section(
             context,
             '1. Administrator danych',
-            '''Administratorem danych jest operator aplikacji Drivio. Przed publiczną publikacją operator uzupełni pełną nazwę lub imię i nazwisko oraz adres wymagany przez prawo.
+            '''Administratorem danych osobowych jest Marysia Rycyk, osoba fizyczna prowadząca aplikację Drivio (dalej: "Administrator").
 
 Kontakt z Administratorem:
 Email: ${AppConfig.contactEmail}
-Strona: www.drivio.app
+Strona: www.drivioapp.pl
 
 W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt pod powyższymi adresami.''',
           ),

@@ -421,7 +421,7 @@ class _PremiumHero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Odblokuj pełny dostęp do pułapek, tras i materiałów premium w jednym miejscu.',
+            'Odblokuj pełny dostęp do pułapek i filmów instruktażowych w jednym miejscu.',
             style: GoogleFonts.poppins(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 13,
@@ -457,9 +457,9 @@ class _BenefitsSection extends StatelessWidget {
           subtitle: 'Szybkie wskazówki do trudnych manewrów.',
         ),
         _BenefitRow(
-          icon: Icons.route_rounded,
-          title: 'Trasy egzaminacyjne',
-          subtitle: 'Lepsze przygotowanie przed realnym egzaminem.',
+          icon: Icons.block_rounded,
+          title: 'Bez reklam',
+          subtitle: 'Żadnych banerów ani reklam przed pułapkami.',
         ),
       ],
     );

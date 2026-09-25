@@ -27,7 +27,7 @@ class TermsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 19 września 2026',
+            'Ostatnia aktualizacja: 25 września 2026',
             style: GoogleFonts.poppins(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
@@ -39,7 +39,7 @@ class TermsScreen extends StatelessWidget {
             '§1. Postanowienia ogólne',
             '''1. Niniejszy Regulamin określa zasady korzystania z aplikacji mobilnej Drivio (dalej: "Aplikacja"), dostępnej na platformach Android i iOS.
 
-2. Operatorem Aplikacji jest podmiot wskazany w finalnej wersji danych usługodawcy. Przed publiczną publikacją należy uzupełnić jego pełną nazwę lub imię i nazwisko, adres oraz wymagane dane rejestrowe (dalej: "Usługodawca").
+2. Operatorem Aplikacji jest Marysia Rycyk, osoba fizyczna (dalej: "Usługodawca"). Kontakt: ${AppConfig.contactEmail}, strona: www.drivioapp.pl.
 
 3. Korzystanie z Aplikacji oznacza akceptację niniejszego Regulaminu w całości.
 
