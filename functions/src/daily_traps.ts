@@ -1,7 +1,9 @@
 import {Timestamp} from 'firebase-admin/firestore';
 
-export const FREE_DAILY_TRAPS = 2;
-export const REWARDED_DAILY_TRAPS = 1;
+/** One trap a day without ads, two more unlocked by rewarded ads. */
+export const FREE_DAILY_TRAPS = 1;
+export const REWARDED_DAILY_TRAPS = 2;
+const MAX_DAILY_TRAPS = FREE_DAILY_TRAPS + REWARDED_DAILY_TRAPS;
 
 const warsawDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Warsaw',
@@ -22,8 +24,19 @@ export interface TrapAllowance {
   views: number;
   freeRemaining: number;
   totalRemaining: number;
+  /** True once any rewarded view was granted today (kept for older apps). */
   rewardGranted: boolean;
+  rewardsGranted: number;
+  rewardTransactionIds: string[];
   canWatchAd: boolean;
+}
+
+function rewardCount(data: FirebaseFirestore.DocumentData): number {
+  if (Number.isInteger(data.rewardsGranted)) {
+    return Math.max(0, Math.min(REWARDED_DAILY_TRAPS, data.rewardsGranted));
+  }
+  // Documents written before multiple rewards stored a single boolean.
+  return data.rewardGranted === true ? 1 : 0;
 }
 
 export function trapAllowance(
@@ -32,19 +45,35 @@ export function trapAllowance(
 ): TrapAllowance {
   const active = data?.dayKey === dayKey;
   const views = active && Number.isInteger(data?.views)
-    ? Math.max(0, Math.min(3, data!.views))
+    ? Math.max(0, Math.min(MAX_DAILY_TRAPS, data!.views))
     : 0;
-  const rewardGranted = active && data?.rewardGranted === true;
+  const rewardsGranted = active ? rewardCount(data!) : 0;
+  const rewardTransactionIds = active && Array.isArray(data?.rewardTransactionIds)
+    ? data!.rewardTransactionIds
+      .filter((id: unknown): id is string => typeof id === 'string')
+      .slice(0, REWARDED_DAILY_TRAPS)
+    : [];
+  const totalRemaining = Math.max(0, FREE_DAILY_TRAPS + rewardsGranted - views);
   return {
     dayKey,
     views,
     freeRemaining: Math.max(0, FREE_DAILY_TRAPS - views),
-    totalRemaining: Math.max(
-      0,
-      FREE_DAILY_TRAPS + (rewardGranted ? REWARDED_DAILY_TRAPS : 0) - views,
-    ),
-    rewardGranted,
-    canWatchAd: !rewardGranted && views >= FREE_DAILY_TRAPS,
+    totalRemaining,
+    rewardGranted: rewardsGranted > 0,
+    rewardsGranted,
+    rewardTransactionIds,
+    canWatchAd: totalRemaining === 0 && rewardsGranted < REWARDED_DAILY_TRAPS,
+  };
+}
+
+/** Fields persisted for [allowance]; `set` replaces the whole usage doc. */
+export function usageFields(allowance: TrapAllowance) {
+  return {
+    dayKey: allowance.dayKey,
+    views: allowance.views,
+    rewardGranted: allowance.rewardsGranted > 0,
+    rewardsGranted: allowance.rewardsGranted,
+    rewardTransactionIds: allowance.rewardTransactionIds,
   };
 }
 

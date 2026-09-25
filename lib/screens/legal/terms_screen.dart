@@ -59,7 +59,7 @@ class TermsScreen extends StatelessWidget {
 
 2. Część funkcji Aplikacji jest dostępna wyłącznie dla użytkowników posiadających subskrypcję Premium.
 
-3. Bezpłatni użytkownicy mogą przeglądać do ${5} pułapek dziennie.
+3. Bezpłatni użytkownicy mogą dziennie otworzyć 1 pułapkę bez reklam oraz 2 kolejne, oglądając reklamę z nagrodą przed każdą z nich (szczegóły w §9).
 
 4. Usługodawca nie gwarantuje ciągłości działania usług i zastrzega sobie prawo do czasowego wyłączenia Aplikacji w celach konserwacyjnych.''',
           ),
@@ -153,7 +153,7 @@ class TermsScreen extends StatelessWidget {
           _section(
             context,
             '§9. Reklamy i śledzenie',
-            '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Dwie odsłony pułapek dziennie są darmowe; jedną dodatkową można odblokować po dobrowolnym obejrzeniu dostępnej reklamy z nagrodą. Limit resetuje się o północy czasu polskiego. Drivio Pro nie ma limitu pułapek ani reklam.
+            '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Jedna odsłona pułapki dziennie jest darmowa; dwie kolejne można odblokować, oglądając dobrowolnie po jednej reklamie z nagrodą za każdą. Limit resetuje się o północy czasu polskiego. Drivio Pro nie ma limitu pułapek ani reklam.
 
 2. Reklamy są ładowane dopiero po sprawdzeniu wymaganych zgód. Aplikacja żąda reklam niepersonalizowanych i nie używa danych użytkownika do reklamy behawioralnej.
 

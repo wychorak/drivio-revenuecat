@@ -7,9 +7,10 @@ Backend contains:
   account and marks that account Premium;
 - `revenueCatWebhook` — idempotent RevenueCat-to-Firestore Premium sync.
 - `getTrapViewStatus` and `consumeDailyTrapView` — App Check-protected daily
-  allowance (2 free views, 1 after reward), reset at midnight Europe/Warsaw;
+  allowance (1 free view, up to 2 more after rewards), reset at midnight Europe/Warsaw;
 - `admobRewardSsv` — validates Google's ECDSA-signed AdMob callback before
-  granting the one rewarded view for the day.
+  granting one rewarded view per signed callback (at most two a day,
+  each AdMob transaction counted once).
 
 Before deployment, configure the RevenueCat authorization header secret:
 

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:drivio/config/app_config.dart';
 import 'package:drivio/models/comment_model.dart';
 import 'package:drivio/models/report_model.dart';
 import 'package:drivio/models/trap_model.dart';
@@ -509,8 +510,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _canWatchAd && AdService.instance.isSupported
-                      ? 'Dwie darmowe pułapki wykorzystane. Obejrzyj reklamę, '
-                            'aby zobaczyć jeszcze jedną dzisiaj, albo wybierz Premium.'
+                      ? 'Obejrzyj reklamę, aby odblokować kolejną pułapkę. '
+                            'Dziennie możesz odblokować w ten sposób '
+                            '${AppConfig.rewardedDailyTrapLimit} pułapki. '
+                            'Premium znosi limit.'
                       : 'Wróć jutro albo odblokuj nielimitowany dostęp w Premium.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(

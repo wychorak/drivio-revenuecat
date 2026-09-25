@@ -14,7 +14,9 @@ import {
 } from './revenuecat';
 import {
   hasBackendPremium,
+  REWARDED_DAILY_TRAPS,
   trapAllowance,
+  usageFields,
   warsawDayKey,
 } from './daily_traps';
 import {
@@ -79,18 +81,13 @@ export const consumeDailyTrapView = onCall(
       if (allowance.totalRemaining === 0) {
         return {...allowance, allowed: false, premium: false};
       }
+      const updated = usageFields({...allowance, views: allowance.views + 1});
       transaction.set(usageRef, {
-        dayKey: allowance.dayKey,
-        views: allowance.views + 1,
-        rewardGranted: allowance.rewardGranted,
+        ...updated,
         updatedAt: FieldValue.serverTimestamp(),
       });
       return {
-        ...trapAllowance({
-          dayKey: allowance.dayKey,
-          views: allowance.views + 1,
-          rewardGranted: allowance.rewardGranted,
-        }, allowance.dayKey),
+        ...trapAllowance(updated, allowance.dayKey),
         allowed: true,
         premium: false,
       };
@@ -153,12 +150,20 @@ export const admobRewardSsv = onRequest(
       await getFirestore().runTransaction(async (transaction) => {
         const usage = await transaction.get(usageRef);
         const allowance = trapAllowance(usage.data(), warsawDayKey(now));
-        if (allowance.rewardGranted) return;
+        // AdMob may retry a callback, so each transaction counts only once.
+        if (allowance.rewardsGranted >= REWARDED_DAILY_TRAPS ||
+            allowance.rewardTransactionIds.includes(reward.transactionId)) {
+          return;
+        }
         transaction.set(usageRef, {
-          dayKey: allowance.dayKey,
-          views: allowance.views,
-          rewardGranted: true,
-          rewardTransactionId: reward.transactionId,
+          ...usageFields({
+            ...allowance,
+            rewardsGranted: allowance.rewardsGranted + 1,
+            rewardTransactionIds: [
+              ...allowance.rewardTransactionIds,
+              reward.transactionId,
+            ],
+          }),
           updatedAt: FieldValue.serverTimestamp(),
         });
       });

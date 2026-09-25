@@ -15,7 +15,7 @@
 - Debug build używa testowego ID Google. Produkcja żąda reklam niepersonalizowanych i przechodzi przez UMP przed pierwszym żądaniem.
 - Firebase App Check jest aktywowany w aplikacji: App Attest z fallbackiem DeviceCheck na iOS, Play Integrity na Androidzie i provider debug w debug buildzie.
 - Firestore i Storage mają reguły default-deny, walidację pól, ownership, limity list/uploadu i custom claim `admin`.
-- Limit pułapek: 2 darmowe odsłony i 1 po podpisanym potwierdzeniu reklamy z nagrodą na dzień kalendarzowy w strefie `Europe/Warsaw`. Transakcje i reset są po stronie Functions; klient nie może sam dopisać nagrody.
+- Limit pułapek: 1 darmowa odsłona i 2 kolejne, każda po podpisanym potwierdzeniu reklamy z nagrodą, na dzień kalendarzowy w strefie `Europe/Warsaw`. Transakcje i reset są po stronie Functions; klient nie może sam dopisać nagrody.
 - Reguły backendu uznają administratora wyłącznie po custom claimie `admin=true`; `ADMIN_EMAILS` służy tylko chronionej funkcji nadającej claim i filtrowaniu UI.
 - Admin ma kolejkę zgłoszeń i może odrzucić zgłoszenie lub usunąć zgłoszoną treść.
 - Chroniona przez App Check funkcja usuwa własne komentarze, zgłoszenia, pułapki, zdjęcia, dokument użytkownika i konto Firebase. Na iOS konto połączone z Apple wymaga ponownej autoryzacji, a aplikacja cofa token Apple przed usunięciem. Ekran ostrzega, że usunięcie konta nie anuluje subskrypcji Apple.

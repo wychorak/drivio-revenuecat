@@ -167,7 +167,7 @@ Wersja webowa Aplikacji może używać plików cookie niezbędnych do funkcjonow
           _section(
             context,
             '9. Reklamy w wersji bezpłatnej',
-            '''W bezpłatnej wersji Drivio wyświetlamy dyskretny baner Google AdMob. Po wykorzystaniu dwóch darmowych odsłon pułapek użytkownik może dobrowolnie obejrzeć reklamę pełnoekranową z nagrodą, aby odblokować jedną dodatkową odsłonę tego dnia. Użytkownicy Drivio Pro nie widzą reklam.
+            '''W bezpłatnej wersji Drivio wyświetlamy dyskretny baner Google AdMob. Po wykorzystaniu darmowej odsłony pułapki użytkownik może dobrowolnie obejrzeć reklamę pełnoekranową z nagrodą; każda obejrzana reklama odblokowuje jedną dodatkową odsłonę, maksymalnie dwie dziennie. Użytkownicy Drivio Pro nie widzą reklam.
 
 Przed załadowaniem reklamy Google User Messaging Platform sprawdza wymagane zgody. Drivio żąda wyłącznie reklam niepersonalizowanych, które nie są dobierane na podstawie wcześniejszej aktywności użytkownika. Google może przetwarzać dane techniczne urządzenia, adres IP oraz dane o wyświetleniu reklamy w celu dostarczenia reklamy, pomiaru i zapobiegania nadużyciom. Potwierdzenie nagrody jest sprawdzane przez Firebase na podstawie identyfikatora użytkownika i podpisanego zdarzenia AdMob.''',
           ),

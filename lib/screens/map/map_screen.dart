@@ -286,11 +286,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          status.freeRemaining > 0
+                          status.freeRemaining == 1
+                              ? '1 darmowa pułapka dziś'
+                              : status.freeRemaining > 1
                               ? '${status.freeRemaining} darmowe pułapki dziś'
                               : status.canWatchAd &&
                                     AdService.instance.isSupported
-                              ? '1 pułapka za reklamę'
+                              ? 'Kolejna pułapka za reklamę'
                               : status.totalRemaining > 0
                               ? '1 pułapka po reklamie'
                               : 'Limit pułapek wykorzystany',
