@@ -136,8 +136,8 @@ const _guides = {
       ),
       _Step(
         'Wyjazd: przygotowanie',
-        'Włącz wsteczny bieg i kierunkowskaz. Rozejrzyj się, czy możesz '
-            'bezpiecznie wyjechać.',
+        'Włącz wsteczny bieg i lewy kierunkowskaz — po wyjeździe pojedziesz '
+            'w lewo. Rozejrzyj się, czy możesz bezpiecznie wyjechać.',
         'Przed ruszeniem sprawdź lusterka i spójrz przez ramię.',
       ),
       _Step(

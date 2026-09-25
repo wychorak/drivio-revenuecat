@@ -20,7 +20,7 @@ class AppConfig {
     const fromDefine = String.fromEnvironment('CONTACT_EMAIL');
     return fromDefine.isNotEmpty
         ? fromDefine
-        : dotenv.env['CONTACT_EMAIL'] ?? 'kontakt@drivio.pl';
+        : dotenv.env['CONTACT_EMAIL'] ?? 'drivioappkontakt@gmail.com';
   }
 
   static Set<String> get adminEmails => adminEmailsRaw
