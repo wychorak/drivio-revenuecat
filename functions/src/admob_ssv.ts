@@ -30,16 +30,43 @@ export function verifiedParams(
   const match = /^(.*)&signature=([^&]+)&key_id=([0-9]+)$/.exec(query);
   if (!match) return null;
   const [, signedPayload, encodedSignature] = match;
+  let signature: Buffer;
   try {
-    const verifier = createVerify('SHA256');
-    verifier.update(signedPayload, 'utf8');
-    verifier.end();
-    const signature = Buffer.from(encodedSignature, 'base64url');
-    if (!verifier.verify(keyPem, signature)) return null;
+    // The signature may arrive percent-encoded (e.g. "=" padding as %3D).
+    // Node's base64 decoder silently skips "%", which would corrupt it.
+    signature = Buffer.from(decodeURIComponent(encodedSignature), 'base64url');
   } catch (_) {
     return null;
   }
-  return new URLSearchParams(signedPayload);
+  const verified = signedPayloadVariants(signedPayload).some((payload) => {
+    try {
+      const verifier = createVerify('SHA256');
+      verifier.update(payload, 'utf8');
+      verifier.end();
+      return verifier.verify(keyPem, signature);
+    } catch (_) {
+      return false;
+    }
+  });
+  return verified ? new URLSearchParams(signedPayload) : null;
+}
+
+/**
+ * Candidate strings for the bytes AdMob signed. AdMob signs the query after
+ * percent-decoding (a reward item "Odblokowanie pułapki" is signed as is,
+ * but arrives as "Odblokowanie%20pu%C5%82apki"), so the decoded form is the
+ * one that matches; the raw forms cover ASCII-only callbacks. Every variant
+ * still needs a valid Google signature, so accepting them adds no forgery
+ * risk.
+ */
+function signedPayloadVariants(raw: string): string[] {
+  const variants = [raw, raw.replace(/%20/g, '+')];
+  try {
+    variants.push(decodeURIComponent(raw.replace(/\+/g, '%20')));
+  } catch (_) {
+    // Malformed escapes: only the raw forms apply.
+  }
+  return [...new Set(variants)];
 }
 
 /**

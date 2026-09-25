@@ -77,3 +77,19 @@ test('AdMob "Verify URL" sample is signed but never grants a reward', () => {
   equal(verifiedParams(url.replace('ad_unit=1234567890', 'ad_unit=8516770878'),
     pem), null);
 });
+
+// Real "Verify URL" callback captured from AdMob, signed with Google's
+// production key 3335741209. AdMob signs the decoded query, so the
+// percent-encoded reward item must be decoded before verifying.
+const ADMOB_VERIFY_URL =
+  '/admobRewardSsv?ad_network=5450213213286189855&ad_unit=1234567890&reward_amount=1&reward_item=Odblokowanie%20pu%C5%82apki&timestamp=1790368140021&transaction_id=123456789&signature=MEQCIBYBhBjuiTygD-Ut7pLNhlwO7nGVjhNUwGgDxjnSVM8zAiACnmc0o7rWmbCISEv5w6D9LQceSZezNFAQD18qqIuipA&key_id=3335741209';
+const ADMOB_KEY_3335741209 = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+nzvoGqvDeB9+SzE6igTl7TyK4JB\nbglwir9oTcQta8NuG26ZpZFxt+F2NDk7asTE6/2Yc8i1ATcGIqtuS5hv0Q==\n-----END PUBLIC KEY-----";
+
+test('real AdMob Verify URL callback is signed but grants nothing', () => {
+  notEqual(verifiedParams(ADMOB_VERIFY_URL, ADMOB_KEY_3335741209), null);
+  equal(verifySignedReward(ADMOB_VERIFY_URL, UNIT, ADMOB_KEY_3335741209), null);
+  equal(verifiedParams(
+    ADMOB_VERIFY_URL.replace('reward_amount=1', 'reward_amount=2'),
+    ADMOB_KEY_3335741209,
+  ), null);
+});
