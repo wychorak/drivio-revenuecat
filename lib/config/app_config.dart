@@ -3,7 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   static const String appName = 'Drivio';
   static const String defaultCity = 'Szczecin';
-  static const int freeDailyTrapLimit = 5;
+  static const int freeDailyTrapLimit = 2;
+  static const int rewardedDailyTrapLimit = 1;
   static const int maxSavedTraps = 500;
   static const int maxSavedSchools = 100;
 
@@ -32,6 +33,8 @@ class AppConfig {
   static const String admobIosAppId = 'ca-app-pub-8263324816746737~5489467107';
   static const String admobIosBannerId =
       'ca-app-pub-8263324816746737/9237140422';
+  static const String admobIosRewardedId =
+      'ca-app-pub-8263324816746737/8516770878';
 
   // RevenueCat / App Store
   static const String revenueCatOfferingId = 'driviooffers';

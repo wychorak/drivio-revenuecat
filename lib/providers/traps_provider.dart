@@ -82,15 +82,33 @@ final schoolCommentsProvider =
     });
 
 final dailyLimitServiceProvider = Provider<DailyLimitService>((ref) {
-  return DailyLimitService(ref.watch(firestoreServiceProvider));
+  return DailyLimitService();
 });
 
-final remainingViewsProvider = FutureProvider<int>((ref) async {
+final remainingViewsProvider = FutureProvider<TrapViewStatus>((ref) async {
   final devLogin = ref.watch(devLoginProvider);
-  if (devLogin) return AppConfig.freeDailyTrapLimit;
+  if (devLogin) {
+    return const TrapViewStatus(
+      allowed: true,
+      premium: true,
+      freeRemaining: AppConfig.freeDailyTrapLimit,
+      totalRemaining: AppConfig.freeDailyTrapLimit,
+      rewardGranted: false,
+      canWatchAd: false,
+    );
+  }
 
   final authState = ref.watch(authStateProvider);
   final user = authState.value;
-  if (user == null) return 0;
-  return ref.watch(dailyLimitServiceProvider).getRemainingViews(user.uid);
+  if (user == null) {
+    return const TrapViewStatus(
+      allowed: false,
+      premium: false,
+      freeRemaining: 0,
+      totalRemaining: 0,
+      rewardGranted: false,
+      canWatchAd: false,
+    );
+  }
+  return ref.watch(dailyLimitServiceProvider).getStatus();
 });

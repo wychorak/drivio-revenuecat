@@ -13,6 +13,7 @@ import 'package:drivio/providers/traps_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/content_moderation_service.dart';
 import 'package:drivio/services/admin_access_service.dart';
+import 'package:drivio/services/ad_service.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
@@ -34,6 +35,9 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
   bool _isSaved = false;
   final _commentController = TextEditingController();
   bool _accessDenied = false;
+  bool _canWatchAd = false;
+  bool _rewardLoading = false;
+  bool _rewardPending = false;
   String? _loadError;
 
   @override
@@ -50,7 +54,8 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
   Future<void> _loadTrap() async {
     try {
-      if (!ref.read(devLoginProvider)) {
+      final devLogin = ref.read(devLoginProvider);
+      if (!devLogin) {
         final user = ref.read(authStateProvider).value;
         if (user == null) {
           if (mounted) {
@@ -61,24 +66,37 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
           }
           return;
         }
-
-        final allowed = await ref
-            .read(dailyLimitServiceProvider)
-            .consumeTrapView(user.uid, ref.read(isPremiumProvider));
-        if (!mounted) return;
-        if (!allowed) {
-          setState(() {
-            _accessDenied = true;
-            _isLoading = false;
-          });
-          return;
-        }
-        ref.invalidate(remainingViewsProvider);
       }
 
-      final trap = ref.read(devLoginProvider)
+      final trap = devLogin
           ? DevDataService.trapById(widget.trapId)
           : await ref.read(firestoreServiceProvider).getTrapById(widget.trapId);
+      if (!mounted) return;
+      if (trap == null) {
+        setState(() {
+          _loadError = 'Ta pułapka nie jest już dostępna.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (!devLogin) {
+        if (!ref.read(isPremiumProvider)) {
+          final status = await ref
+              .read(dailyLimitServiceProvider)
+              .consumeTrapView();
+          if (!mounted) return;
+          if (!status.allowed) {
+            setState(() {
+              _accessDenied = true;
+              _canWatchAd = status.canWatchAd;
+              _isLoading = false;
+            });
+            return;
+          }
+          ref.invalidate(remainingViewsProvider);
+        }
+      }
       if (!mounted) return;
       setState(() {
         _trap = trap;
@@ -91,6 +109,98 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         _loadError = 'Nie udało się załadować pułapki. Spróbuj ponownie.';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _checkReward() async {
+    try {
+      final status = await ref.read(dailyLimitServiceProvider).getStatus();
+      if (!mounted) return;
+      if (status.rewardGranted && status.totalRemaining > 0) {
+        setState(() {
+          _accessDenied = false;
+          _isLoading = true;
+          _rewardPending = false;
+        });
+        await _loadTrap();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nagroda jest jeszcze weryfikowana.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nie udało się sprawdzić nagrody.')),
+      );
+    }
+  }
+
+  Future<void> _watchAd() async {
+    if (_rewardLoading || !AdService.instance.isSupported) return;
+    final user = ref.read(authStateProvider).value;
+    if (user == null) return;
+    final agreed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Dodatkowa pułapka'),
+        content: const Text(
+          'Obejrzyj reklamę z nagrodą, aby odblokować jedną dodatkową '
+          'pułapkę dzisiaj. Możesz pominąć reklamę.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Pomiń'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Obejrzyj reklamę'),
+          ),
+        ],
+      ),
+    );
+    if (agreed != true || !mounted) return;
+    setState(() => _rewardLoading = true);
+    try {
+      final earned = await AdService.instance.showRewardedTrapAd(user.uid);
+      if (!mounted) return;
+      if (!earned) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reklama nie przyznała nagrody.')),
+        );
+        return;
+      }
+      if (AdService.instance.usesTestRewardedAd) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reklama testowa nie dopisuje nagrody do Firebase.'),
+          ),
+        );
+        return;
+      }
+      for (var attempt = 0; attempt < 10; attempt++) {
+        final status = await ref.read(dailyLimitServiceProvider).getStatus();
+        if (!mounted) return;
+        if (status.rewardGranted && status.totalRemaining > 0) {
+          setState(() {
+            _accessDenied = false;
+            _isLoading = true;
+          });
+          await _loadTrap();
+          return;
+        }
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+      if (mounted) setState(() => _rewardPending = true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się wyświetlić reklamy.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _rewardLoading = false);
     }
   }
 
@@ -398,7 +508,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Wróć jutro albo odblokuj nielimitowany dostęp w Premium.',
+                  _canWatchAd && AdService.instance.isSupported
+                      ? 'Dwie darmowe pułapki wykorzystane. Obejrzyj reklamę, '
+                            'aby zobaczyć jeszcze jedną dzisiaj, albo wybierz Premium.'
+                      : 'Wróć jutro albo odblokuj nielimitowany dostęp w Premium.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -406,6 +519,23 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                if (_canWatchAd && AdService.instance.isSupported) ...[
+                  FilledButton.icon(
+                    onPressed: _rewardLoading ? null : _watchAd,
+                    icon: const Icon(Icons.play_circle_outline_rounded),
+                    label: Text(
+                      _rewardLoading
+                          ? 'Ładowanie reklamy…'
+                          : 'Obejrzyj reklamę',
+                    ),
+                  ),
+                  if (_rewardPending)
+                    TextButton(
+                      onPressed: _checkReward,
+                      child: const Text('Sprawdź dostęp'),
+                    ),
+                  const SizedBox(height: 8),
+                ],
                 ElevatedButton(
                   onPressed: () => context.push('/premium'),
                   child: const Text('Zobacz Premium'),

@@ -2,11 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:drivio/config/app_config.dart';
 
 class AdService {
   AdService._();
 
   static final AdService instance = AdService._();
+  static const _useLiveRewardedAd = bool.fromEnvironment(
+    'USE_LIVE_REWARDED_AD',
+    defaultValue: false,
+  );
+
+  bool get usesTestRewardedAd => kDebugMode && !_useLiveRewardedAd;
 
   Future<bool>? _initializing;
   bool _canRequestAds = false;
@@ -14,7 +21,17 @@ class AdService {
   bool get isSupported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-  Future<bool> initialize() => _initializing ??= _initialize();
+  Future<bool> initialize() async {
+    final inProgress = _initializing ??= _initialize();
+    try {
+      final ready = await inProgress;
+      if (!ready) _initializing = null;
+      return ready;
+    } catch (_) {
+      _initializing = null;
+      rethrow;
+    }
+  }
 
   Future<bool> _initialize() async {
     if (!isSupported) return false;
@@ -99,5 +116,47 @@ class AdService {
       completer.complete();
     });
     await completer.future;
+  }
+
+  Future<bool> showRewardedTrapAd(String uid) async {
+    if (!isSupported || !await initialize()) return false;
+    final completed = Completer<bool>();
+    var earnedReward = false;
+    RewardedInterstitialAd.load(
+      adUnitId: usesTestRewardedAd
+          ? 'ca-app-pub-3940256099942544/6978759866'
+          : AppConfig.admobIosRewardedId,
+      request: const AdRequest(nonPersonalizedAds: true),
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.setServerSideOptions(
+            ServerSideVerificationOptions(
+              userId: uid,
+              customData: 'trap-view-v1',
+            ),
+          );
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              if (!completed.isCompleted) completed.complete(earnedReward);
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              debugPrint('AdMob rewarded show failed: $error');
+              ad.dispose();
+              if (!completed.isCompleted) completed.complete(false);
+            },
+          );
+          ad.show(onUserEarnedReward: (_, _) => earnedReward = true);
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('AdMob rewarded load failed: $error');
+          if (!completed.isCompleted) completed.complete(false);
+        },
+      ),
+    );
+    return completed.future.timeout(
+      const Duration(minutes: 3),
+      onTimeout: () => false,
+    );
   }
 }

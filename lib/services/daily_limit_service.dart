@@ -1,21 +1,48 @@
-import 'package:drivio/config/app_config.dart';
-import 'package:drivio/services/firestore_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
+class TrapViewStatus {
+  const TrapViewStatus({
+    required this.allowed,
+    required this.premium,
+    required this.freeRemaining,
+    required this.totalRemaining,
+    required this.rewardGranted,
+    required this.canWatchAd,
+  });
+
+  final bool allowed;
+  final bool premium;
+  final int freeRemaining;
+  final int totalRemaining;
+  final bool rewardGranted;
+  final bool canWatchAd;
+
+  factory TrapViewStatus.fromMap(Map<Object?, Object?> data) {
+    return TrapViewStatus(
+      allowed: data['allowed'] == true,
+      premium: data['premium'] == true,
+      freeRemaining: (data['freeRemaining'] as num?)?.toInt() ?? 0,
+      totalRemaining: (data['totalRemaining'] as num?)?.toInt() ?? 0,
+      rewardGranted: data['rewardGranted'] == true,
+      canWatchAd: data['canWatchAd'] == true,
+    );
+  }
+}
 
 class DailyLimitService {
-  final FirestoreService _firestoreService;
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'europe-west1',
+  );
 
-  DailyLimitService(this._firestoreService);
-
-  /// Atomically consumes one view. Premium users are never counted.
-  Future<bool> consumeTrapView(String uid, bool isPremium) async {
-    if (isPremium) return true;
-    return _firestoreService.consumeTrapView(uid, AppConfig.freeDailyTrapLimit);
+  Future<TrapViewStatus> consumeTrapView() async {
+    final response = await _functions
+        .httpsCallable('consumeDailyTrapView')
+        .call();
+    return TrapViewStatus.fromMap(Map<Object?, Object?>.from(response.data));
   }
 
-  /// Returns how many trap views the user has left today.
-  Future<int> getRemainingViews(String uid) async {
-    final viewsToday = await _firestoreService.getTrapViewsToday(uid);
-    final remaining = AppConfig.freeDailyTrapLimit - viewsToday;
-    return remaining < 0 ? 0 : remaining;
+  Future<TrapViewStatus> getStatus() async {
+    final response = await _functions.httpsCallable('getTrapViewStatus').call();
+    return TrapViewStatus.fromMap(Map<Object?, Object?>.from(response.data));
   }
 }

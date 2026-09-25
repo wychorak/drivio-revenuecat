@@ -153,7 +153,7 @@ class TermsScreen extends StatelessWidget {
           _section(
             context,
             '§9. Reklamy i śledzenie',
-            '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Drivio Pro jest wolne od reklam.
+            '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Dwie odsłony pułapek dziennie są darmowe; jedną dodatkową można odblokować po dobrowolnym obejrzeniu dostępnej reklamy z nagrodą. Limit resetuje się o północy czasu polskiego. Drivio Pro nie ma limitu pułapek ani reklam.
 
 2. Reklamy są ładowane dopiero po sprawdzeniu wymaganych zgód. Aplikacja żąda reklam niepersonalizowanych i nie używa danych użytkownika do reklamy behawioralnej.
 

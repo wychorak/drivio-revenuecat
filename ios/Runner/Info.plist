@@ -57,7 +57,7 @@
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Drivio używa lokalizacji, aby pokazać Twoje położenie na mapie pułapek i szkół jazdy.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Drivio pozwala wybrać zdjęcie miejsca egzaminacyjnego z biblioteki, jeśli samodzielnie je dodajesz.</string>
+		<string>Drivio pozwala wybrać zdjęcie lub film miejsca egzaminacyjnego z biblioteki, jeśli samodzielnie je dodajesz.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

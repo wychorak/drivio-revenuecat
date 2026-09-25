@@ -34,6 +34,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     AppConfig.szczecin_lng,
   );
   File? _pickedImage;
+  File? _pickedVideo;
   bool _isLoading = false;
   final _storageService = StorageService();
 
@@ -42,6 +43,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       _descriptionController.text.trim().isNotEmpty ||
       _ruleController.text.trim().isNotEmpty ||
       _pickedImage != null ||
+      _pickedVideo != null ||
       _difficulty != 3 ||
       _markerPosition.latitude != AppConfig.szczecin_lat ||
       _markerPosition.longitude != AppConfig.szczecin_lng;
@@ -81,6 +83,32 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     }
   }
 
+  Future<void> _pickVideo() async {
+    try {
+      final picked = await ImagePicker().pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 2),
+      );
+      if (picked == null || !mounted) return;
+      final file = File(picked.path);
+      if (await file.length() > 100 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Film może mieć maksymalnie 100 MB.')),
+          );
+        }
+        return;
+      }
+      if (mounted) setState(() => _pickedVideo = file);
+    } on PlatformException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się wybrać filmu.')),
+        );
+      }
+    }
+  }
+
   Future<bool> _confirmDiscard() async {
     if (!_hasUnsavedChanges) return true;
     return await showDialog<bool>(
@@ -88,7 +116,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
           builder: (dialogContext) => AlertDialog(
             title: const Text('Odrzucić zmiany?'),
             content: const Text(
-              'Wpisane informacje i wybrane zdjęcie nie zostaną zapisane.',
+              'Wpisane informacje, zdjęcie i film nie zostaną zapisane.',
             ),
             actions: [
               TextButton(
@@ -146,6 +174,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     setState(() => _isLoading = true);
 
     String? uploadedPhotoUrl;
+    String? uploadedVideoUrl;
     try {
       if (devLogin) {
         if (mounted) {
@@ -165,6 +194,12 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
           _pickedImage!,
         );
       }
+      if (_pickedVideo != null) {
+        uploadedVideoUrl = await _storageService.uploadTrapVideo(
+          user!.uid,
+          _pickedVideo!,
+        );
+      }
 
       final prefs = await SharedPreferences.getInstance();
       final city = prefs.getString('selectedCity') ?? AppConfig.defaultCity;
@@ -177,6 +212,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         description: _descriptionController.text.trim(),
         difficulty: _difficulty,
         photoUrl: uploadedPhotoUrl,
+        videoUrl: uploadedVideoUrl,
         ruleDescription: _ruleController.text.trim(),
         createdBy: user!.uid,
         city: city,
@@ -196,11 +232,16 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       if (uploadedPhotoUrl != null) {
         await _storageService.deletePhoto(uploadedPhotoUrl);
       }
+      if (uploadedVideoUrl != null) {
+        await _storageService.deleteUploadedMedia(uploadedVideoUrl);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Nie udało się dodać pułapki. Sprawdź dane i spróbuj ponownie.',
+              e is FormatException
+                  ? e.message
+                  : 'Nie udało się dodać pułapki. Sprawdź dane i spróbuj ponownie.',
             ),
           ),
         );
@@ -411,6 +452,48 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                         onTap: () => _pickImage(ImageSource.gallery),
                       ),
                     ],
+                  ),
+                const SizedBox(height: 20),
+                _sectionLabel('Film (opcjonalny, maks. 100 MB)'),
+                const SizedBox(height: 8),
+                if (_pickedVideo != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.video_file_outlined,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _pickedVideo!.uri.pathSegments.last,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: colors.onSurface),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Usuń film',
+                          onPressed: () => setState(() => _pickedVideo = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  _imagePickerBtn(
+                    icon: Icons.video_library_outlined,
+                    label: 'Dodaj film',
+                    onTap: _pickVideo,
                   ),
                 const SizedBox(height: 32),
                 SizedBox(

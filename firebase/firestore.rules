@@ -148,50 +148,11 @@ service cloud.firestore {
         ));
       allow delete: if false;
 
-      // Legacy-compatible rolling counter used by the current Flutter client.
-      // Only +1 in a transaction is accepted; reset is possible only after 24 h.
+      // Daily counter and ad reward are owned by Cloud Functions. A client
+      // must never be able to grant itself the rewarded third view.
       match /usage/{usageId} {
         allow read: if owns(uid);
-        allow create: if owns(uid)
-          && usageId == 'trapViews'
-          && request.resource.data.keys().hasAll([
-            'views', 'periodStartedAt', 'updatedAt'
-          ])
-          && request.resource.data.keys().hasOnly([
-            'views', 'periodStartedAt', 'updatedAt'
-          ])
-          && request.resource.data.views is int
-          && request.resource.data.views == 1
-          && request.resource.data.periodStartedAt is timestamp
-          && request.resource.data.periodStartedAt == request.time
-          && request.resource.data.updatedAt is timestamp
-          && request.resource.data.updatedAt == request.time;
-        allow update: if owns(uid)
-          && usageId == 'trapViews'
-          && request.resource.data.keys().hasAll([
-            'views', 'periodStartedAt', 'updatedAt'
-          ])
-          && request.resource.data.keys().hasOnly([
-            'views', 'periodStartedAt', 'updatedAt'
-          ])
-          && resource.data.views is int
-          && resource.data.periodStartedAt is timestamp
-          && request.resource.data.views is int
-          && request.resource.data.periodStartedAt is timestamp
-          && request.resource.data.updatedAt is timestamp
-          && request.resource.data.updatedAt == request.time
-          && (
-            (
-              request.time < resource.data.periodStartedAt + duration.value(24, 'h')
-              && request.resource.data.periodStartedAt == resource.data.periodStartedAt
-              && request.resource.data.views == resource.data.views + 1
-              && request.resource.data.views <= 5
-            ) || (
-              request.time >= resource.data.periodStartedAt + duration.value(24, 'h')
-              && request.resource.data.periodStartedAt == request.time
-              && request.resource.data.views == 1
-            )
-          );
+        allow create, update: if false;
         allow delete: if isAdmin();
       }
     }

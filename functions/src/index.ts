@@ -12,6 +12,16 @@ import {
   premiumStateForEvent,
   RevenueCatEvent,
 } from './revenuecat';
+import {
+  hasBackendPremium,
+  trapAllowance,
+  warsawDayKey,
+} from './daily_traps';
+import {
+  getAdMobKey,
+  ssvKeyId,
+  verifySignedReward,
+} from './admob_ssv';
 
 initializeApp();
 
@@ -21,6 +31,142 @@ const ADMIN_EMAILS = new Set([
   'estlin20@gmail.com',
 ]);
 const revenueCatWebhookAuth = defineSecret('REVENUECAT_WEBHOOK_AUTH');
+const ADMOB_IOS_REWARDED_UNIT_ID =
+  'ca-app-pub-8263324816746737/8516770878';
+
+function requireUid(uid: string | undefined): string {
+  if (!uid) throw new HttpsError('unauthenticated', 'Wymagane logowanie.');
+  return uid;
+}
+
+export const getTrapViewStatus = onCall(
+  {region: REGION, enforceAppCheck: true},
+  async (request) => {
+    const uid = requireUid(request.auth?.uid);
+    const db = getFirestore();
+    const [usage, user] = await Promise.all([
+      db.collection('users').doc(uid).collection('usage').doc('trapViews').get(),
+      db.collection('users').doc(uid).get(),
+    ]);
+    const now = new Date();
+    return {
+      ...trapAllowance(usage.data(), warsawDayKey(now)),
+      premium: request.auth?.token.admin === true ||
+        hasBackendPremium(user.data(), now),
+    };
+  },
+);
+
+export const consumeDailyTrapView = onCall(
+  {region: REGION, enforceAppCheck: true},
+  async (request) => {
+    const uid = requireUid(request.auth?.uid);
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(uid);
+    const usageRef = userRef.collection('usage').doc('trapViews');
+    return db.runTransaction(async (transaction) => {
+      const [user, usage] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(usageRef),
+      ]);
+      const now = new Date();
+      const allowance = trapAllowance(usage.data(), warsawDayKey(now));
+      if (request.auth?.token.admin === true ||
+          hasBackendPremium(user.data(), now)) {
+        return {...allowance, allowed: true, premium: true};
+      }
+      if (allowance.totalRemaining === 0) {
+        return {...allowance, allowed: false, premium: false};
+      }
+      transaction.set(usageRef, {
+        dayKey: allowance.dayKey,
+        views: allowance.views + 1,
+        rewardGranted: allowance.rewardGranted,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return {
+        ...trapAllowance({
+          dayKey: allowance.dayKey,
+          views: allowance.views + 1,
+          rewardGranted: allowance.rewardGranted,
+        }, allowance.dayKey),
+        allowed: true,
+        premium: false,
+      };
+    });
+  },
+);
+
+// Configure this URL as the rewarded interstitial unit's SSV callback in AdMob.
+// Only Google's signed callback may grant the third daily trap view.
+export const admobRewardSsv = onRequest(
+  {region: REGION},
+  async (request, response) => {
+    if (request.method !== 'GET') {
+      response.status(405).send('Method Not Allowed');
+      return;
+    }
+    const keyId = ssvKeyId(request.originalUrl);
+    if (!keyId) {
+      response.status(400).send('Missing signature');
+      return;
+    }
+    let keyPem: string | null;
+    try {
+      keyPem = await getAdMobKey(keyId);
+    } catch (error) {
+      logger.error('Could not fetch AdMob verification keys', error);
+      response.status(503).send('Verification unavailable');
+      return;
+    }
+    if (!keyPem) {
+      response.status(403).send('Unknown key');
+      return;
+    }
+    const reward = verifySignedReward(
+      request.originalUrl,
+      ADMOB_IOS_REWARDED_UNIT_ID,
+      keyPem,
+    );
+    if (!reward) {
+      response.status(403).send('Invalid reward');
+      return;
+    }
+    // AdMob's URL verification omits the app's optional user/custom fields.
+    // A valid signed test must succeed, but must never grant an actual view.
+    if (!reward.uid || reward.customData !== 'trap-view-v1') {
+      response.status(200).send('Verified callback; no reward target');
+      return;
+    }
+    const now = new Date();
+    if (Math.abs(now.getTime() - reward.timestamp.getTime()) > 60 * 60 * 1000 ||
+        warsawDayKey(now) !== warsawDayKey(reward.timestamp)) {
+      response.status(200).send('Expired reward');
+      return;
+    }
+    const usageRef = getFirestore().collection('users').doc(reward.uid)
+      .collection('usage').doc('trapViews');
+    try {
+      await getFirestore().runTransaction(async (transaction) => {
+        const usage = await transaction.get(usageRef);
+        const allowance = trapAllowance(usage.data(), warsawDayKey(now));
+        if (allowance.rewardGranted) return;
+        transaction.set(usageRef, {
+          dayKey: allowance.dayKey,
+          views: allowance.views,
+          rewardGranted: true,
+          rewardTransactionId: reward.transactionId,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      });
+    } catch (error) {
+      logger.error('Could not grant rewarded trap view', error);
+      response.status(503).send('Reward unavailable');
+      return;
+    }
+    response.status(200).send('OK');
+  },
+);
 
 async function deleteQuery(
   collection: string,

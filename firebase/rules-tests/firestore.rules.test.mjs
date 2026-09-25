@@ -294,7 +294,7 @@ describe('daily limits', () => {
     );
   });
 
-  test('legacy usage counter permits +1 transaction but denies reset', async () => {
+  test('trap usage can only be changed by the backend', async () => {
     const periodStartedAt = Timestamp.now();
     await seed('users/alice/usage/trapViews', {
       views: 2,
@@ -305,7 +305,16 @@ describe('daily limits', () => {
     const aliceDb = auth('alice');
     const usageRef = doc(aliceDb, 'users/alice/usage/trapViews');
 
-    await assertSucceeds(
+    await assertFails(
+      setDoc(doc(aliceDb, 'users/alice/usage/forgedReward'), {
+        dayKey: '2026-09-25',
+        views: 0,
+        rewardGranted: true,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+
+    await assertFails(
       runTransaction(aliceDb, async (transaction) => {
         const snapshot = await transaction.get(usageRef);
         transaction.update(usageRef, {
@@ -318,6 +327,12 @@ describe('daily limits', () => {
     await assertFails(
       updateDoc(usageRef, {
         views: 0,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(usageRef, {
+        rewardGranted: true,
         updatedAt: serverTimestamp(),
       }),
     );

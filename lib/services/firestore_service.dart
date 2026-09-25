@@ -5,6 +5,7 @@ import 'package:drivio/models/school_model.dart';
 import 'package:drivio/models/trap_model.dart';
 import 'package:drivio/models/user_model.dart';
 import 'package:drivio/config/app_config.dart';
+import 'package:drivio/services/storage_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -185,6 +186,9 @@ class FirestoreService {
     };
 
     final batch = _db.batch();
+    final trap = itemType == 'trap'
+        ? await _db.collection('traps').doc(itemId).get()
+        : null;
     batch.delete(_db.collection(collection).doc(itemId));
 
     if (itemType != 'comment') {
@@ -209,6 +213,14 @@ class FirestoreService {
       batch.delete(report.reference);
     }
     await batch.commit();
+    if (trap != null && trap.exists) {
+      final media = StorageService();
+      for (final url in [trap.data()?['photoUrl'], trap.data()?['videoUrl']]) {
+        if (url is String && url.isNotEmpty) {
+          await media.deleteUploadedMedia(url);
+        }
+      }
+    }
   }
 
   // ─── USERS ───────────────────────────────────────────────────────────────
@@ -308,59 +320,6 @@ class FirestoreService {
         .toList();
   }
 
-  // ─── DAILY TRAP VIEWS ────────────────────────────────────────────────────
-
-  DocumentReference<Map<String, dynamic>> _usageRef(String uid) =>
-      _db.collection('users').doc(uid).collection('usage').doc('trapViews');
-
-  Future<int> getTrapViewsToday(String uid) async {
-    final snapshot = await _usageRef(uid).get();
-    if (!snapshot.exists) return 0;
-    final data = snapshot.data()!;
-    final startedAt = (data['periodStartedAt'] as Timestamp?)?.toDate();
-    if (startedAt == null ||
-        DateTime.now().difference(startedAt) >= const Duration(hours: 24)) {
-      return 0;
-    }
-    return (data['views'] as num?)?.toInt() ?? 0;
-  }
-
-  Future<bool> consumeTrapView(String uid, int dailyLimit) async {
-    final usageRef = _usageRef(uid);
-    return _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(usageRef);
-      if (!snapshot.exists) {
-        transaction.set(usageRef, {
-          'views': 1,
-          'periodStartedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        return true;
-      }
-
-      final data = snapshot.data()!;
-      final startedAt = (data['periodStartedAt'] as Timestamp?)?.toDate();
-      final expired =
-          startedAt == null ||
-          DateTime.now().difference(startedAt) >= const Duration(hours: 24);
-      if (expired) {
-        transaction.set(usageRef, {
-          'views': 1,
-          'periodStartedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        return true;
-      }
-
-      final used = (data['views'] as num?)?.toInt() ?? 0;
-      if (used >= dailyLimit) return false;
-      transaction.update(usageRef, {
-        'views': used + 1,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      return true;
-    });
-  }
   // ─── SAVED TRAPS DETAILS ────────────────────────────────────────────────
 
   Future<List<TrapModel>> getSavedTraps(List<String> trapIds) async {

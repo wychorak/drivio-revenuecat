@@ -15,6 +15,7 @@ import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
 import 'package:drivio/services/admin_access_service.dart';
+import 'package:drivio/services/ad_service.dart';
 import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -258,7 +259,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               right: 0,
               child: Center(
                 child: remainingAsync.when(
-                  data: (remaining) => Container(
+                  data: (status) => Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 9,
@@ -285,7 +286,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Pozostało $remaining pułapek dziś',
+                          status.freeRemaining > 0
+                              ? '${status.freeRemaining} darmowe pułapki dziś'
+                              : status.canWatchAd &&
+                                    AdService.instance.isSupported
+                              ? '1 pułapka za reklamę'
+                              : status.totalRemaining > 0
+                              ? '1 pułapka po reklamie'
+                              : 'Limit pułapek wykorzystany',
                           style: GoogleFonts.poppins(
                             color: colors.onSurface,
                             fontSize: 12,

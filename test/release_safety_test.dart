@@ -25,10 +25,15 @@ void main() {
         AppConfig.admobIosBannerId,
         matches(RegExp(r'^ca-app-pub-\d{16}/\d{10}$')),
       );
+      expect(
+        AppConfig.admobIosRewardedId,
+        matches(RegExp(r'^ca-app-pub-\d{16}/\d{10}$')),
+      );
     });
 
     test('production limits are bounded', () {
-      expect(AppConfig.freeDailyTrapLimit, inInclusiveRange(1, 20));
+      expect(AppConfig.freeDailyTrapLimit, 2);
+      expect(AppConfig.rewardedDailyTrapLimit, 1);
       expect(AppConfig.maxSavedTraps, lessThanOrEqualTo(500));
       expect(AppConfig.maxSavedSchools, lessThanOrEqualTo(100));
     });
