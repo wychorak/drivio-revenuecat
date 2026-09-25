@@ -12,18 +12,44 @@ export interface VerifiedReward {
   timestamp: Date;
 }
 
-export function verifySignedReward(
+/**
+ * Returns the signed query parameters when [rawUrl] carries a valid AdMob
+ * signature, or null for unsigned or tampered callbacks.
+ */
+export function verifiedParams(
   rawUrl: string,
-  expectedUnitId: string,
   keyPem: string,
-): VerifiedReward | null {
+): URLSearchParams | null {
   const query = rawUrl.split('?', 2)[1];
   if (!query || query.length > 8192) return null;
   // AdMob signs the exact query bytes before the final signature/key_id pair.
   const match = /^(.*)&signature=([^&]+)&key_id=([0-9]+)$/.exec(query);
   if (!match) return null;
   const [, signedPayload, encodedSignature] = match;
-  const params = new URLSearchParams(signedPayload);
+  try {
+    const verifier = createVerify('SHA256');
+    verifier.update(signedPayload, 'utf8');
+    verifier.end();
+    const signature = Buffer.from(encodedSignature, 'base64url');
+    if (!verifier.verify(keyPem, signature)) return null;
+  } catch (_) {
+    return null;
+  }
+  return new URLSearchParams(signedPayload);
+}
+
+/**
+ * Returns the reward only for a signed callback from [expectedUnitId] with
+ * well-formed ids. AdMob's "Verify URL" check is signed but uses sample
+ * values, so it verifies without producing a reward.
+ */
+export function verifySignedReward(
+  rawUrl: string,
+  expectedUnitId: string,
+  keyPem: string,
+): VerifiedReward | null {
+  const params = verifiedParams(rawUrl, keyPem);
+  if (!params) return null;
   const expectedNumericId = expectedUnitId.split('/')[1];
   if (!expectedNumericId || params.get('ad_unit') !== expectedNumericId) {
     return null;
@@ -34,15 +60,6 @@ export function verifySignedReward(
   if ((uid && !/^[A-Za-z0-9_-]{1,128}$/.test(uid)) ||
       !transactionId || !/^[A-Fa-f0-9]{16,128}$/.test(transactionId) ||
       !Number.isSafeInteger(timestampMs)) {
-    return null;
-  }
-  try {
-    const verifier = createVerify('SHA256');
-    verifier.update(signedPayload, 'utf8');
-    verifier.end();
-    const signature = Buffer.from(encodedSignature, 'base64url');
-    if (!verifier.verify(keyPem, signature)) return null;
-  } catch (_) {
     return null;
   }
   return {

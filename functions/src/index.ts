@@ -20,6 +20,7 @@ import {
 import {
   getAdMobKey,
   ssvKeyId,
+  verifiedParams,
   verifySignedReward,
 } from './admob_ssv';
 
@@ -123,18 +124,20 @@ export const admobRewardSsv = onRequest(
       response.status(403).send('Unknown key');
       return;
     }
+    if (!verifiedParams(request.originalUrl, keyPem)) {
+      logger.warn('Rejected AdMob callback with invalid signature');
+      response.status(403).send('Invalid signature');
+      return;
+    }
     const reward = verifySignedReward(
       request.originalUrl,
       ADMOB_IOS_REWARDED_UNIT_ID,
       keyPem,
     );
-    if (!reward) {
-      response.status(403).send('Invalid reward');
-      return;
-    }
-    // AdMob's URL verification omits the app's optional user/custom fields.
-    // A valid signed test must succeed, but must never grant an actual view.
-    if (!reward.uid || reward.customData !== 'trap-view-v1') {
+    // AdMob's "Verify URL" check is signed but uses sample ad unit and
+    // transaction values and omits user/custom data. It must succeed, but
+    // must never grant an actual view.
+    if (!reward || !reward.uid || reward.customData !== 'trap-view-v1') {
       response.status(200).send('Verified callback; no reward target');
       return;
     }
