@@ -2,8 +2,12 @@ import {createVerify} from 'node:crypto';
 
 const KEYS_URL = 'https://www.gstatic.com/admob/reward/verifier-keys.json';
 const KEY_CACHE_MS = 60 * 60 * 1000;
+const TEST_KEYS_URL =
+  'https://www.gstatic.com/admob/reward/verifier-keys-test.json';
 let cachedKeys: Map<string, string> | null = null;
 let cachedAt = 0;
+let cachedTestKeys: Map<string, string> | null = null;
+let cachedTestAt = 0;
 
 export interface VerifiedReward {
   uid: string | null;
@@ -80,9 +84,30 @@ export async function getAdMobKey(keyId: string): Promise<string | null> {
   if (cachedKeys?.has(keyId) && Date.now() - cachedAt < KEY_CACHE_MS) {
     return cachedKeys.get(keyId) ?? null;
   }
-  const response = await fetch(KEYS_URL, {
-    signal: AbortSignal.timeout(5000),
-  });
+  const keys = await fetchKeys(KEYS_URL);
+  if (keys.size === 0) throw new Error('AdMob key list is empty');
+  cachedKeys = keys;
+  cachedAt = Date.now();
+  return keys.get(keyId) ?? null;
+}
+
+/**
+ * Returns the PEM for a key from AdMob's test key list. The console's
+ * "Verify URL" check can be signed with these keys; a callback signed with
+ * one must be acknowledged but never grant a reward.
+ */
+export async function getAdMobTestKey(keyId: string): Promise<string | null> {
+  if (cachedTestKeys?.has(keyId) &&
+      Date.now() - cachedTestAt < KEY_CACHE_MS) {
+    return cachedTestKeys.get(keyId) ?? null;
+  }
+  cachedTestKeys = await fetchKeys(TEST_KEYS_URL);
+  cachedTestAt = Date.now();
+  return cachedTestKeys.get(keyId) ?? null;
+}
+
+async function fetchKeys(url: string): Promise<Map<string, string>> {
+  const response = await fetch(url, {signal: AbortSignal.timeout(5000)});
   if (!response.ok) throw new Error(`AdMob keys HTTP ${response.status}`);
   const body = await response.json() as {
     keys?: Array<{keyId?: number; pem?: string}>;
@@ -93,8 +118,5 @@ export async function getAdMobKey(keyId: string): Promise<string | null> {
       keys.set(String(key.keyId), key.pem);
     }
   }
-  if (keys.size === 0) throw new Error('AdMob key list is empty');
-  cachedKeys = keys;
-  cachedAt = Date.now();
-  return keys.get(keyId) ?? null;
+  return keys;
 }

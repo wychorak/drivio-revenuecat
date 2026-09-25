@@ -21,6 +21,7 @@ import {
 } from './daily_traps';
 import {
   getAdMobKey,
+  getAdMobTestKey,
   ssvKeyId,
   verifiedParams,
   verifySignedReward,
@@ -118,6 +119,20 @@ export const admobRewardSsv = onRequest(
       return;
     }
     if (!keyPem) {
+      // The AdMob console's "Verify URL" check may be signed with a test key.
+      // Acknowledge a valid test signature, but never grant a reward for it.
+      let testKeyPem: string | null = null;
+      try {
+        testKeyPem = await getAdMobTestKey(keyId);
+      } catch (error) {
+        logger.error('Could not fetch AdMob test verification keys', error);
+      }
+      if (testKeyPem && verifiedParams(request.originalUrl, testKeyPem)) {
+        logger.info('Verified AdMob test callback', {keyId});
+        response.status(200).send('Verified test callback; no reward');
+        return;
+      }
+      logger.warn('Rejected AdMob callback with unknown key', {keyId});
       response.status(403).send('Unknown key');
       return;
     }
