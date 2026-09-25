@@ -137,7 +137,15 @@ export const admobRewardSsv = onRequest(
       return;
     }
     if (!verifiedParams(request.originalUrl, keyPem)) {
-      logger.warn('Rejected AdMob callback with invalid signature');
+      // Diagnostics for signature mismatches: the signed part of the query
+      // as it reached us. The signature itself is left out.
+      const query = request.originalUrl.split('?', 2)[1] ?? '';
+      logger.warn('Rejected AdMob callback with invalid signature', {
+        keyId,
+        signedPart: query.split('&signature=')[0].slice(0, 1000),
+        urlDiffers: request.url !== request.originalUrl,
+        pathPrefix: request.originalUrl.split('?')[0],
+      });
       response.status(403).send('Invalid signature');
       return;
     }
