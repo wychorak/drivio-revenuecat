@@ -1,11 +1,18 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:drivio/config/app_config.dart';
 import 'package:drivio/models/school_model.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/admin_access_service.dart';
+import 'package:drivio/services/storage_service.dart';
+import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/map/location_picker.dart';
 
 class AdminSchoolFormScreen extends ConsumerStatefulWidget {
   final String? schoolId;
@@ -34,6 +41,32 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
   bool _loading = false;
   bool _initializing = false;
   SchoolModel? _original;
+  File? _pickedLogo;
+  bool _logoRemoved = false;
+  final _storage = StorageService();
+
+  Future<void> _pickLogo() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 88,
+      );
+      if (picked != null && mounted) {
+        setState(() {
+          _pickedLogo = File(picked.path);
+          _logoRemoved = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się wybrać zdjęcia.')),
+        );
+      }
+    }
+  }
 
   bool get _editing => widget.schoolId != null;
 
@@ -108,10 +141,14 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
 
     setState(() => _loading = true);
     try {
+      var logoUrl = _logoRemoved ? null : _original?.logoUrl;
+      if (_pickedLogo != null) {
+        logoUrl = await _storage.uploadSchoolLogo(_pickedLogo!);
+      }
       final school = SchoolModel(
         id: widget.schoolId ?? '',
         name: _name.text.trim(),
-        logoUrl: _original?.logoUrl,
+        logoUrl: logoUrl,
         rating: _original?.rating ?? 0,
         reviewCount: _original?.reviewCount ?? 0,
         priceFrom: from,
@@ -131,6 +168,12 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
         await service.addSchool(school);
       }
       if (mounted) context.pop();
+    } on FormatException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +211,8 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            _buildLogoPicker(),
+            const SizedBox(height: 20),
             _field(_name, 'Nazwa szkoły', validator: _required),
             _field(_city, 'Miasto', validator: _required),
             _field(_address, 'Adres', validator: _required),
@@ -203,27 +248,10 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 260,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _position,
-                    zoom: 14,
-                  ),
-                  markers: {
-                    Marker(
-                      markerId: const MarkerId('school'),
-                      position: _position,
-                      draggable: true,
-                      onDragEnd: (value) => setState(() => _position = value),
-                    ),
-                  },
-                  onTap: (value) => setState(() => _position = value),
-                  zoomControlsEnabled: false,
-                ),
-              ),
+            LocationPreview(
+              position: _position,
+              title: 'Lokalizacja szkoły',
+              onChanged: (value) => setState(() => _position = value),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -238,6 +266,84 @@ class _AdminSchoolFormScreenState extends ConsumerState<AdminSchoolFormScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLogoPicker() {
+    final colors = Theme.of(context).colorScheme;
+    final existingUrl = _logoRemoved ? null : _original?.logoUrl;
+    final Widget? logo = _pickedLogo != null
+        ? Image.file(_pickedLogo!, fit: BoxFit.cover)
+        : existingUrl != null
+        ? CachedNetworkImage(imageUrl: existingUrl, fit: BoxFit.cover)
+        : null;
+    final hasLogo = logo != null;
+
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _loading ? null : _pickLogo,
+          child: Container(
+            width: 88,
+            height: 88,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colors.outlineVariant),
+            ),
+            child:
+                logo ??
+                Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: colors.onSurfaceVariant,
+                  size: 32,
+                ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Logo szkoły',
+                style: TextStyle(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'JPG, PNG, WebP lub HEIC, do 5 MB. Najlepiej kwadratowe.',
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
+              ),
+              Wrap(
+                spacing: 4,
+                children: [
+                  TextButton(
+                    onPressed: _loading ? null : _pickLogo,
+                    child: Text(hasLogo ? 'Zmień' : 'Dodaj zdjęcie'),
+                  ),
+                  if (hasLogo)
+                    TextButton(
+                      onPressed: _loading
+                          ? null
+                          : () => setState(() {
+                              _pickedLogo = null;
+                              _logoRemoved = true;
+                            }),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primary,
+                      ),
+                      child: const Text('Usuń'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

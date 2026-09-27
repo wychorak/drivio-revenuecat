@@ -10,7 +10,14 @@ class StorageService {
     return filePath.substring(lastDot);
   }
 
-  Future<String> uploadTrapPhoto(String uid, File imageFile) async {
+  Future<String> uploadTrapPhoto(String uid, File imageFile) =>
+      _uploadImage(imageFile, 'traps/$uid');
+
+  /// Uploads a driving school logo (admin only, see storage.rules).
+  Future<String> uploadSchoolLogo(File imageFile) =>
+      _uploadImage(imageFile, 'schools/logos');
+
+  Future<String> _uploadImage(File imageFile, String folder) async {
     if (await imageFile.length() > 5 * 1024 * 1024) {
       throw const FormatException('Zdjęcie może mieć maksymalnie 5 MB.');
     }
@@ -26,16 +33,11 @@ class StorageService {
       ),
     };
     final fileName = '${DateTime.now().microsecondsSinceEpoch}$extension';
-    final ref = _storage.ref().child('traps/$uid/$fileName');
-
-    final uploadTask = ref.putFile(
-      imageFile,
-      SettableMetadata(contentType: contentType),
-    );
-
-    final snapshot = await uploadTask;
-    final downloadUrl = await snapshot.ref.getDownloadURL();
-    return downloadUrl;
+    final snapshot = await _storage
+        .ref()
+        .child('$folder/$fileName')
+        .putFile(imageFile, SettableMetadata(contentType: contentType));
+    return snapshot.ref.getDownloadURL();
   }
 
   Future<String> uploadTrapVideo(String uid, File videoFile) async {

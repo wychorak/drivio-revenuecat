@@ -160,14 +160,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: const Text('Edytuj nazwę profilu'),
                         onTap: () => _editName(context, ref, user.displayName),
                       ),
-                      if (user.email.isNotEmpty) ...[
-                        const Divider(height: 1, indent: 62),
-                        ListTile(
-                          leading: const Icon(Icons.lock_reset),
-                          title: const Text('Wyślij link do zmiany hasła'),
-                          onTap: () => _resetPassword(context, ref, user.email),
-                        ),
-                      ],
                       const Divider(height: 1, indent: 62),
                       ListTile(
                         leading: const Icon(Icons.logout),
@@ -279,19 +271,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Profil zaktualizowany.')));
-    }
-  }
-
-  Future<void> _resetPassword(
-    BuildContext context,
-    WidgetRef ref,
-    String email,
-  ) async {
-    await ref.read(authServiceProvider).sendPasswordReset(email);
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Link wysłany na $email')));
     }
   }
 

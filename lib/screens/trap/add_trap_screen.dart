@@ -14,6 +14,7 @@ import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/services/content_moderation_service.dart';
 import 'package:drivio/services/storage_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/map/location_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddTrapScreen extends ConsumerStatefulWidget {
@@ -294,42 +295,10 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 24),
                 _sectionLabel('Lokalizacja'),
                 const SizedBox(height: 8),
-                Container(
-                  height: 250,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.outlineVariant),
-                  ),
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _markerPosition,
-                      zoom: 14,
-                    ),
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId('selected'),
-                        position: _markerPosition,
-                        draggable: true,
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                          BitmapDescriptor.hueRed,
-                        ),
-                        onDragEnd: (pos) =>
-                            setState(() => _markerPosition = pos),
-                      ),
-                    },
-                    onTap: (pos) => setState(() => _markerPosition = pos),
-                    zoomControlsEnabled: false,
-                    myLocationButtonEnabled: false,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Dotknij mapę lub przeciągnij pin, aby ustawić lokalizację',
-                  style: GoogleFonts.poppins(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
+                LocationPreview(
+                  position: _markerPosition,
+                  title: 'Lokalizacja pułapki',
+                  onChanged: (pos) => setState(() => _markerPosition = pos),
                 ),
                 const SizedBox(height: 20),
                 _sectionLabel('Nazwa miejsca'),

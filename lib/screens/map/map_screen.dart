@@ -12,6 +12,7 @@ import 'package:drivio/providers/traps_provider.dart';
 import 'package:drivio/providers/schools_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/map/map_type_button.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
 import 'package:drivio/services/admin_access_service.dart';
@@ -29,11 +30,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   // ignore: unused_field
   GoogleMapController? _mapController;
   String _selectedCity = AppConfig.defaultCity;
+  MapType _mapType = MapType.normal;
 
   @override
   void initState() {
     super.initState();
     _loadCity();
+    MapTypePreference.load().then((type) {
+      if (mounted) setState(() => _mapType = type);
+    });
   }
 
   Future<void> _loadCity() async {
@@ -138,11 +143,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             onMapCreated: (ctrl) => _mapController = ctrl,
             markers: markers,
-            mapType: MapType.normal,
+            mapType: _mapType,
             myLocationEnabled: false,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
-            style: isDark ? _darkMapStyle : null,
+            // The dark style only applies to the standard map; imagery
+            // layers keep their own colours.
+            style: isDark && _mapType == MapType.normal ? _darkMapStyle : null,
           ),
           SafeArea(
             child: Padding(
@@ -250,6 +257,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   colors: colors,
                 ),
               ],
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 72,
+            right: 12,
+            child: MapTypeButton(
+              value: _mapType,
+              onChanged: (type) => setState(() => _mapType = type),
             ),
           ),
           if (!isPremium)

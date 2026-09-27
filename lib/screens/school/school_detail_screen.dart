@@ -455,7 +455,7 @@ class _SchoolDetailScreenState extends ConsumerState<SchoolDetailScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                'Opinie kursantów (${comments.length})',
+                                'Opinie (${comments.length})',
                                 style: GoogleFonts.poppins(
                                   color: Theme.of(
                                     context,

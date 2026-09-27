@@ -78,14 +78,14 @@ flutter_launcher_icons:
     icon_size: 48
 
 flutter_native_splash:
+  # Plain background matching the animated Flutter splash, so users see a
+  # single start screen instead of the icon followed by the Drivio intro.
   color: "#0A0C14"
-  image: assets/images/icon.png
   android: true
   ios: true
   web: false
   android_12:
     color: "#0A0C14"
-    image: assets/images/icon.png
 
 flutter:
   uses-material-design: true
