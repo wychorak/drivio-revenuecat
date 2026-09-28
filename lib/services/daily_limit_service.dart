@@ -4,6 +4,8 @@ class TrapViewStatus {
   const TrapViewStatus({
     required this.allowed,
     required this.premium,
+    required this.views,
+    required this.rewardsGranted,
     required this.freeRemaining,
     required this.totalRemaining,
     required this.rewardGranted,
@@ -12,6 +14,8 @@ class TrapViewStatus {
 
   final bool allowed;
   final bool premium;
+  final int views;
+  final int rewardsGranted;
   final int freeRemaining;
   final int totalRemaining;
   final bool rewardGranted;
@@ -21,6 +25,10 @@ class TrapViewStatus {
     return TrapViewStatus(
       allowed: data['allowed'] == true,
       premium: data['premium'] == true,
+      views: (data['views'] as num?)?.toInt() ?? 0,
+      rewardsGranted:
+          (data['rewardsGranted'] as num?)?.toInt() ??
+          (data['rewardGranted'] == true ? 1 : 0),
       freeRemaining: (data['freeRemaining'] as num?)?.toInt() ?? 0,
       totalRemaining: (data['totalRemaining'] as num?)?.toInt() ?? 0,
       rewardGranted: data['rewardGranted'] == true,

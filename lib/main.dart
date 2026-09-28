@@ -16,9 +16,10 @@ Future<void> main() async {
   await _loadLocalEnv();
   await initializeDateFormatting('pl', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Install the provider before Auth, Functions or any other Firebase traffic.
+  await _activateAppCheck();
   await FirebaseAuth.instance.setLanguageCode('pl');
   await SessionPreferenceService.enforceOnStartup();
-  await _activateAppCheck();
   await RevenueCatService.instance.initialize();
   runApp(const ProviderScope(child: DrivioApp()));
 }

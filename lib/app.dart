@@ -97,9 +97,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/trap/:id',
-        builder: (context, state) => _DarkOnly(
-          child: TrapDetailScreen(trapId: state.pathParameters['id']!),
-        ),
+        builder: (context, state) =>
+            TrapDetailScreen(trapId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/schools',

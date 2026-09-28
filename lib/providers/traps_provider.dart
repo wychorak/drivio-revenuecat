@@ -91,6 +91,8 @@ final remainingViewsProvider = FutureProvider<TrapViewStatus>((ref) async {
     return const TrapViewStatus(
       allowed: true,
       premium: true,
+      views: 0,
+      rewardsGranted: 0,
       freeRemaining: AppConfig.freeDailyTrapLimit,
       totalRemaining: AppConfig.freeDailyTrapLimit,
       rewardGranted: false,
@@ -104,6 +106,8 @@ final remainingViewsProvider = FutureProvider<TrapViewStatus>((ref) async {
     return const TrapViewStatus(
       allowed: false,
       premium: false,
+      views: 0,
+      rewardsGranted: 0,
       freeRemaining: 0,
       totalRemaining: 0,
       rewardGranted: false,

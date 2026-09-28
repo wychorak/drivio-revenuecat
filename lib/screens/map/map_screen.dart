@@ -16,7 +16,6 @@ import 'package:drivio/widgets/map/map_type_button.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
 import 'package:drivio/services/admin_access_service.dart';
-import 'package:drivio/services/ad_service.dart';
 import 'package:drivio/widgets/common/drivio_brand.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -275,6 +274,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Center(
                 child: remainingAsync.when(
                   data: (status) => Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width - 24,
+                    ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 9,
@@ -300,28 +302,38 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           size: 16,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          status.freeRemaining == 1
-                              ? '1 darmowa pułapka dziś'
-                              : status.freeRemaining > 1
-                              ? '${status.freeRemaining} darmowe pułapki dziś'
-                              : status.canWatchAd &&
-                                    AdService.instance.isSupported
-                              ? 'Kolejna pułapka za reklamę'
-                              : status.totalRemaining > 0
-                              ? '1 pułapka po reklamie'
-                              : 'Limit pułapek wykorzystany',
-                          style: GoogleFonts.poppins(
-                            color: colors.onSurface,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Pułapki dziś: ${status.views}/3',
+                                style: GoogleFonts.poppins(
+                                  color: colors.onSurface,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '1 darmowa · 2 po reklamach',
+                                style: GoogleFonts.poppins(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (_, _) => TextButton.icon(
+                    onPressed: () => ref.invalidate(remainingViewsProvider),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Sprawdź limit pułapek'),
+                  ),
                 ),
               ),
             ),

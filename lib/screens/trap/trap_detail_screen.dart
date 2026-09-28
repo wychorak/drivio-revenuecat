@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -104,7 +105,20 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         _isLoading = false;
       });
       _checkSaved();
-    } catch (_) {
+    } on FirebaseFunctionsException catch (error) {
+      debugPrint('Trap view function failed: ${error.code}');
+      if (!mounted) return;
+      setState(() {
+        _loadError =
+            error.code == 'unauthenticated' || error.code == 'permission-denied'
+            ? 'Nie udało się potwierdzić dostępu do pułapek na tym urządzeniu. '
+                  'Spróbuj ponownie lub zgłoś problem w ustawieniach aplikacji.'
+            : 'Nie udało się sprawdzić dziennego limitu pułapek. '
+                  'Spróbuj ponownie za chwilę.';
+        _isLoading = false;
+      });
+    } catch (error) {
+      debugPrint('Trap load failed: $error');
       if (!mounted) return;
       setState(() {
         _loadError = 'Nie udało się załadować pułapki. Spróbuj ponownie.';
