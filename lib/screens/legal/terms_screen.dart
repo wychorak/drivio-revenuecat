@@ -144,7 +144,7 @@ class TermsScreen extends StatelessWidget {
           _section(
             context,
             '§8. Ochrona danych osobowych',
-            '''1. Zasady przetwarzania danych osobowych opisano w Polityce Prywatności, dostępnej w Aplikacji.
+            '''1. Zasady przetwarzania danych osobowych opisano w Polityce Prywatności, dostępnej w Aplikacji (Ustawienia → Polityka prywatności) oraz pod adresem https://drivio-a7d9c.web.app.
 
 2. Korzystając z Aplikacji, użytkownik wyraża zgodę na przetwarzanie danych osobowych zgodnie z Polityką Prywatności.
 

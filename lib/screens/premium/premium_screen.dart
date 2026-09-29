@@ -10,6 +10,7 @@ import 'package:drivio/providers/premium_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/revenuecat_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/utils/legal_links.dart';
 
 const _showPremiumCheckoutPreview = bool.fromEnvironment(
   'DRIVIO_PREVIEW_CHECKOUT',
@@ -875,7 +876,7 @@ class _Footnote extends StatelessWidget {
               child: const Text('Regulamin'),
             ),
             TextButton(
-              onPressed: () => context.push('/privacy'),
+              onPressed: () => openPrivacyPolicy(context),
               child: const Text('Polityka prywatności'),
             ),
           ],

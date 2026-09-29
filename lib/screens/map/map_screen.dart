@@ -12,6 +12,7 @@ import 'package:drivio/providers/traps_provider.dart';
 import 'package:drivio/providers/schools_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/utils/legal_links.dart';
 import 'package:drivio/widgets/map/map_type_button.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
@@ -670,7 +671,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     title: 'Polityka prywatności',
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/privacy');
+                      openPrivacyPolicy(context);
                     },
                   ),
                 ],

@@ -7,10 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/config/app_config.dart';
+import 'package:drivio/providers/ads_provider.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/settings_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
+import 'package:drivio/services/ad_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/utils/legal_links.dart';
 import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/common/edit_name_dialog.dart';
 
@@ -231,8 +234,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Polityka prywatności'),
-                  onTap: () => context.push('/privacy'),
+                  onTap: () => openPrivacyPolicy(context),
                 ),
+                if (ref.watch(adPrivacyOptionsRequiredProvider).value == true)
+                  ListTile(
+                    leading: const Icon(Icons.ads_click_outlined),
+                    title: const Text('Ustawienia prywatności reklam'),
+                    onTap: AdService.instance.showPrivacyOptions,
+                  ),
                 const Divider(height: 1, indent: 62),
                 ListTile(
                   leading: const Icon(Icons.mail_outline),

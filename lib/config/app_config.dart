@@ -56,6 +56,9 @@ class AppConfig {
   // WORD - exam registration system
   static const String wordUrl = 'https://word.szczecin.pl';
 
+  // Public site hosting the privacy policy (see hosting/index.html).
+  static const String privacyPolicyUrl = 'https://drivio-a7d9c.web.app';
+
   // Szczecin center coordinates
   // ignore: constant_identifier_names
   static const double szczecin_lat = 53.4289;

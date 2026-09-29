@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/services/session_preference_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/utils/legal_links.dart';
 import 'package:drivio/utils/auth_error_message.dart';
 import 'package:drivio/widgets/auth/social_auth_buttons.dart';
 import 'package:drivio/widgets/common/drivio_brand.dart';
@@ -353,7 +354,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   setState(() => _acceptedRodo = value),
                               prefix: 'Akceptuję ',
                               linkText: 'Politykę prywatności',
-                              onOpen: () => context.push('/privacy'),
+                              onOpen: () => openPrivacyPolicy(context),
                             ),
                             const SizedBox(height: 26),
                             SizedBox(

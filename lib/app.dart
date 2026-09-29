@@ -21,7 +21,6 @@ import 'package:drivio/screens/exam/exam_registration_screen.dart';
 import 'package:drivio/screens/profile/profile_screen.dart';
 import 'package:drivio/screens/premium/premium_screen.dart';
 import 'package:drivio/screens/legal/terms_screen.dart';
-import 'package:drivio/screens/legal/privacy_screen.dart';
 import 'package:drivio/screens/ranking/ranking_screen.dart';
 import 'package:drivio/screens/admin/admin_moderation_screen.dart';
 import 'package:drivio/screens/admin/admin_school_form_screen.dart';
@@ -55,8 +54,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
           onSplash ||
           onCitySelect ||
           loggingIn ||
-          state.matchedLocation == '/terms' ||
-          state.matchedLocation == '/privacy';
+          state.matchedLocation == '/terms';
 
       if (onSplash) return null;
 
@@ -139,10 +137,6 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/terms',
         builder: (context, state) => const _DarkOnly(child: TermsScreen()),
-      ),
-      GoRoute(
-        path: '/privacy',
-        builder: (context, state) => const _DarkOnly(child: PrivacyScreen()),
       ),
       GoRoute(
         path: '/ranking',
