@@ -42,7 +42,7 @@ class PrivacyScreen extends StatelessWidget {
 
 Kontakt z Administratorem:
 Email: ${AppConfig.contactEmail}
-Strona: www.drivioapp.pl
+Strona: https://drivio-a7d9c.web.app
 
 W przypadku pytań dotyczących przetwarzania danych osobowych prosimy o kontakt pod powyższymi adresami.''',
           ),

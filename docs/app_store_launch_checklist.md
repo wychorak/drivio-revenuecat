@@ -38,4 +38,4 @@
 - Debug może używać `REVENUECAT_TEST_API_KEY`; kod wybiera go tylko w buildzie debug. Przed wydaniem Androida ustawić osobny `REVENUECAT_ANDROID_API_KEY` i nie przekazywać klucza `test_` do release.
 - Dodać istniejące testy do CI. Lokalnie przechodzi 11 testów Flutter, 22 testy reguł i 8 testów backendu RevenueCat.
 - Włączyć alerty Firebase Usage and billing oraz ograniczyć Google Maps API key do Bundle ID `com.drivio.com` i właściwych API.
-- Zweryfikować publiczne URL-e: support, privacy policy, marketing oraz procedurę odpowiedzi na zgłoszenia UGC.
+- Publiczna witryna i polityka prywatności: `https://drivio-a7d9c.web.app` (Firebase Hosting). Tego adresu użyć w App Store Connect jako Privacy Policy, Support i Marketing URL oraz jako strony dewelopera dla `app-ads.txt`. Domeny `drivio.pl` i `drivioapp.pl` nie są już używane.

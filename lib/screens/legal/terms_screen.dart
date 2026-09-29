@@ -39,7 +39,7 @@ class TermsScreen extends StatelessWidget {
             '§1. Postanowienia ogólne',
             '''1. Niniejszy Regulamin określa zasady korzystania z aplikacji mobilnej Drivio (dalej: "Aplikacja"), dostępnej na platformach Android i iOS.
 
-2. Operatorem Aplikacji jest Marysia Rycyk, osoba fizyczna (dalej: "Usługodawca"). Kontakt: ${AppConfig.contactEmail}, strona: www.drivioapp.pl.
+2. Operatorem Aplikacji jest Marysia Rycyk, osoba fizyczna (dalej: "Usługodawca"). Kontakt: ${AppConfig.contactEmail}, strona: https://drivio-a7d9c.web.app.
 
 3. Korzystanie z Aplikacji oznacza akceptację niniejszego Regulaminu w całości.
 
