@@ -30,6 +30,10 @@ class AdService {
   Future<bool>? _initializing;
   bool _canRequestAds = false;
 
+  /// Short reason for the last failed ad request, shown next to the
+  /// "unavailable" message so failures can be diagnosed on real devices.
+  String? lastAdIssue;
+
   bool get isSupported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -55,12 +59,14 @@ class AdService {
         ConsentForm.loadAndShowConsentFormIfRequired((error) {
           if (error != null) {
             debugPrint('AdMob consent form failed: ${error.message}');
+            lastAdIssue = 'zgoda-formularz ${error.errorCode}';
           }
           if (!update.isCompleted) update.complete();
         });
       },
       (error) {
         debugPrint('AdMob consent update failed: ${error.message}');
+        lastAdIssue = 'zgoda ${error.errorCode}: ${error.message}';
         if (!update.isCompleted) update.complete();
       },
     );
@@ -69,9 +75,11 @@ class AdService {
       await update.future.timeout(const Duration(seconds: 20));
     } on TimeoutException {
       debugPrint('AdMob consent update timed out.');
+      lastAdIssue = 'zgoda-timeout';
     }
 
     _canRequestAds = await ConsentInformation.instance.canRequestAds();
+    if (!_canRequestAds) lastAdIssue ??= 'brak-zgody';
     if (_canRequestAds) {
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(
@@ -131,6 +139,7 @@ class AdService {
   }
 
   Future<RewardedAdOutcome> showRewardedTrapAd(String uid) async {
+    lastAdIssue = null;
     if (!isSupported || !await initialize()) {
       return RewardedAdOutcome.unavailable;
     }
@@ -162,6 +171,7 @@ class AdService {
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               debugPrint('AdMob rewarded show failed: $error');
+              lastAdIssue = 'wyswietlenie ${error.code}';
               ad.dispose();
               if (!completed.isCompleted) {
                 completed.complete(RewardedAdOutcome.unavailable);
@@ -172,6 +182,7 @@ class AdService {
         },
         onAdFailedToLoad: (error) {
           debugPrint('AdMob rewarded load failed: $error');
+          lastAdIssue = 'ladowanie ${error.code}: ${error.message}';
           if (!completed.isCompleted) {
             completed.complete(RewardedAdOutcome.unavailable);
           }

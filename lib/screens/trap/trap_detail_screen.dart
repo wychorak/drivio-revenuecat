@@ -187,7 +187,8 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
               outcome == RewardedAdOutcome.closedEarly
                   ? 'Obejrzyj reklamę do końca, aby odblokować pułapkę.'
                   : 'Reklama jest chwilowo niedostępna. Spróbuj za chwilę '
-                        'albo wybierz Premium.',
+                        'albo wybierz Premium.'
+                        '${AdService.instance.lastAdIssue == null ? '' : ' (${AdService.instance.lastAdIssue})'}',
             ),
           ),
         );
