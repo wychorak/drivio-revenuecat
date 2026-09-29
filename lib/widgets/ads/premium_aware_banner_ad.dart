@@ -66,7 +66,13 @@ class _PremiumAwareBannerAdState extends ConsumerState<PremiumAwareBannerAd> {
         onAdFailedToLoad: (failedAd, error) {
           debugPrint('AdMob banner failed: $error');
           failedAd.dispose();
-          if (mounted) setState(() => _loading = false);
+          _loading = false;
+          // No fill is common; allow another request after a pause instead
+          // of leaving the slot empty for the rest of the session.
+          Future<void>.delayed(const Duration(seconds: 60), () {
+            if (!mounted) return;
+            setState(() => _requestedWidth = null);
+          });
         },
       ),
     );

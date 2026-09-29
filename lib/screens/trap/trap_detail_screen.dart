@@ -178,11 +178,18 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     if (agreed != true || !mounted) return;
     setState(() => _rewardLoading = true);
     try {
-      final earned = await AdService.instance.showRewardedTrapAd(user.uid);
+      final outcome = await AdService.instance.showRewardedTrapAd(user.uid);
       if (!mounted) return;
-      if (!earned) {
+      if (outcome != RewardedAdOutcome.rewarded) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reklama nie przyznała nagrody.')),
+          SnackBar(
+            content: Text(
+              outcome == RewardedAdOutcome.closedEarly
+                  ? 'Obejrzyj reklamę do końca, aby odblokować pułapkę.'
+                  : 'Reklama jest chwilowo niedostępna. Spróbuj za chwilę '
+                        'albo wybierz Premium.',
+            ),
+          ),
         );
         return;
       }

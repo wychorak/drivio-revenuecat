@@ -4,6 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:drivio/config/app_config.dart';
 
+/// How a rewarded ad attempt ended.
+enum RewardedAdOutcome {
+  /// The user watched to the end; AdMob confirms the reward to the backend.
+  rewarded,
+
+  /// The ad was shown but closed before the reward.
+  closedEarly,
+
+  /// No ad could be shown: no consent, no fill or a network error.
+  unavailable,
+}
+
 class AdService {
   AdService._();
 
@@ -118,9 +130,11 @@ class AdService {
     await completer.future;
   }
 
-  Future<bool> showRewardedTrapAd(String uid) async {
-    if (!isSupported || !await initialize()) return false;
-    final completed = Completer<bool>();
+  Future<RewardedAdOutcome> showRewardedTrapAd(String uid) async {
+    if (!isSupported || !await initialize()) {
+      return RewardedAdOutcome.unavailable;
+    }
+    final completed = Completer<RewardedAdOutcome>();
     var earnedReward = false;
     RewardedInterstitialAd.load(
       adUnitId: usesTestRewardedAd
@@ -138,25 +152,35 @@ class AdService {
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
               ad.dispose();
-              if (!completed.isCompleted) completed.complete(earnedReward);
+              if (!completed.isCompleted) {
+                completed.complete(
+                  earnedReward
+                      ? RewardedAdOutcome.rewarded
+                      : RewardedAdOutcome.closedEarly,
+                );
+              }
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               debugPrint('AdMob rewarded show failed: $error');
               ad.dispose();
-              if (!completed.isCompleted) completed.complete(false);
+              if (!completed.isCompleted) {
+                completed.complete(RewardedAdOutcome.unavailable);
+              }
             },
           );
           ad.show(onUserEarnedReward: (_, _) => earnedReward = true);
         },
         onAdFailedToLoad: (error) {
           debugPrint('AdMob rewarded load failed: $error');
-          if (!completed.isCompleted) completed.complete(false);
+          if (!completed.isCompleted) {
+            completed.complete(RewardedAdOutcome.unavailable);
+          }
         },
       ),
     );
     return completed.future.timeout(
       const Duration(minutes: 3),
-      onTimeout: () => false,
+      onTimeout: () => RewardedAdOutcome.unavailable,
     );
   }
 }
