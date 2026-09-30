@@ -145,12 +145,12 @@ class AdService {
     }
     final completed = Completer<RewardedAdOutcome>();
     var earnedReward = false;
-    RewardedAd.load(
+    RewardedInterstitialAd.load(
       adUnitId: usesTestRewardedAd
-          ? 'ca-app-pub-3940256099942544/1712485313'
+          ? 'ca-app-pub-3940256099942544/6978759866'
           : AppConfig.admobIosRewardedId,
       request: const AdRequest(nonPersonalizedAds: true),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           ad.setServerSideOptions(
             ServerSideVerificationOptions(
