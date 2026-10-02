@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +19,7 @@ import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
 import 'package:drivio/widgets/trap/comment_tile.dart';
+import 'package:drivio/widgets/trap/trap_photo_gallery.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
 
 class TrapDetailScreen extends ConsumerStatefulWidget {
@@ -700,27 +700,8 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: trap.photoUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: trap.photoUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) => Container(
-                        color: Theme.of(context).colorScheme.surface,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (_, _, _) => Container(
-                        color: Theme.of(context).colorScheme.surface,
-                        child: Icon(
-                          Icons.image_not_supported_outlined,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          size: 48,
-                        ),
-                      ),
-                    )
+              background: trap.photoUrls.isNotEmpty
+                  ? TrapPhotoGallery(urls: trap.photoUrls)
                   : Container(
                       color: Theme.of(context).colorScheme.surface,
                       child: const Icon(

@@ -7,7 +7,9 @@ class TrapModel {
   final String title;
   final String description;
   final int difficulty;
-  final String? photoUrl;
+
+  /// Trap photos in display order (at most five).
+  final List<String> photoUrls;
   final String? videoUrl;
   final String ruleDescription;
   final String createdBy;
@@ -22,7 +24,7 @@ class TrapModel {
     required this.title,
     required this.description,
     required this.difficulty,
-    this.photoUrl,
+    this.photoUrls = const [],
     this.videoUrl,
     required this.ruleDescription,
     required this.createdBy,
@@ -30,6 +32,18 @@ class TrapModel {
     required this.createdAt,
     this.savesCount = 0,
   });
+
+  /// First photo, used for thumbnails and markers.
+  String? get photoUrl => photoUrls.isEmpty ? null : photoUrls.first;
+
+  static List<String> _photoUrlsFrom(Map<String, dynamic> map) {
+    final list = map['photoUrls'];
+    if (list is List) {
+      return list.whereType<String>().where((url) => url.isNotEmpty).toList();
+    }
+    final single = map['photoUrl'];
+    return single is String && single.isNotEmpty ? [single] : const [];
+  }
 
   factory TrapModel.fromMap(Map<String, dynamic> map, String id) {
     return TrapModel(
@@ -39,7 +53,7 @@ class TrapModel {
       title: map['title'] as String? ?? '',
       description: map['description'] as String? ?? '',
       difficulty: (map['difficulty'] as num?)?.toInt() ?? 1,
-      photoUrl: map['photoUrl'] as String?,
+      photoUrls: _photoUrlsFrom(map),
       videoUrl: map['videoUrl'] as String?,
       ruleDescription: map['ruleDescription'] as String? ?? '',
       createdBy: map['createdBy'] as String? ?? '',
@@ -58,6 +72,8 @@ class TrapModel {
       'title': title,
       'description': description,
       'difficulty': difficulty,
+      'photoUrls': photoUrls,
+      // Kept for app versions that only read a single photo.
       'photoUrl': photoUrl,
       'videoUrl': videoUrl,
       'ruleDescription': ruleDescription,
@@ -75,7 +91,7 @@ class TrapModel {
     String? title,
     String? description,
     int? difficulty,
-    String? photoUrl,
+    List<String>? photoUrls,
     String? videoUrl,
     String? ruleDescription,
     String? createdBy,
@@ -90,7 +106,7 @@ class TrapModel {
       title: title ?? this.title,
       description: description ?? this.description,
       difficulty: difficulty ?? this.difficulty,
-      photoUrl: photoUrl ?? this.photoUrl,
+      photoUrls: photoUrls ?? this.photoUrls,
       videoUrl: videoUrl ?? this.videoUrl,
       ruleDescription: ruleDescription ?? this.ruleDescription,
       createdBy: createdBy ?? this.createdBy,

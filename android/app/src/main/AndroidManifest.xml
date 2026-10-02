@@ -3,6 +3,11 @@
         android:label="drivio"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Photo crop editor used when adding traps (image_cropper). -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

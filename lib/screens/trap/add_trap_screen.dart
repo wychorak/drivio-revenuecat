@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:drivio/config/app_config.dart';
 import 'package:drivio/models/trap_model.dart';
@@ -34,7 +35,8 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     AppConfig.szczecin_lat,
     AppConfig.szczecin_lng,
   );
-  File? _pickedImage;
+  static const _maxPhotos = 5;
+  final List<File> _pickedImages = [];
   File? _pickedVideo;
   bool _isLoading = false;
   final _storageService = StorageService();
@@ -43,7 +45,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       _titleController.text.trim().isNotEmpty ||
       _descriptionController.text.trim().isNotEmpty ||
       _ruleController.text.trim().isNotEmpty ||
-      _pickedImage != null ||
+      _pickedImages.isNotEmpty ||
       _pickedVideo != null ||
       _difficulty != 3 ||
       _markerPosition.latitude != AppConfig.szczecin_lat ||
@@ -66,8 +68,10 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      if (picked != null && mounted) {
-        setState(() => _pickedImage = File(picked.path));
+      if (picked == null || !mounted) return;
+      final edited = await _cropImage(File(picked.path));
+      if (edited != null && mounted && _pickedImages.length < _maxPhotos) {
+        setState(() => _pickedImages.add(edited));
       }
     } on PlatformException {
       if (mounted) {
@@ -82,6 +86,122 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         );
       }
     }
+  }
+
+  /// Opens the crop/rotate editor; returns null when the user cancels.
+  Future<File?> _cropImage(File source) async {
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: source.path,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 88,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        uiSettings: [
+          IOSUiSettings(
+            title: 'Dopasuj zdjęcie',
+            doneButtonTitle: 'Gotowe',
+            cancelButtonTitle: 'Anuluj',
+            aspectRatioPresets: const [
+              CropAspectRatioPreset.ratio16x9,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.original,
+            ],
+          ),
+          AndroidUiSettings(
+            toolbarTitle: 'Dopasuj zdjęcie',
+            toolbarColor: AppTheme.primary,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: AppTheme.primary,
+            lockAspectRatio: false,
+            aspectRatioPresets: const [
+              CropAspectRatioPreset.ratio16x9,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.original,
+            ],
+          ),
+        ],
+      );
+      return cropped == null ? null : File(cropped.path);
+    } on PlatformException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się otworzyć edytora.')),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> _editImage(int index) async {
+    final edited = await _cropImage(_pickedImages[index]);
+    if (edited != null && mounted) {
+      setState(() => _pickedImages[index] = edited);
+    }
+  }
+
+  Widget _photoThumbnail(int index, ColorScheme colors) {
+    return SizedBox(
+      width: 150,
+      child: Column(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _isLoading ? null : () => _editImage(index),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.file(_pickedImages[index], fit: BoxFit.cover),
+                    if (index == 0)
+                      Positioned(
+                        left: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Główne',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                tooltip: 'Dopasuj zdjęcie',
+                visualDensity: VisualDensity.compact,
+                onPressed: _isLoading ? null : () => _editImage(index),
+                icon: Icon(Icons.crop_rotate_rounded, color: colors.onSurface),
+              ),
+              IconButton(
+                tooltip: 'Usuń zdjęcie',
+                visualDensity: VisualDensity.compact,
+                onPressed: _isLoading
+                    ? null
+                    : () => setState(() => _pickedImages.removeAt(index)),
+                icon: const Icon(Icons.delete_outline, color: AppTheme.primary),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickVideo() async {
@@ -117,7 +237,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
           builder: (dialogContext) => AlertDialog(
             title: const Text('Odrzucić zmiany?'),
             content: const Text(
-              'Wpisane informacje, zdjęcie i film nie zostaną zapisane.',
+              'Wpisane informacje, zdjęcia i film nie zostaną zapisane.',
             ),
             actions: [
               TextButton(
@@ -174,7 +294,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
 
     setState(() => _isLoading = true);
 
-    String? uploadedPhotoUrl;
+    final uploadedPhotoUrls = <String>[];
     String? uploadedVideoUrl;
     try {
       if (devLogin) {
@@ -189,10 +309,9 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         return;
       }
 
-      if (_pickedImage != null) {
-        uploadedPhotoUrl = await _storageService.uploadTrapPhoto(
-          user!.uid,
-          _pickedImage!,
+      for (final image in _pickedImages) {
+        uploadedPhotoUrls.add(
+          await _storageService.uploadTrapPhoto(user!.uid, image),
         );
       }
       if (_pickedVideo != null) {
@@ -212,7 +331,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         difficulty: _difficulty,
-        photoUrl: uploadedPhotoUrl,
+        photoUrls: uploadedPhotoUrls,
         videoUrl: uploadedVideoUrl,
         ruleDescription: _ruleController.text.trim(),
         createdBy: user!.uid,
@@ -230,8 +349,8 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       }
     } catch (e) {
       debugPrint('Add trap failed: $e');
-      if (uploadedPhotoUrl != null) {
-        await _storageService.deletePhoto(uploadedPhotoUrl);
+      for (final url in uploadedPhotoUrls) {
+        await _storageService.deletePhoto(url);
       }
       if (uploadedVideoUrl != null) {
         await _storageService.deleteUploadedMedia(uploadedVideoUrl);
@@ -385,28 +504,25 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                   }),
                 ),
                 const SizedBox(height: 20),
-                _sectionLabel('Zdjęcie (opcjonalne)'),
+                _sectionLabel(
+                  'Zdjęcia (opcjonalne, maks. $_maxPhotos) '
+                  '${_pickedImages.length}/$_maxPhotos',
+                ),
                 const SizedBox(height: 8),
-                if (_pickedImage != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      _pickedImage!,
-                      height: 160,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                if (_pickedImages.isNotEmpty) ...[
+                  SizedBox(
+                    height: 132,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _pickedImages.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) =>
+                          _photoThumbnail(index, colors),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: () => setState(() => _pickedImage = null),
-                    icon: const Icon(Icons.delete_outline, size: 16),
-                    label: const Text('Usuń zdjęcie'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primary,
-                    ),
-                  ),
-                ] else
+                  const SizedBox(height: 10),
+                ],
+                if (_pickedImages.length < _maxPhotos)
                   Row(
                     children: [
                       _imagePickerBtn(

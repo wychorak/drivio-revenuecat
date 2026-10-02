@@ -215,7 +215,14 @@ class FirestoreService {
     await batch.commit();
     if (trap != null && trap.exists) {
       final media = StorageService();
-      for (final url in [trap.data()?['photoUrl'], trap.data()?['videoUrl']]) {
+      final data = trap.data();
+      final photos = data?['photoUrls'];
+      final urls = {
+        data?['photoUrl'],
+        data?['videoUrl'],
+        if (photos is List) ...photos,
+      };
+      for (final url in urls) {
         if (url is String && url.isNotEmpty) {
           await media.deleteUploadedMedia(url);
         }
