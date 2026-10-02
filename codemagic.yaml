@@ -81,13 +81,22 @@ workflows:
           )
           flutter build ipa "${BUILD_ARGUMENTS[@]}"
 
+      - name: Upload to App Store Connect
+        script: |
+          # Xcode 26 altool cannot resolve the app from its bundle ID
+          # ("Cannot determine the Apple ID from Bundle ID", error 19), so pass
+          # the numeric App Store Connect app ID explicitly. Credentials come
+          # from the driviorelase integration via APP_STORE_CONNECT_* variables.
+          set -euo pipefail
+          : "${APP_STORE_APPLE_ID:?Missing APP_STORE_APPLE_ID}"
+          : "${APP_STORE_CONNECT_PRIVATE_KEY:?App Store Connect integration driviorelase did not provide API key variables}"
+          app-store-connect publish \
+            --path "build/ios/ipa/*.ipa" \
+            --altool-additional-arguments="--apple-id $APP_STORE_APPLE_ID" \
+            --altool-retries 3
+
     artifacts:
       - build/ios/ipa/*.ipa
       - build/ios/archive/*.xcarchive
       - /tmp/xcodebuild_logs/*.log
 
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: false
