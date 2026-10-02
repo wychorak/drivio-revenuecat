@@ -128,7 +128,9 @@ class TermsScreen extends StatelessWidget {
 
 2. Kopiowanie, modyfikowanie lub dystrybucja elementów Aplikacji bez zgody Usługodawcy jest zabroniona.
 
-3. Usługodawca szanuje prawa autorskie osób trzecich. W przypadku naruszenia prosimy o kontakt.''',
+3. Usługodawca szanuje prawa autorskie osób trzecich. W przypadku naruszenia prosimy o kontakt.
+
+4. Część materiałów w Aplikacji, w szczególności grafiki, ilustracje i teksty, mogła zostać przygotowana z wykorzystaniem narzędzi sztucznej inteligencji. Materiały te są sprawdzane przez Usługodawcę przed publikacją. Aplikacja nie prowadzi z użytkownikami rozmów za pośrednictwem systemów sztucznej inteligencji i nie podejmuje wobec nich decyzji w sposób zautomatyzowany.''',
           ),
           _section(
             context,
