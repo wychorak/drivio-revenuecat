@@ -5,7 +5,7 @@ The root codemagic.yaml contains the ios-release workflow for a signed Drivio IP
 ## Required Codemagic setup
 
 1. Connect the GitHub repository wychorak/drivio-revenuecat and select codemagic.yaml.
-2. Keep an App Store Connect integration named wychor appstoreconnectkey.
+2. Keep an App Store Connect integration named driviorelase (key drivioappstorekey, Key ID XQ9Z873V82, Admin).
 3. The integration must use an App Store Connect API key with access to certificates, profiles and TestFlight. Do not use the Sign in with Apple key driviokey or the RevenueCat In-App Purchase key here.
 4. Create an environment-variable group named drivio_secrets.
 5. Add these values to the group and mark sensitive values Secure:
