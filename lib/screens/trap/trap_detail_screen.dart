@@ -939,10 +939,17 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
 
   Future<void> _openVideo(String url) async {
     final uri = Uri.tryParse(url);
-    final opened =
-        uri != null &&
-        uri.hasScheme &&
+    var opened = false;
+    if (uri != null && uri.hasScheme) {
+      try {
+        // On iOS the in-app Safari view reports a video file as a failed
+        // "page load" even while it plays, so a false result is not an error.
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+        opened = true;
+      } catch (error) {
+        debugPrint('Video launch failed: $error');
+      }
+    }
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nie udało się otworzyć wideo.')),
