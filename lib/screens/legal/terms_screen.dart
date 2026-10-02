@@ -27,7 +27,7 @@ class TermsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ostatnia aktualizacja: 25 września 2026',
+            'Ostatnia aktualizacja: 2 października 2026',
             style: GoogleFonts.poppins(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
@@ -45,7 +45,7 @@ class TermsScreen extends StatelessWidget {
 
 4. Usługodawca zastrzega sobie prawo do zmiany Regulaminu. O wszelkich zmianach użytkownicy zostaną poinformowani z co najmniej 14-dniowym wyprzedzeniem.
 
-5. Aplikacja jest przeznaczona dla osób pełnoletnich lub za zgodą rodziców/opiekunów prawnych dla osób powyżej 16. roku życia.''',
+5. Aplikacja ma charakter edukacyjny i może z niej korzystać każdy, bez względu na wiek. Ograniczenia związane z wiekiem dotyczą wyłącznie zakupów Premium (§4) i reklam (§9).''',
           ),
           _section(
             context,
@@ -94,7 +94,9 @@ class TermsScreen extends StatelessWidget {
 
 5. Subskrypcją można zarządzać i ją anulować w ustawieniach konta sklepu (na iPhonie: Ustawienia → Apple ID → Subskrypcje). Usunięcie konta w Aplikacji nie anuluje subskrypcji.
 
-6. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta. Zwroty za zakupy w App Store obsługuje Apple.''',
+6. Anulowanie subskrypcji nie uprawnia do zwrotu środków za niewykorzystany okres, z wyjątkiem przypadków określonych w przepisach o prawach konsumenta. Zwroty za zakupy w App Store obsługuje Apple.
+
+7. Premium może kupić osoba pełnoletnia. Osoba niepełnoletnia może kupić Premium wyłącznie za zgodą rodzica lub opiekuna prawnego. Rodzic lub opiekun może ograniczyć zakupy w aplikacjach w ustawieniach Chmury rodzinnej i Czasu przed ekranem na urządzeniu Apple.''',
           ),
           _section(
             context,
@@ -155,7 +157,7 @@ class TermsScreen extends StatelessWidget {
             '§9. Reklamy i śledzenie',
             '''1. Bezpłatna wersja Aplikacji wyświetla dyskretny baner Google AdMob. Jedna odsłona pułapki dziennie jest darmowa; dwie kolejne można odblokować, oglądając dobrowolnie po jednej reklamie z nagrodą za każdą. Limit resetuje się o północy czasu polskiego. Drivio Pro nie ma limitu pułapek ani reklam.
 
-2. Reklamy są ładowane dopiero po sprawdzeniu wymaganych zgód. Aplikacja żąda reklam niepersonalizowanych i nie używa danych użytkownika do reklamy behawioralnej.
+2. Reklamy są ładowane dopiero po sprawdzeniu wymaganych zgód. Aplikacja żąda reklam niepersonalizowanych i nie używa danych użytkownika do reklamy behawioralnej. Dotyczy to wszystkich użytkowników, także niepełnoletnich. W przypadku osób poniżej 16. roku życia zgody dotyczące reklam wyraża rodzic lub opiekun prawny.
 
 3. Użytkownik może ponownie otworzyć wymagane ustawienia prywatności reklam z poziomu Polityki prywatności.
 
