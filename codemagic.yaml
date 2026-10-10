@@ -13,7 +13,9 @@ workflows:
         bundle_identifier: com.drivio.com
 
       flutter: stable
-      xcode: latest
+      # Pinned to a released Xcode: "latest" resolves to the edge image, which
+      # ships a beta Xcode (rejected by App Store Connect) and can sit queued.
+      xcode: "27.1"
       cocoapods: default
 
       groups:
