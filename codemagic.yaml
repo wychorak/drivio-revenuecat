@@ -13,9 +13,10 @@ workflows:
         bundle_identifier: com.drivio.com
 
       flutter: stable
-      # Pinned to a released Xcode: "latest" resolves to the edge image, which
-      # ships a beta Xcode (rejected by App Store Connect) and can sit queued.
-      xcode: "27.1"
+      # Pinned to Codemagic's default released Xcode: "latest" resolves to the
+      # edge image (a beta Xcode, rejected by App Store Connect), and newer
+      # images can sit queued when their machine pool is overloaded.
+      xcode: "26.6"
       cocoapods: default
 
       groups:
