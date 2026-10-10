@@ -6,9 +6,12 @@ import 'package:drivio/theme/app_theme.dart';
 
 /// Swipeable trap photos with page dots; tapping opens a zoomable viewer.
 class TrapPhotoGallery extends StatefulWidget {
-  const TrapPhotoGallery({super.key, required this.urls});
+  const TrapPhotoGallery({super.key, required this.urls, this.credit});
 
   final List<String> urls;
+
+  /// Optional photo source, shown small in the corner.
+  final String? credit;
 
   @override
   State<TrapPhotoGallery> createState() => _TrapPhotoGalleryState();
@@ -28,7 +31,11 @@ class _TrapPhotoGalleryState extends State<TrapPhotoGallery> {
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => _PhotoViewer(urls: widget.urls, initialIndex: _index),
+        builder: (_) => _PhotoViewer(
+          urls: widget.urls,
+          initialIndex: _index,
+          credit: widget.credit,
+        ),
       ),
     );
   }
@@ -65,6 +72,28 @@ class _TrapPhotoGalleryState extends State<TrapPhotoGallery> {
             ),
           ),
         ),
+        if (widget.credit?.trim().isNotEmpty == true)
+          Positioned(
+            left: 10,
+            bottom: 10,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(90),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  widget.credit!.trim(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (widget.urls.length > 1)
           Positioned(
             left: 0,
@@ -96,10 +125,15 @@ class _TrapPhotoGalleryState extends State<TrapPhotoGallery> {
 }
 
 class _PhotoViewer extends StatelessWidget {
-  const _PhotoViewer({required this.urls, required this.initialIndex});
+  const _PhotoViewer({
+    required this.urls,
+    required this.initialIndex,
+    this.credit,
+  });
 
   final List<String> urls;
   final int initialIndex;
+  final String? credit;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +143,18 @@ class _PhotoViewer extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
+      bottomNavigationBar: credit?.trim().isNotEmpty == true
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  credit!.trim(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                ),
+              ),
+            )
+          : null,
       body: PhotoViewGallery.builder(
         itemCount: urls.length,
         pageController: PageController(initialPage: initialIndex),

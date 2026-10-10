@@ -10,6 +10,9 @@ class TrapModel {
 
   /// Trap photos in display order (at most five).
   final List<String> photoUrls;
+
+  /// Source shown under the photos, e.g. "Zdjęcie: Google Street View".
+  final String? photoCredit;
   final String? videoUrl;
   final String ruleDescription;
   final String createdBy;
@@ -25,6 +28,7 @@ class TrapModel {
     required this.description,
     required this.difficulty,
     this.photoUrls = const [],
+    this.photoCredit,
     this.videoUrl,
     required this.ruleDescription,
     required this.createdBy,
@@ -54,6 +58,7 @@ class TrapModel {
       description: map['description'] as String? ?? '',
       difficulty: (map['difficulty'] as num?)?.toInt() ?? 1,
       photoUrls: _photoUrlsFrom(map),
+      photoCredit: map['photoCredit'] as String?,
       videoUrl: map['videoUrl'] as String?,
       ruleDescription: map['ruleDescription'] as String? ?? '',
       createdBy: map['createdBy'] as String? ?? '',
@@ -75,6 +80,7 @@ class TrapModel {
       'photoUrls': photoUrls,
       // Kept for app versions that only read a single photo.
       'photoUrl': photoUrl,
+      'photoCredit': photoCredit,
       'videoUrl': videoUrl,
       'ruleDescription': ruleDescription,
       'createdBy': createdBy,
@@ -92,6 +98,7 @@ class TrapModel {
     String? description,
     int? difficulty,
     List<String>? photoUrls,
+    String? photoCredit,
     String? videoUrl,
     String? ruleDescription,
     String? createdBy,
@@ -107,6 +114,7 @@ class TrapModel {
       description: description ?? this.description,
       difficulty: difficulty ?? this.difficulty,
       photoUrls: photoUrls ?? this.photoUrls,
+      photoCredit: photoCredit ?? this.photoCredit,
       videoUrl: videoUrl ?? this.videoUrl,
       ruleDescription: ruleDescription ?? this.ruleDescription,
       createdBy: createdBy ?? this.createdBy,

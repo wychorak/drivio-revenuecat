@@ -701,7 +701,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: trap.photoUrls.isNotEmpty
-                  ? TrapPhotoGallery(urls: trap.photoUrls)
+                  ? TrapPhotoGallery(
+                      urls: trap.photoUrls,
+                      credit: trap.photoCredit,
+                    )
                   : Container(
                       color: Theme.of(context).colorScheme.surface,
                       child: const Icon(
