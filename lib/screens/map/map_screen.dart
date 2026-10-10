@@ -6,10 +6,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drivio/config/app_config.dart';
 import 'package:drivio/models/trap_model.dart';
-import 'package:drivio/models/school_model.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/traps_provider.dart';
-import 'package:drivio/providers/schools_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/utils/legal_links.dart';
@@ -47,7 +45,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (mounted) setState(() => _selectedCity = city);
   }
 
-  Set<Marker> _buildMarkers(List<TrapModel> traps, List<SchoolModel> schools) {
+  Set<Marker> _buildMarkers(List<TrapModel> traps) {
     final markers = <Marker>{};
 
     for (final trap in traps) {
@@ -58,20 +56,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: InfoWindow(title: trap.title),
           onTap: () => _showTrapBottomSheet(trap),
-        ),
-      );
-    }
-
-    for (final school in schools) {
-      markers.add(
-        Marker(
-          markerId: MarkerId('school_${school.id}'),
-          position: LatLng(school.lat, school.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueGreen,
-          ),
-          infoWindow: InfoWindow(title: school.name),
-          onTap: () => context.push('/school/${school.id}'),
         ),
       );
     }
@@ -122,14 +106,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final trapsAsync = ref.watch(trapsProvider(_selectedCity));
-    final schoolsAsync = ref.watch(schoolsProvider(_selectedCity));
     final isPremium = ref.watch(isPremiumProvider);
     final isAdmin = ref.watch(adminAccessProvider).value?.isAdmin ?? false;
     final remainingAsync = ref.watch(remainingViewsProvider);
 
     final traps = trapsAsync.value ?? [];
-    final schools = schoolsAsync.value ?? [];
-    final markers = _buildMarkers(traps, schools);
+    final markers = _buildMarkers(traps);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -252,7 +234,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 const SizedBox(width: 8),
                 _MapPill(
                   icon: Icons.school_rounded,
-                  label: '${schools.length} szkół',
+                  label: 'Szkoły · Coming soon',
                   color: AppTheme.successColor,
                   colors: colors,
                 ),

@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/models/trap_model.dart';
-import 'package:drivio/models/school_model.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/common/coming_soon.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -23,7 +23,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<TrapModel> _savedTraps = [];
-  List<SchoolModel> _savedSchools = [];
   bool _loadingSaved = false;
 
   @override
@@ -51,7 +50,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       if (mounted) {
         setState(() {
           _savedTraps = DevDataService.savedTraps(user.savedTraps);
-          _savedSchools = DevDataService.savedSchools(user.savedSchools);
           _loadingSaved = false;
         });
       }
@@ -60,13 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final fs = ref.read(firestoreServiceProvider);
     try {
       final traps = await fs.getSavedTraps(user.savedTraps);
-      final schools = await fs.getSavedSchools(user.savedSchools);
-      if (mounted) {
-        setState(() {
-          _savedTraps = traps;
-          _savedSchools = schools;
-        });
-      }
+      if (mounted) setState(() => _savedTraps = traps);
     } catch (error) {
       debugPrint('Profile: saved items unavailable: $error');
     } finally {
@@ -82,9 +74,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       final before = previous?.value;
       final after = next.value;
       if (after == null) return;
-      if (before == null ||
-          !listEquals(before.savedTraps, after.savedTraps) ||
-          !listEquals(before.savedSchools, after.savedSchools)) {
+      if (before == null || !listEquals(before.savedTraps, after.savedTraps)) {
         _loadSaved();
       }
     });
@@ -287,7 +277,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               controller: _tabController,
               children: [
                 _loadingSaved ? const LoadingWidget() : _buildSavedTraps(),
-                _loadingSaved ? const LoadingWidget() : _buildSavedSchools(),
+                const ComingSoon(),
               ],
             ),
           );
@@ -415,97 +405,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSavedSchools() {
-    final colors = Theme.of(context).colorScheme;
-    if (_savedSchools.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.school_outlined,
-              color: colors.onSurfaceVariant,
-              size: 48,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Brak zapisanych szkół',
-              style: GoogleFonts.poppins(
-                color: colors.onSurfaceVariant,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _savedSchools.length,
-      itemBuilder: (ctx, i) {
-        final school = _savedSchools[i];
-        return GestureDetector(
-          onTap: () => context.push('/school/${school.id}'),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: colors.outline.withAlpha(120)),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: colors.surfaceContainerHighest,
-                  backgroundImage: school.logoUrl != null
-                      ? NetworkImage(school.logoUrl!)
-                      : null,
-                  child: school.logoUrl == null
-                      ? Icon(
-                          Icons.school_rounded,
-                          color: colors.onSurfaceVariant,
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        school.name,
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 14),
-                          Text(
-                            ' ${school.rating.toStringAsFixed(1)}',
-                            style: GoogleFonts.poppins(
-                              color: colors.onSurfaceVariant,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
               ],
             ),
           ),

@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/config/app_config.dart';
-import 'package:drivio/models/school_model.dart';
 import 'package:drivio/models/trap_model.dart';
 import 'package:drivio/providers/auth_provider.dart';
 import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
+import 'package:drivio/widgets/common/coming_soon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final _rankingTrapsProvider = FutureProvider<List<TrapModel>>((ref) async {
@@ -21,17 +21,6 @@ final _rankingTrapsProvider = FutureProvider<List<TrapModel>>((ref) async {
     return traps;
   }
   return ref.read(firestoreServiceProvider).getRankingTraps(city);
-});
-
-final _rankingSchoolsProvider = FutureProvider<List<SchoolModel>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final city = prefs.getString('selectedCity') ?? AppConfig.defaultCity;
-  if (ref.read(devLoginProvider)) {
-    final schools = DevDataService.schools(city);
-    schools.sort((a, b) => b.rating.compareTo(a.rating));
-    return schools;
-  }
-  return ref.read(firestoreServiceProvider).getRankingSchools(city);
 });
 
 class RankingScreen extends ConsumerStatefulWidget {
@@ -74,7 +63,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_TrapsRankingTab(), _SchoolsRankingTab()],
+        children: [_TrapsRankingTab(), const ComingSoon()],
       ),
     );
   }
@@ -233,153 +222,6 @@ class _TrapRankItem extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         trap.city,
-                        style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SchoolsRankingTab extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rankingAsync = ref.watch(_rankingSchoolsProvider);
-
-    return rankingAsync.when(
-      data: (schools) {
-        if (schools.isEmpty) {
-          return Center(
-            child: Text(
-              'Brak danych',
-              style: GoogleFonts.poppins(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: schools.length,
-          itemBuilder: (ctx, i) {
-            final school = schools[i];
-            final rank = i + 1;
-            return _SchoolRankItem(school: school, rank: rank);
-          },
-        );
-      },
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppTheme.primary),
-      ),
-      error: (_, _) => Center(
-        child: Text(
-          'Błąd ładowania rankingu',
-          style: GoogleFonts.poppins(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SchoolRankItem extends StatelessWidget {
-  final SchoolModel school;
-  final int rank;
-
-  const _SchoolRankItem({required this.school, required this.rank});
-
-  @override
-  Widget build(BuildContext context) {
-    Color rankColor = Theme.of(context).colorScheme.onSurfaceVariant;
-    if (rank == 1) rankColor = const Color(0xFFFFD700);
-    if (rank == 2) rankColor = const Color(0xFFC0C0C0);
-    if (rank == 3) rankColor = const Color(0xFFCD7F32);
-
-    return GestureDetector(
-      onTap: () => context.push('/school/${school.id}'),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: rank <= 3
-                ? rankColor.withAlpha(60)
-                : Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 36,
-              child: Text(
-                '#$rank',
-                style: GoogleFonts.poppins(
-                  color: rankColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              backgroundImage: school.logoUrl != null
-                  ? CachedNetworkImageProvider(school.logoUrl!)
-                  : null,
-              child: school.logoUrl == null
-                  ? Icon(
-                      Icons.school_rounded,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      size: 22,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    school.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      ...List.generate(
-                        school.rating.floor(),
-                        (_) => const Icon(
-                          Icons.star,
-                          color: Colors.amber,
-                          size: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${school.rating.toStringAsFixed(1)} (${school.reviewCount})',
                         style: GoogleFonts.poppins(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
