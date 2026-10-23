@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -949,6 +950,11 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         // "page load" even while it plays, so a false result is not an error.
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
         opened = true;
+      } on PlatformException catch (error) {
+        // url_launcher_ios throws that failed load (code "Error") after the
+        // Safari view is already on screen and playing the video.
+        opened = error.code == 'Error';
+        if (!opened) debugPrint('Video launch failed: $error');
       } catch (error) {
         debugPrint('Video launch failed: $error');
       }
