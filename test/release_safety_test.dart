@@ -32,7 +32,7 @@ void main() {
     });
 
     test('production limits are bounded', () {
-      expect(AppConfig.freeDailyTrapLimit, 1);
+      expect(AppConfig.freeDailyTrapLimit, 3);
       expect(AppConfig.rewardedDailyTrapLimit, 2);
       expect(AppConfig.maxSavedTraps, lessThanOrEqualTo(500));
       expect(AppConfig.maxSavedSchools, lessThanOrEqualTo(100));

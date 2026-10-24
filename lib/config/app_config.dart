@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   static const String appName = 'Drivio';
   static const String defaultCity = 'Szczecin';
-  static const int freeDailyTrapLimit = 1;
+  static const int freeDailyTrapLimit = 3;
   static const int rewardedDailyTrapLimit = 2;
   static const int maxSavedTraps = 500;
   static const int maxSavedSchools = 100;

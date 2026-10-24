@@ -291,7 +291,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Pułapki dziś: ${status.views}/3',
+                                'Pułapki dziś: ${status.views}/${AppConfig.freeDailyTrapLimit + AppConfig.rewardedDailyTrapLimit}',
                                 style: GoogleFonts.poppins(
                                   color: colors.onSurface,
                                   fontSize: 12,
@@ -299,7 +299,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                 ),
                               ),
                               Text(
-                                '1 darmowa · 2 po reklamach',
+                                '${AppConfig.freeDailyTrapLimit} darmowe · ${AppConfig.rewardedDailyTrapLimit} po reklamach',
                                 style: GoogleFonts.poppins(
                                   color: colors.onSurfaceVariant,
                                   fontSize: 10,

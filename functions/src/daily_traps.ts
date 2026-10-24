@@ -1,7 +1,7 @@
 import {Timestamp} from 'firebase-admin/firestore';
 
-/** One trap a day without ads, two more unlocked by rewarded ads. */
-export const FREE_DAILY_TRAPS = 1;
+/** Three traps a day without ads, two more unlocked by rewarded ads. */
+export const FREE_DAILY_TRAPS = 3;
 export const REWARDED_DAILY_TRAPS = 2;
 const MAX_DAILY_TRAPS = FREE_DAILY_TRAPS + REWARDED_DAILY_TRAPS;
 
