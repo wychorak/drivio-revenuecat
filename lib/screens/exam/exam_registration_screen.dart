@@ -37,14 +37,20 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
             iconColor: AppTheme.primary,
             title: 'Jak zapisać się na egzamin',
             children: [
-              _step('1', 'Wejdź na stronę WORD Szczecin: word.szczecin.pl'),
-              _step('2', 'Kliknij "Rezerwacja terminu egzaminu"'),
-              _step('3', 'Zaloguj się lub utwórz konto'),
-              _step('4', 'Wybierz kategorię prawa jazdy (np. B)'),
-              _step('5', 'Wybierz termin egzaminu teoretycznego'),
-              _step('6', 'Wybierz termin egzaminu praktycznego'),
-              _step('7', 'Opłać egzamin (patrz niżej)'),
-              _step('8', 'Potwierdź rezerwację – otrzymasz email'),
+              _step(
+                '1',
+                'Otwórz portal Info-Kierowca (przycisk na dole ekranu)',
+              ),
+              _step(
+                '2',
+                'Zaloguj się przez login.gov.pl lub aplikację eDO App',
+              ),
+              _step('3', 'Wybierz profil PKK i kategorię prawa jazdy (np. B)'),
+              _step('4', 'Wybierz ośrodek: WORD Szczecin'),
+              _step('5', 'Wybierz egzamin teoretyczny, praktyczny lub łączony'),
+              _step('6', 'Wybierz datę i godzinę z wolnych terminów'),
+              _step('7', 'Zatwierdź dane na podsumowaniu'),
+              _step('8', 'Opłać egzamin – po opłacie rezerwacja jest gotowa'),
             ],
           ),
           const SizedBox(height: 12),
@@ -154,7 +160,7 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
               onPressed: _openWord,
               icon: const Icon(Icons.open_in_new, size: 20),
               label: const Text(
-                'Zapisz się przez WORD Szczecin →',
+                'Zarezerwuj egzamin online →',
                 style: TextStyle(fontSize: 15),
               ),
               style: ElevatedButton.styleFrom(

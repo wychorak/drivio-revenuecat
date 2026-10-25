@@ -53,8 +53,8 @@ class AppConfig {
   static const String stripeYearly =
       'https://buy.stripe.com/fZucN63A13MyfxfbS71Nu01';
 
-  // WORD - exam registration system
-  static const String wordUrl = 'https://word.szczecin.pl';
+  // Exam reservation in the national Info-Kierowca portal (covers every WORD)
+  static const String wordUrl = 'https://info-kierowca.pl/services/reservation';
 
   // Public site hosting the privacy policy (see hosting/index.html).
   static const String privacyPolicyUrl = 'https://drivio-a7d9c.web.app';
