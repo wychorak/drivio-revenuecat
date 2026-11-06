@@ -16,7 +16,7 @@ workflows:
       # Pinned to a released Xcode with the iOS 26 SDK. "latest" resolves to the
       # edge image (a beta Xcode, rejected by App Store Connect), and the newest
       # and default images can sit queued when their machine pool is overloaded.
-      xcode: "26.4"
+      xcode: "26.3"
       cocoapods: default
 
       groups:
