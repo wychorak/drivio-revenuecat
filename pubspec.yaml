@@ -2,7 +2,7 @@ name: drivio
 description: "Drivio - polska aplikacja pomagająca zdać egzamin na prawo jazdy."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+1
 
 environment:
   sdk: ^3.11.1

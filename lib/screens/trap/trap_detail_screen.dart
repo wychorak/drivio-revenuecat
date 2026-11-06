@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -189,7 +190,8 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   ? 'Obejrzyj reklamę do końca, aby odblokować pułapkę.'
                   : 'Reklama jest chwilowo niedostępna. Spróbuj za chwilę '
                         'albo wybierz Premium.'
-                        '${AdService.instance.lastAdIssue == null ? '' : ' (${AdService.instance.lastAdIssue})'}',
+                        // The SDK error is for debugging, not for users.
+                        '${!kDebugMode || AdService.instance.lastAdIssue == null ? '' : ' (${AdService.instance.lastAdIssue})'}',
             ),
           ),
         );
