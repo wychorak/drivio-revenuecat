@@ -185,19 +185,30 @@ class _TrapsTab extends ConsumerWidget {
                                   ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              trailing: IconButton(
-                                tooltip: 'Usuń pułapkę',
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: AppTheme.primary,
-                                ),
-                                onPressed: () => _confirmDelete(
-                                  context,
-                                  'Usunąć pułapkę i jej komentarze?',
-                                  () => ref
-                                      .read(firestoreServiceProvider)
-                                      .deleteTrap(trap.id),
-                                ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Edytuj pułapkę',
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () =>
+                                        context.push('/trap/${trap.id}/edit'),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Usuń pułapkę',
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: AppTheme.primary,
+                                    ),
+                                    onPressed: () => _confirmDelete(
+                                      context,
+                                      'Usunąć pułapkę i jej komentarze?',
+                                      () => ref
+                                          .read(firestoreServiceProvider)
+                                          .deleteTrap(trap.id),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           );

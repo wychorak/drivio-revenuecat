@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,8 +20,11 @@ import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/map/location_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Adds a new trap, or edits an existing one when [trapId] is given.
 class AddTrapScreen extends ConsumerStatefulWidget {
-  const AddTrapScreen({super.key});
+  const AddTrapScreen({super.key, this.trapId});
+
+  final String? trapId;
 
   @override
   ConsumerState<AddTrapScreen> createState() => _AddTrapScreenState();
@@ -41,15 +46,79 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
   bool _isLoading = false;
   final _storageService = StorageService();
 
-  bool get _hasUnsavedChanges =>
-      _titleController.text.trim().isNotEmpty ||
-      _descriptionController.text.trim().isNotEmpty ||
-      _ruleController.text.trim().isNotEmpty ||
-      _pickedImages.isNotEmpty ||
-      _pickedVideo != null ||
-      _difficulty != 3 ||
-      _markerPosition.latitude != AppConfig.szczecin_lat ||
-      _markerPosition.longitude != AppConfig.szczecin_lng;
+  // Edit mode: the trap as loaded and the media it already has.
+  TrapModel? _original;
+  bool _loadingTrap = false;
+  String? _loadError;
+  final List<String> _existingPhotoUrls = [];
+  String? _existingVideoUrl;
+
+  bool get _isEditing => widget.trapId != null;
+  int get _photoCount => _existingPhotoUrls.length + _pickedImages.length;
+
+  bool get _hasUnsavedChanges {
+    final original = _original;
+    if (original == null) {
+      return _titleController.text.trim().isNotEmpty ||
+          _descriptionController.text.trim().isNotEmpty ||
+          _ruleController.text.trim().isNotEmpty ||
+          _pickedImages.isNotEmpty ||
+          _pickedVideo != null ||
+          _difficulty != 3 ||
+          _markerPosition.latitude != AppConfig.szczecin_lat ||
+          _markerPosition.longitude != AppConfig.szczecin_lng;
+    }
+    return _titleController.text.trim() != original.title ||
+        _descriptionController.text.trim() != original.description ||
+        _ruleController.text.trim() != original.ruleDescription ||
+        _difficulty != original.difficulty ||
+        _markerPosition.latitude != original.lat ||
+        _markerPosition.longitude != original.lng ||
+        _pickedImages.isNotEmpty ||
+        _pickedVideo != null ||
+        _existingVideoUrl != original.videoUrl ||
+        !listEquals(_existingPhotoUrls, original.photoUrls);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) _loadTrap();
+  }
+
+  Future<void> _loadTrap() async {
+    // Called from initState, so no setState before the first await.
+    _loadingTrap = true;
+    try {
+      final trap = await ref
+          .read(firestoreServiceProvider)
+          .getTrapById(widget.trapId!);
+      if (!mounted) return;
+      if (trap == null) {
+        setState(() => _loadError = 'Ta pułapka nie jest już dostępna.');
+        return;
+      }
+      _original = trap;
+      _titleController.text = trap.title;
+      _descriptionController.text = trap.description;
+      _ruleController.text = trap.ruleDescription;
+      setState(() {
+        _difficulty = trap.difficulty.clamp(1, 5);
+        _markerPosition = LatLng(trap.lat, trap.lng);
+        _existingPhotoUrls
+          ..clear()
+          ..addAll(trap.photoUrls);
+        _existingVideoUrl = trap.videoUrl;
+      });
+    } catch (error) {
+      debugPrint('Load trap for edit failed: $error');
+      if (mounted) {
+        setState(() => _loadError = 'Nie udało się wczytać pułapki.');
+      }
+    } finally {
+      if (mounted) setState(() => _loadingTrap = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -70,7 +139,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
       );
       if (picked == null || !mounted) return;
       final edited = await _cropImage(File(picked.path));
-      if (edited != null && mounted && _pickedImages.length < _maxPhotos) {
+      if (edited != null && mounted && _photoCount < _maxPhotos) {
         setState(() => _pickedImages.add(edited));
       }
     } on PlatformException {
@@ -204,6 +273,64 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     );
   }
 
+  Widget _existingPhotoThumbnail(int index, ColorScheme colors) {
+    return SizedBox(
+      width: 150,
+      child: Column(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: _existingPhotoUrls[index],
+                    fit: BoxFit.cover,
+                    errorWidget: (_, _, _) => Icon(
+                      Icons.image_not_supported_outlined,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                  if (index == 0)
+                    Positioned(
+                      left: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Główne',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              tooltip: 'Usuń zdjęcie',
+              visualDensity: VisualDensity.compact,
+              onPressed: _isLoading
+                  ? null
+                  : () => setState(() => _existingPhotoUrls.removeAt(index)),
+              icon: const Icon(Icons.delete_outline, color: AppTheme.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickVideo() async {
     try {
       final picked = await ImagePicker().pickVideo(
@@ -284,11 +411,27 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     if (!devLogin && !(await AdminAccessService.check(user!)).isAdmin) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tylko administrator może dodawać pułapki.'),
+          SnackBar(
+            content: Text(
+              _isEditing
+                  ? 'Tylko administrator może edytować pułapki.'
+                  : 'Tylko administrator może dodawać pułapki.',
+            ),
           ),
         );
       }
+      return;
+    }
+    if (!mounted) return;
+
+    if (_isEditing) {
+      if (devLogin) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('DEV: edycja nie zapisuje Firestore')),
+        );
+        return;
+      }
+      await _saveEdit(user!.uid);
       return;
     }
 
@@ -371,6 +514,78 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
     }
   }
 
+  Future<void> _saveEdit(String uid) async {
+    final original = _original!;
+    setState(() => _isLoading = true);
+    final uploadedPhotoUrls = <String>[];
+    String? uploadedVideoUrl;
+    try {
+      for (final image in _pickedImages) {
+        uploadedPhotoUrls.add(
+          await _storageService.uploadTrapPhoto(uid, image),
+        );
+      }
+      if (_pickedVideo != null) {
+        uploadedVideoUrl = await _storageService.uploadTrapVideo(
+          uid,
+          _pickedVideo!,
+        );
+      }
+      final photoUrls = [..._existingPhotoUrls, ...uploadedPhotoUrls];
+      final videoUrl = uploadedVideoUrl ?? _existingVideoUrl;
+      await ref.read(firestoreServiceProvider).updateTrap(original.id, {
+        'lat': _markerPosition.latitude,
+        'lng': _markerPosition.longitude,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'ruleDescription': _ruleController.text.trim(),
+        'difficulty': _difficulty,
+        'photoUrls': photoUrls,
+        'photoUrl': photoUrls.isEmpty ? null : photoUrls.first,
+        // The credit describes the original photos, not newly added ones.
+        'photoCredit': _existingPhotoUrls.isEmpty ? null : original.photoCredit,
+        'videoUrl': videoUrl,
+      });
+
+      // Removed media is deleted only once the trap no longer points at it.
+      for (final url in original.photoUrls) {
+        if (!photoUrls.contains(url)) await _storageService.deletePhoto(url);
+      }
+      final oldVideo = original.videoUrl;
+      if (oldVideo != null && oldVideo != videoUrl) {
+        await _storageService.deleteUploadedMedia(oldVideo);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Zmiany zapisane.')));
+        context.pop(true);
+      }
+    } catch (e) {
+      debugPrint('Edit trap failed: $e');
+      for (final url in uploadedPhotoUrls) {
+        await _storageService.deletePhoto(url);
+      }
+      if (uploadedVideoUrl != null) {
+        await _storageService.deleteUploadedMedia(uploadedVideoUrl);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is FormatException
+                  ? e.message
+                  : 'Nie udało się zapisać zmian. Spróbuj ponownie.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -384,7 +599,9 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Tylko administrator może dodawać pułapki.',
+              _isEditing
+                  ? 'Tylko administrator może edytować pułapki.'
+                  : 'Tylko administrator może dodawać pułapki.',
               textAlign: TextAlign.center,
               style: TextStyle(color: colors.onSurfaceVariant),
             ),
@@ -392,9 +609,22 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         ),
       );
     }
+    if (_isEditing && _original == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Edytuj pułapkę')),
+        body: Center(
+          child: _loadingTrap || _loadError == null
+              ? const CircularProgressIndicator()
+              : Text(
+                  _loadError!,
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dodaj pułapkę'),
+        title: Text(_isEditing ? 'Edytuj pułapkę' : 'Dodaj pułapkę'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: _requestPop,
@@ -506,23 +736,28 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 20),
                 _sectionLabel(
                   'Zdjęcia (opcjonalne, maks. $_maxPhotos) '
-                  '${_pickedImages.length}/$_maxPhotos',
+                  '$_photoCount/$_maxPhotos',
                 ),
                 const SizedBox(height: 8),
-                if (_pickedImages.isNotEmpty) ...[
+                if (_photoCount > 0) ...[
                   SizedBox(
                     height: 132,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: _pickedImages.length,
+                      itemCount: _photoCount,
                       separatorBuilder: (_, _) => const SizedBox(width: 10),
                       itemBuilder: (context, index) =>
-                          _photoThumbnail(index, colors),
+                          index < _existingPhotoUrls.length
+                          ? _existingPhotoThumbnail(index, colors)
+                          : _photoThumbnail(
+                              index - _existingPhotoUrls.length,
+                              colors,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 10),
                 ],
-                if (_pickedImages.length < _maxPhotos)
+                if (_photoCount < _maxPhotos)
                   Row(
                     children: [
                       _imagePickerBtn(
@@ -541,7 +776,45 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                 const SizedBox(height: 20),
                 _sectionLabel('Film (opcjonalny, maks. 100 MB)'),
                 const SizedBox(height: 8),
-                if (_pickedVideo != null)
+                if (_pickedVideo == null && _existingVideoUrl != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.video_file_outlined,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Obecny film premium',
+                            style: TextStyle(color: colors.onSurface),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _isLoading ? null : _pickVideo,
+                          child: const Text('Zmień'),
+                        ),
+                        IconButton(
+                          tooltip: 'Usuń film',
+                          onPressed: _isLoading
+                              ? null
+                              : () => setState(() => _existingVideoUrl = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_pickedVideo != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -602,7 +875,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                               Text('Zapisywanie...'),
                             ],
                           )
-                        : const Text('Dodaj pułapkę'),
+                        : Text(_isEditing ? 'Zapisz zmiany' : 'Dodaj pułapkę'),
                   ),
                 ),
                 const SizedBox(height: 32),

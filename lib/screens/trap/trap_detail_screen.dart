@@ -56,6 +56,17 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     super.dispose();
   }
 
+  /// Opens the admin editor and shows the saved changes on return, without
+  /// spending another daily view.
+  Future<void> _editTrap() async {
+    final saved = await context.push<bool>('/trap/${widget.trapId}/edit');
+    if (saved != true || !mounted) return;
+    final trap = await ref
+        .read(firestoreServiceProvider)
+        .getTrapById(widget.trapId);
+    if (trap != null && mounted) setState(() => _trap = trap);
+  }
+
   Future<void> _loadTrap() async {
     try {
       final devLogin = ref.read(devLoginProvider);
@@ -662,6 +673,23 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
               onPressed: () => context.pop(),
             ),
             actions: [
+              if (isAdmin)
+                IconButton(
+                  tooltip: 'Edytuj pułapkę',
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(170),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  onPressed: _editTrap,
+                ),
               IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),

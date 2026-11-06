@@ -99,6 +99,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
             TrapDetailScreen(trapId: state.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/trap/:id/edit',
+        builder: (context, state) =>
+            AddTrapScreen(trapId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         path: '/schools',
         builder: (context, state) => const SchoolsScreen(),
       ),
