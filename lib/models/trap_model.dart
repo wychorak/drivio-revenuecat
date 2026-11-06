@@ -14,6 +14,9 @@ class TrapModel {
   /// Source shown under the photos, e.g. "Zdjęcie: Google Street View".
   final String? photoCredit;
   final String? videoUrl;
+
+  /// The premium video is open to every user; such traps get a yellow pin.
+  final bool freeVideo;
   final String ruleDescription;
   final String createdBy;
   final String city;
@@ -30,6 +33,7 @@ class TrapModel {
     this.photoUrls = const [],
     this.photoCredit,
     this.videoUrl,
+    this.freeVideo = false,
     required this.ruleDescription,
     required this.createdBy,
     required this.city,
@@ -60,6 +64,7 @@ class TrapModel {
       photoUrls: _photoUrlsFrom(map),
       photoCredit: map['photoCredit'] as String?,
       videoUrl: map['videoUrl'] as String?,
+      freeVideo: map['freeVideo'] == true,
       ruleDescription: map['ruleDescription'] as String? ?? '',
       createdBy: map['createdBy'] as String? ?? '',
       city: map['city'] as String? ?? 'Szczecin',
@@ -82,6 +87,7 @@ class TrapModel {
       'photoUrl': photoUrl,
       'photoCredit': photoCredit,
       'videoUrl': videoUrl,
+      'freeVideo': freeVideo,
       'ruleDescription': ruleDescription,
       'createdBy': createdBy,
       'city': city,
@@ -100,6 +106,7 @@ class TrapModel {
     List<String>? photoUrls,
     String? photoCredit,
     String? videoUrl,
+    bool? freeVideo,
     String? ruleDescription,
     String? createdBy,
     String? city,
@@ -116,6 +123,7 @@ class TrapModel {
       photoUrls: photoUrls ?? this.photoUrls,
       photoCredit: photoCredit ?? this.photoCredit,
       videoUrl: videoUrl ?? this.videoUrl,
+      freeVideo: freeVideo ?? this.freeVideo,
       ruleDescription: ruleDescription ?? this.ruleDescription,
       createdBy: createdBy ?? this.createdBy,
       city: city ?? this.city,

@@ -53,8 +53,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         Marker(
           markerId: MarkerId('trap_${trap.id}'),
           position: LatLng(trap.lat, trap.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: InfoWindow(title: trap.title),
+          // Yellow marks a trap whose premium video is free for everyone.
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            trap.freeVideo
+                ? BitmapDescriptor.hueYellow
+                : BitmapDescriptor.hueRed,
+          ),
+          infoWindow: InfoWindow(
+            title: trap.title,
+            snippet: trap.freeVideo ? 'Darmowy film premium' : null,
+          ),
           onTap: () => _showTrapBottomSheet(trap),
         ),
       );
@@ -939,6 +947,30 @@ class _TrapBottomSheet extends StatelessWidget {
                   ),
                 ),
               ),
+              if (trap.freeVideo) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.premiumGold.withAlpha(24),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.premiumGold.withAlpha(80),
+                    ),
+                  ),
+                  child: Text(
+                    'Darmowy film',
+                    style: GoogleFonts.poppins(
+                      color: AppTheme.premiumGold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 10),

@@ -831,12 +831,37 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
                   const SizedBox(height: 24),
                   _sectionTitle('Wskazówka wideo'),
                   const SizedBox(height: 8),
-                  if (!isPremium)
+                  if (!isPremium && !trap.freeVideo)
                     _videoPremiumLock(isPremium)
                   else if (trap.videoUrl?.trim().isNotEmpty == true)
                     _videoPremiumPlayer(trap.videoUrl!.trim())
                   else
                     _videoUnavailable(),
+                  if (trap.freeVideo &&
+                      trap.videoUrl?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.lock_open_rounded,
+                          color: AppTheme.premiumGold,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Ten film premium jest dostępny dla wszystkich.',
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   commentsAsync.when(
                     data: (comments) => Column(

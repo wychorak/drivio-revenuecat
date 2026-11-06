@@ -43,6 +43,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
   static const _maxPhotos = 5;
   final List<File> _pickedImages = [];
   File? _pickedVideo;
+  bool _freeVideo = false;
   bool _isLoading = false;
   final _storageService = StorageService();
 
@@ -77,6 +78,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         _pickedImages.isNotEmpty ||
         _pickedVideo != null ||
         _existingVideoUrl != original.videoUrl ||
+        _freeVideo != original.freeVideo ||
         !listEquals(_existingPhotoUrls, original.photoUrls);
   }
 
@@ -109,6 +111,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
           ..clear()
           ..addAll(trap.photoUrls);
         _existingVideoUrl = trap.videoUrl;
+        _freeVideo = trap.freeVideo;
       });
     } catch (error) {
       debugPrint('Load trap for edit failed: $error');
@@ -476,6 +479,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         difficulty: _difficulty,
         photoUrls: uploadedPhotoUrls,
         videoUrl: uploadedVideoUrl,
+        freeVideo: _freeVideo && uploadedVideoUrl != null,
         ruleDescription: _ruleController.text.trim(),
         createdBy: user!.uid,
         city: city,
@@ -545,6 +549,7 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
         // The credit describes the original photos, not newly added ones.
         'photoCredit': _existingPhotoUrls.isEmpty ? null : original.photoCredit,
         'videoUrl': videoUrl,
+        'freeVideo': _freeVideo && videoUrl != null,
       });
 
       // Removed media is deleted only once the trap no longer points at it.
@@ -853,6 +858,20 @@ class _AddTrapScreenState extends ConsumerState<AddTrapScreen> {
                     label: 'Dodaj film',
                     onTap: _pickVideo,
                   ),
+                if (_pickedVideo != null || _existingVideoUrl != null) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: _freeVideo,
+                    onChanged: _isLoading
+                        ? null
+                        : (value) => setState(() => _freeVideo = value),
+                    title: const Text('Film dostępny dla wszystkich'),
+                    subtitle: const Text(
+                      'Także bez Premium. Pinezka na mapie będzie żółta.',
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,

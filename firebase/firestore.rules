@@ -166,8 +166,8 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'lat', 'lng', 'title', 'description', 'difficulty', 'photoUrl',
-          'photoUrls', 'photoCredit', 'videoUrl', 'ruleDescription', 'createdBy',
-          'city', 'createdAt', 'savesCount'
+          'photoUrls', 'photoCredit', 'videoUrl', 'freeVideo', 'ruleDescription',
+          'createdBy', 'city', 'createdAt', 'savesCount'
         ])
         && data.lat is number && data.lat >= -90 && data.lat <= 90
         && data.lng is number && data.lng >= -180 && data.lng <= 180
@@ -180,6 +180,7 @@ service cloud.firestore {
           || (data.photoUrls is list && data.photoUrls.size() <= 5))
         && optionalString(data, 'photoCredit', 120)
         && optionalString(data, 'videoUrl', 2048)
+        && (!data.keys().hasAny(['freeVideo']) || data.freeVideo is bool)
         && data.ruleDescription is string && data.ruleDescription.size() <= 1000
         && data.createdBy is string && data.createdBy.size() <= 128
         && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
