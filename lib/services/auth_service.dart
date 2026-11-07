@@ -4,6 +4,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'analytics_service.dart';
 
 class AuthService {
   static const _iosGoogleClientId =
@@ -38,6 +39,7 @@ class AuthService {
         message: 'Potwierdź adres e-mail przed logowaniem.',
       );
     }
+    if (user != null) AnalyticsService.instance.login('email');
     return user;
   }
 
@@ -64,6 +66,7 @@ class AuthService {
 
     final user = credential.user;
     if (user != null) await _ensureUserDocument(user);
+    _logProviderSignIn(credential, 'google');
     return user;
   }
 
@@ -77,7 +80,17 @@ class AuthService {
 
     final user = credential.user;
     if (user != null) await _ensureUserDocument(user);
+    _logProviderSignIn(credential, 'apple');
     return user;
+  }
+
+  void _logProviderSignIn(UserCredential credential, String method) {
+    if (credential.user == null) return;
+    if (credential.additionalUserInfo?.isNewUser == true) {
+      AnalyticsService.instance.signUp(method);
+    } else {
+      AnalyticsService.instance.login(method);
+    }
   }
 
   Future<void> _initializeGoogleSignIn() async {
@@ -129,6 +142,7 @@ class AuthService {
       await _createUserDocument(user, displayName, legalConsentsAccepted: true);
       await user.sendEmailVerification();
       await _auth.signOut();
+      AnalyticsService.instance.signUp('email');
     }
     return user;
   }

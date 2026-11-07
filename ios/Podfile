@@ -2,6 +2,10 @@ platform :ios, '15.0'
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
+# Firebase Analytics without the IDFA/AdSupport component: Drivio never asks for
+# App Tracking Transparency, so no advertising identifier is collected.
+$FirebaseAnalyticsWithoutAdIdSupport = true
+
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,

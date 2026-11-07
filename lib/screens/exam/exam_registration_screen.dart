@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:drivio/services/analytics_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/config/app_config.dart';
@@ -13,6 +14,7 @@ class ExamRegistrationScreen extends StatefulWidget {
 
 class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
   Future<void> _openWord() async {
+    AnalyticsService.instance.examBookingOpen();
     final uri = Uri.parse(AppConfig.wordUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

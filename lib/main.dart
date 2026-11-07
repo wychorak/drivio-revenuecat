@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'config/firebase_options.dart';
 import 'app.dart';
+import 'services/analytics_service.dart';
 import 'services/revenuecat_service.dart';
 import 'services/session_preference_service.dart';
 
@@ -16,6 +17,7 @@ Future<void> main() async {
   await _loadLocalEnv();
   await initializeDateFormatting('pl', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await AnalyticsService.instance.initialize();
   // Install the provider before Auth, Functions or any other Firebase traffic.
   await _activateAppCheck();
   await FirebaseAuth.instance.setLanguageCode('pl');

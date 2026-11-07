@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:drivio/services/analytics_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/providers/auth_provider.dart';
@@ -182,6 +183,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 
+  AnalyticsService.instance.attachToRouter(router);
   ref.listen(authStateProvider, (_, _) => router.refresh());
   ref.listen(devLoginProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);

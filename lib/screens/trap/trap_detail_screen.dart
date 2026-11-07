@@ -17,6 +17,7 @@ import 'package:drivio/providers/user_provider.dart';
 import 'package:drivio/services/content_moderation_service.dart';
 import 'package:drivio/services/admin_access_service.dart';
 import 'package:drivio/services/ad_service.dart';
+import 'package:drivio/services/analytics_service.dart';
 import 'package:drivio/services/dev_data_service.dart';
 import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/trap/difficulty_stars.dart';
@@ -102,6 +103,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
               .consumeTrapView();
           if (!mounted) return;
           if (!status.allowed) {
+            AnalyticsService.instance.dailyLimitReached();
             setState(() {
               _accessDenied = true;
               _canWatchAd = status.canWatchAd;
@@ -117,6 +119,10 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
         _trap = trap;
         _isLoading = false;
       });
+      AnalyticsService.instance.trapView(
+        trapId: trap.id,
+        premium: ref.read(isPremiumProvider),
+      );
       _checkSaved();
     } on FirebaseFunctionsException catch (error) {
       debugPrint('Trap view function failed: ${error.code}');
@@ -192,6 +198,7 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
     setState(() => _rewardLoading = true);
     try {
       final outcome = await AdService.instance.showRewardedTrapAd(user.uid);
+      AnalyticsService.instance.rewardedAdResult(outcome.name);
       if (!mounted) return;
       if (outcome != RewardedAdOutcome.rewarded) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -997,6 +1004,13 @@ class _TrapDetailScreenState extends ConsumerState<TrapDetailScreen> {
   }
 
   Future<void> _openVideo(String url) async {
+    final trap = _trap;
+    if (trap != null) {
+      AnalyticsService.instance.trapVideoPlay(
+        trapId: trap.id,
+        freeVideo: trap.freeVideo,
+      );
+    }
     final uri = Uri.tryParse(url);
     var opened = false;
     if (uri != null && uri.hasScheme) {

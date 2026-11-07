@@ -53,8 +53,20 @@ class _SplashScreenState extends State<SplashScreen>
     }
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
+    if (_left) return;
     await _exit.forward();
-    if (!mounted) return;
+    _leave();
+  }
+
+  bool _left = false;
+
+  /// Leaves the splash once, either at the end of the intro or straight away
+  /// when the user taps the screen.
+  void _leave() {
+    if (_left || !mounted) return;
+    _left = true;
+    _intro.stop();
+    _exit.stop();
     // The router sends signed-in users on to the map (or city selection).
     context.go('/login');
   }
@@ -70,56 +82,63 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest;
-          final tileCenter = Offset(size.width / 2, size.height * _tileCenterY);
-          return AnimatedBuilder(
-            animation: Listenable.merge([_intro, _exit]),
-            builder: (context, _) {
-              final t = _intro.value;
-              final exitRaw = _exit.value;
-              final exit = Curves.easeInCubic.transform(exitRaw);
-              return Opacity(
-                opacity: 1 - splashInterval(exitRaw, 0.4, 1, Curves.easeIn),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _CityMapPainter(
-                          progress: t,
-                          exit: exit,
-                          destination: tileCenter,
-                          tileSize: _tileSize,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _leave,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final size = constraints.biggest;
+            final tileCenter = Offset(
+              size.width / 2,
+              size.height * _tileCenterY,
+            );
+            return AnimatedBuilder(
+              animation: Listenable.merge([_intro, _exit]),
+              builder: (context, _) {
+                final t = _intro.value;
+                final exitRaw = _exit.value;
+                final exit = Curves.easeInCubic.transform(exitRaw);
+                return Opacity(
+                  opacity: 1 - splashInterval(exitRaw, 0.4, 1, Curves.easeIn),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _CityMapPainter(
+                            progress: t,
+                            exit: exit,
+                            destination: tileCenter,
+                            tileSize: _tileSize,
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: tileCenter.dx - _tileSize / 2,
-                      top: tileCenter.dy - _tileSize / 2,
-                      child: _buildTile(t, exit),
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: tileCenter.dy + _tileSize / 2 + 30,
-                      child: Opacity(
-                        opacity: 1 - splashInterval(exitRaw, 0, 0.35),
-                        child: Column(
-                          children: [
-                            _buildWordmark(t),
-                            const SizedBox(height: 6),
-                            _buildTagline(t),
-                          ],
+                      Positioned(
+                        left: tileCenter.dx - _tileSize / 2,
+                        top: tileCenter.dy - _tileSize / 2,
+                        child: _buildTile(t, exit),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: tileCenter.dy + _tileSize / 2 + 30,
+                        child: Opacity(
+                          opacity: 1 - splashInterval(exitRaw, 0, 0.35),
+                          child: Column(
+                            children: [
+                              _buildWordmark(t),
+                              const SizedBox(height: 6),
+                              _buildTagline(t),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
