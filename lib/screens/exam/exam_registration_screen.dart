@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drivio/services/analytics_service.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/config/app_config.dart';
@@ -21,6 +22,32 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
     }
   }
 
+  Widget _theoryShortcut() {
+    return Material(
+      color: AppTheme.bgCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.primary),
+      ),
+      child: ListTile(
+        onTap: () => context.push('/theory'),
+        leading: const Icon(Icons.quiz_outlined, color: AppTheme.primaryBright),
+        title: Text(
+          'Egzamin teoretyczny',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          'Ćwicz na oficjalnych pytaniach i zrób próbny egzamin',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,6 +60,8 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _headerCard(),
+          const SizedBox(height: 12),
+          _theoryShortcut(),
           const SizedBox(height: 16),
           _section(
             icon: Icons.how_to_reg_rounded,
