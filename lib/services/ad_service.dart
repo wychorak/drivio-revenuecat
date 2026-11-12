@@ -138,6 +138,65 @@ class AdService {
     await completer.future;
   }
 
+  InterstitialAd? _interstitial;
+  bool _interstitialLoading = false;
+
+  String get _interstitialUnitId => kDebugMode
+      ? 'ca-app-pub-3940256099942544/4411468910'
+      : AppConfig.admobIosInterstitialId;
+
+  /// Loads the theory section's interstitial ahead of time so showing it
+  /// never makes the user wait.
+  Future<void> preloadInterstitial() async {
+    if (_interstitial != null || _interstitialLoading) return;
+    if (_interstitialUnitId.isEmpty || !isSupported || !await initialize()) {
+      return;
+    }
+    _interstitialLoading = true;
+    await InterstitialAd.load(
+      adUnitId: _interstitialUnitId,
+      request: const AdRequest(
+        nonPersonalizedAds: true,
+        keywords: ['prawo jazdy', 'nauka jazdy', 'egzamin'],
+      ),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialLoading = false;
+          _interstitial = ad;
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('AdMob interstitial load failed: $error');
+          _interstitialLoading = false;
+        },
+      ),
+    );
+  }
+
+  /// Shows a preloaded interstitial and resolves when it closes. Returns
+  /// false at once when none is ready (no consent, no fill, still loading).
+  Future<bool> showInterstitial() async {
+    final ad = _interstitial;
+    if (ad == null) {
+      unawaited(preloadInterstitial());
+      return false;
+    }
+    _interstitial = null;
+    final closed = Completer<bool>();
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        if (!closed.isCompleted) closed.complete(true);
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        debugPrint('AdMob interstitial show failed: $error');
+        ad.dispose();
+        if (!closed.isCompleted) closed.complete(false);
+      },
+    );
+    await ad.show();
+    return closed.future;
+  }
+
   Future<RewardedAdOutcome> showRewardedTrapAd(String uid) async {
     lastAdIssue = null;
     if (!isSupported || !await initialize()) {
