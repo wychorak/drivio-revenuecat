@@ -84,8 +84,13 @@ class AnalyticsService {
       _log(() => _analytics.logEvent(name: name, parameters: parameters));
 
   void _log(Future<void> Function() send) {
-    send().catchError(
-      (Object error) => debugPrint('Analytics event failed: $error'),
-    );
+    try {
+      send().catchError(
+        (Object error) => debugPrint('Analytics event failed: $error'),
+      );
+    } catch (error) {
+      // Firebase not initialized (tests, previews): analytics is optional.
+      debugPrint('Analytics event failed: $error');
+    }
   }
 }
