@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:drivio/features/theory_exam/ad_policy.dart';
@@ -68,8 +69,14 @@ class TheoryAdController extends Notifier<void> {
 
   Future<void> _show() async {
     final ads = ref.read(theoryInterstitialProvider);
-    final shown = await ads.show().timeout(maxWait, onTimeout: () => false);
+    var shown = false;
+    try {
+      shown = await ads.show().timeout(maxWait, onTimeout: () => false);
+    } catch (error) {
+      // Ads are optional: a plugin failure must not stop the user.
+      debugPrint('Theory interstitial failed: $error');
+    }
     if (shown) _policy.markShown(_now());
-    unawaited(ads.preload());
+    unawaited(ads.preload().catchError((Object _) {}));
   }
 }

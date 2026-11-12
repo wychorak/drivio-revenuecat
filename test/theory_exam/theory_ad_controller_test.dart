@@ -57,6 +57,14 @@ void main() {
     expect(shows, 0);
   });
 
+  test('a failing ad plugin never breaks the flow', () async {
+    final c = make(premium: false, show: () => Future.error('plugin crash'));
+    final ads = c.read(theoryAdControllerProvider.notifier);
+    now = now.add(const Duration(minutes: 3));
+    await ads.onExamFinished();
+    expect(shows, 1);
+  });
+
   test('a hanging ad never blocks the exam result for more than 5 s', () {
     final c = make(premium: false, show: () => Completer<bool>().future);
     final ads = c.read(theoryAdControllerProvider.notifier);
