@@ -13,9 +13,17 @@ import 'package:google_fonts/google_fonts.dart';
 /// (seen on Flutter 3.50). Loading the fonts up front makes that impossible.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  // The weights bundled in assets/google_fonts/.
-  GoogleFonts.poppins(fontWeight: FontWeight.w400);
-  GoogleFonts.poppins(fontWeight: FontWeight.w700);
+  // The weights bundled in assets/google_fonts/ (bundled_fonts_test keeps
+  // that folder in step with the weights used in lib/).
+  for (final weight in const [
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w600,
+    FontWeight.w700,
+    FontWeight.w800,
+  ]) {
+    GoogleFonts.poppins(fontWeight: weight);
+  }
   await GoogleFonts.pendingFonts();
   await testMain();
 }
