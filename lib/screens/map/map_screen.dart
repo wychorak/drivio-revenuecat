@@ -586,6 +586,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     },
                   ),
                   _drawerItem(
+                    icon: Icons.quiz_outlined,
+                    title: 'Egzamin teoretyczny',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/theory');
+                    },
+                  ),
+                  _drawerItem(
                     icon: Icons.assignment_outlined,
                     title: 'WORD i egzamin',
                     onTap: () {

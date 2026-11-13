@@ -28,6 +28,12 @@ import 'package:drivio/screens/admin/admin_school_form_screen.dart';
 import 'package:drivio/screens/settings/settings_screen.dart';
 import 'package:drivio/screens/guides/parking_screen.dart';
 import 'package:drivio/screens/guides/car_screen.dart';
+import 'package:drivio/features/theory_exam/models.dart';
+import 'package:drivio/providers/theory_exam_provider.dart';
+import 'package:drivio/screens/theory_exam/theory_home_screen.dart';
+import 'package:drivio/screens/theory_exam/theory_practice_screen.dart';
+import 'package:drivio/screens/theory_exam/theory_exam_screen.dart';
+import 'package:drivio/screens/theory_exam/theory_exam_result_screen.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -122,6 +128,44 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/exam',
         builder: (context, state) =>
             const _DarkOnly(child: ExamRegistrationScreen()),
+      ),
+      GoRoute(
+        path: '/theory',
+        builder: (context, state) =>
+            const _DarkOnly(child: TheoryHomeScreen()),
+      ),
+      GoRoute(
+        path: '/theory/random',
+        builder: (context, state) => const _DarkOnly(
+          child: TheoryPracticeScreen(mode: PracticeMode.random),
+        ),
+      ),
+      GoRoute(
+        path: '/theory/learn',
+        builder: (context, state) => const _DarkOnly(
+          child: TheoryPracticeScreen(mode: PracticeMode.learn),
+        ),
+      ),
+      GoRoute(
+        path: '/theory/mistakes',
+        builder: (context, state) => const _DarkOnly(
+          child: TheoryPracticeScreen(mode: PracticeMode.mistakes),
+        ),
+      ),
+      GoRoute(
+        path: '/theory/exam',
+        builder: (context, state) =>
+            const _DarkOnly(child: TheoryExamScreen()),
+      ),
+      GoRoute(
+        path: '/theory/exam/result',
+        builder: (context, state) => _DarkOnly(
+          child: switch (state.extra) {
+            final ExamRecord record => TheoryExamResultScreen(record: record),
+            // Opened without a result (e.g. restored route): section home.
+            _ => const TheoryHomeScreen(),
+          },
+        ),
       ),
       GoRoute(
         path: '/profile',

@@ -69,12 +69,28 @@ class AnalyticsService {
 
   void examBookingOpen() => _event('exam_booking_open');
 
+  void theoryModeOpen(String mode) =>
+      _event('theory_mode_open', {'mode': mode});
+
+  void theoryExamFinished({required int score, required bool passed}) =>
+      _event('theory_exam_finished', {
+        'score': score,
+        'passed': passed ? 1 : 0,
+      });
+
+  void theoryInterstitialShown() => _event('theory_interstitial_shown');
+
   void _event(String name, [Map<String, Object>? parameters]) =>
       _log(() => _analytics.logEvent(name: name, parameters: parameters));
 
   void _log(Future<void> Function() send) {
-    send().catchError(
-      (Object error) => debugPrint('Analytics event failed: $error'),
-    );
+    try {
+      send().catchError(
+        (Object error) => debugPrint('Analytics event failed: $error'),
+      );
+    } catch (error) {
+      // Firebase not initialized (tests, previews): analytics is optional.
+      debugPrint('Analytics event failed: $error');
+    }
   }
 }

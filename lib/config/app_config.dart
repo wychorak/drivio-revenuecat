@@ -36,6 +36,10 @@ class AppConfig {
   static const String admobIosRewardedId =
       'ca-app-pub-8263324816746737/8516770878';
 
+  /// Theory exam section interstitial. Empty until the AdMob unit exists:
+  /// release builds then show no interstitial (debug uses Google's test ID).
+  static const String admobIosInterstitialId = '';
+
   // RevenueCat / App Store
   static const String revenueCatOfferingId = 'driviooffers';
   static const String revenueCatEntitlementId = 'drivio pro relase';
