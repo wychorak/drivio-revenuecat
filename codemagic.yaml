@@ -25,6 +25,9 @@ workflows:
       vars:
         APP_STORE_APPLE_ID: "6776345734"
         IOS_BUNDLE_ID: "com.drivio.com"
+        # Internal TestFlight group that gets every build, exactly as named in
+        # App Store Connect > TestFlight > Internal Testing. Empty = upload only.
+        TESTFLIGHT_BETA_GROUP: ""
 
     scripts:
       - name: Validate release configuration
@@ -93,10 +96,17 @@ workflows:
           set -euo pipefail
           : "${APP_STORE_APPLE_ID:?Missing APP_STORE_APPLE_ID}"
           : "${APP_STORE_CONNECT_PRIVATE_KEY:?App Store Connect integration driviorelase did not provide API key variables}"
+          # Internal testers only: the build is added to the group after Apple
+          # processes it; nothing is sent to external beta review.
+          GROUP_ARGUMENTS=()
+          if [ -n "${TESTFLIGHT_BETA_GROUP:-}" ]; then
+            GROUP_ARGUMENTS=(--beta-group "$TESTFLIGHT_BETA_GROUP")
+          fi
           app-store-connect publish \
             --path "build/ios/ipa/*.ipa" \
             --altool-additional-arguments="--apple-id $APP_STORE_APPLE_ID" \
-            --altool-retries 3
+            --altool-retries 3 \
+            ${GROUP_ARGUMENTS[@]+"${GROUP_ARGUMENTS[@]}"}
 
     artifacts:
       - build/ios/ipa/*.ipa
