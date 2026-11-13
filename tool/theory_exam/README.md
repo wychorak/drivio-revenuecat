@@ -23,4 +23,7 @@ Co skrypt pomija:
 
 ## Ostatnie uruchomienie
 
-(uzupełniane po wygenerowaniu)
+13.11.2026, katalog 07.2026, czas ok. 2 min:
+- 1100 pytań kat. B, w tym 911 ze zdjęciem (45,7 MB WebP),
+- grupy: podstawowe 1/2/3 pkt: 181/250/286, specjalistyczne 1/2/3 pkt: 78/150/155,
+- pominięte: 1029 pytań z filmem, 6 z błędnym formatem (lista wyżej), 0 duplikatów, 0 bez zdjęcia.
