@@ -29,13 +29,33 @@ QuestionBank fakeBank({int perGroup = 15}) {
   return QuestionBank(questions: questions, sourceVersion: 'test');
 }
 
-TheoryQuestion q(TheoryPart part) => TheoryQuestion(
+TheoryQuestion q(TheoryPart part, {String? video}) => TheoryQuestion(
   id: 1,
   text: 'x',
   part: part,
   points: 3,
   answers: const ['TAK', 'NIE'],
   correctIndex: 0,
+  video: video,
+  videoBytes: video == null ? null : 100,
+);
+
+/// Like [fakeBank], with every other basic question carrying a video.
+QuestionBank bankWithVideos({int perGroup = 15}) => QuestionBank(
+  sourceVersion: 'test',
+  questions: [
+    for (final x in fakeBank(perGroup: perGroup).questions)
+      TheoryQuestion(
+        id: x.id,
+        text: x.text,
+        part: x.part,
+        points: x.points,
+        answers: x.answers,
+        correctIndex: x.correctIndex,
+        video: x.isBasic && x.id.isEven ? 'v/${x.id}.mp4' : null,
+        videoBytes: x.isBasic && x.id.isEven ? 100 : null,
+      ),
+  ],
 );
 
 void main() {
@@ -75,6 +95,25 @@ void main() {
         generateExam(bank, Random(4)).map((q) => q.id),
         generateExam(bank, Random(4)).map((q) => q.id),
       );
+    });
+
+    test('the variant without videos never draws a video question', () {
+      final exam = generateExam(
+        bankWithVideos(perGroup: 25),
+        Random(3),
+        withoutVideo: true,
+      );
+      expect(exam, hasLength(32));
+      expect(exam.where((q) => q.hasVideo), isEmpty);
+      expect(exam.fold<int>(0, (s, q) => s + q.points), examMaxScore);
+    });
+
+    test('the full exam draws video questions too', () {
+      final withVideo = [
+        for (var seed = 0; seed < 5; seed++)
+          ...generateExam(bankWithVideos(), Random(seed)),
+      ].where((q) => q.hasVideo);
+      expect(withVideo, isNotEmpty);
     });
 
     test('a bank too small for the blueprint throws', () {
@@ -147,6 +186,58 @@ void main() {
       expect(clock.timeUp, isFalse);
       now = now.add(const Duration(seconds: 1));
       expect(clock.timeUp, isTrue);
+    });
+
+    test('video question: 20 s reading, the film, then 15 s answering', () {
+      clock.startQuestion(q(TheoryPart.basic, video: 'v/1.mp4'));
+      expect(clock.phase, QuestionPhase.reading);
+      now = now.add(const Duration(seconds: 20));
+      expect(clock.phase, QuestionPhase.video);
+
+      clock.startVideo(const Duration(seconds: 9));
+      expect(clock.phase, QuestionPhase.video);
+      expect(clock.phaseLength, const Duration(seconds: 9));
+      now = now.add(const Duration(seconds: 8));
+      expect(clock.phase, QuestionPhase.video);
+      expect(clock.remainingInPhase, const Duration(seconds: 1));
+
+      now = now.add(const Duration(seconds: 1));
+      expect(clock.phase, QuestionPhase.answering);
+      expect(clock.remainingInPhase, const Duration(seconds: 15));
+      now = now.add(const Duration(seconds: 15));
+      expect(clock.timeUp, isTrue);
+    });
+
+    test('Start skips the reading and the film begins at once', () {
+      clock.startQuestion(q(TheoryPart.basic, video: 'v/1.mp4'));
+      now = now.add(const Duration(seconds: 4));
+      clock.skipReading();
+      expect(clock.phase, QuestionPhase.video);
+    });
+
+    test('a film that never starts gives way to answering after 3 s', () {
+      clock.startQuestion(q(TheoryPart.basic, video: 'v/1.mp4'));
+      clock.skipReading();
+      now = now.add(const Duration(seconds: 2));
+      expect(clock.phase, QuestionPhase.video);
+      now = now.add(const Duration(seconds: 1));
+      expect(clock.phase, QuestionPhase.answering);
+      expect(clock.remainingInPhase, const Duration(seconds: 15));
+    });
+
+    test('a failed or finished film starts the answer time at once', () {
+      clock.startQuestion(q(TheoryPart.basic, video: 'v/1.mp4'));
+      clock.skipReading();
+      clock.startVideo(const Duration(seconds: 10));
+      now = now.add(const Duration(seconds: 2));
+      clock.videoEnded();
+      expect(clock.phase, QuestionPhase.answering);
+      expect(clock.remainingInPhase, const Duration(seconds: 15));
+
+      clock.startQuestion(q(TheoryPart.basic, video: 'v/2.mp4'));
+      clock.skipReading();
+      clock.videoFailed();
+      expect(clock.phase, QuestionPhase.answering);
     });
 
     test('time spent in the background counts against the 25 min', () {
