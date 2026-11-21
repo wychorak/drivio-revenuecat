@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:drivio/features/theory_exam/models.dart';
+import 'package:drivio/features/theory_exam/video_cache.dart';
+import 'package:drivio/features/theory_exam/video_playback.dart';
 import 'package:drivio/features/theory_exam/progress_repository.dart';
 import 'package:drivio/features/theory_exam/question_bank.dart';
 import 'package:drivio/providers/theory_ad_provider.dart';
@@ -45,13 +49,86 @@ QuestionBank harnessBank({int perGroup = 12}) {
   return QuestionBank(questions: questions, sourceVersion: '2026-07');
 }
 
+/// In-memory video cache: no real files, so it works under fake async.
+class FakeVideoStore implements TheoryVideoStore {
+  final local = <String>{};
+  final ensured = <int>[];
+
+  /// Ids of questions whose download fails, as if offline.
+  final offline = <int>{};
+
+  @override
+  Future<File?> localFile(TheoryQuestion q) async =>
+      local.contains(q.video) ? File(q.video!) : null;
+
+  @override
+  Future<File> ensure(TheoryQuestion q) async {
+    ensured.add(q.id);
+    if (offline.contains(q.id)) throw const SocketException('offline');
+    local.add(q.video!);
+    return File(q.video!);
+  }
+
+  @override
+  Stream<double> prepare(List<TheoryQuestion> questions) async* {
+    final missing = [
+      for (final q in questions)
+        if (q.hasVideo && !local.contains(q.video)) q,
+    ];
+    for (var i = 0; i < missing.length; i++) {
+      yield i / missing.length;
+      await ensure(missing[i]);
+    }
+    yield 1.0;
+  }
+
+  @override
+  Future<int> sizeBytes() async => local.length * 1000000;
+
+  @override
+  Future<void> clear() async => local.clear();
+}
+
+class FakeVideoController implements TheoryVideoController {
+  FakeVideoController(this.file, this.onEnded);
+
+  final File file;
+  final VoidCallback onEnded;
+  int plays = 0;
+  bool disposed = false;
+
+  /// Simulates the film reaching its end.
+  void end() => onEnded();
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Duration get duration => const Duration(seconds: 8);
+
+  @override
+  double get aspectRatio => 16 / 9;
+
+  @override
+  Future<void> playFromStart() async => plays++;
+
+  @override
+  Widget view() => const SizedBox(key: Key('video-view'));
+
+  @override
+  Future<void> dispose() async => disposed = true;
+}
+
 class Harness {
-  Harness({QuestionBank? bank, TheoryProgress? progress})
+  Harness({QuestionBank? bank, TheoryProgress? progress, FakeVideoStore? videos})
     : bank = bank ?? harnessBank(),
-      repo = MemoryRepo(progress);
+      repo = MemoryRepo(progress),
+      videos = videos ?? FakeVideoStore();
 
   final QuestionBank bank;
   final MemoryRepo repo;
+  final FakeVideoStore videos;
+  final controllers = <FakeVideoController>[];
   DateTime now = DateTime(2026, 11, 13, 10);
 
   void advance(Duration d) => now = now.add(d);
@@ -69,6 +146,14 @@ class Harness {
         theoryQuestionBankProvider.overrideWith((ref) async => bank),
         theoryProgressRepositoryProvider.overrideWithValue(repo),
         theoryClockProvider.overrideWithValue(() => now),
+        theoryVideoCacheProvider.overrideWithValue(videos),
+        theoryVideoControllerFactoryProvider.overrideWithValue(
+          (file, {required onEnded}) {
+            final c = FakeVideoController(file, onEnded);
+            controllers.add(c);
+            return c;
+          },
+        ),
         theoryAdsPremiumProvider.overrideWithValue(true),
         isPremiumProvider.overrideWithValue(true),
         premiumStatusResolvedProvider.overrideWithValue(true),

@@ -8,10 +8,20 @@ abstract class VideoDownloader {
   Future<void> download(String storagePath, File target);
 }
 
+/// What the screens need from the video cache; a fake replaces it in widget
+/// tests, which cannot do real file I/O.
+abstract class TheoryVideoStore {
+  Future<File?> localFile(TheoryQuestion question);
+  Future<File> ensure(TheoryQuestion question);
+  Stream<double> prepare(List<TheoryQuestion> questions);
+  Future<int> sizeBytes();
+  Future<void> clear();
+}
+
 /// Keeps the exam videos on the device for good: each one is downloaded at
 /// most once. File names are content hashes, so a changed video in a new
 /// question bank gets a new name instead of reusing a stale copy.
-class TheoryVideoCache {
+class TheoryVideoCache implements TheoryVideoStore {
   TheoryVideoCache({
     required Future<Directory> Function() directory,
     required VideoDownloader downloader,
@@ -29,6 +39,7 @@ class TheoryVideoCache {
   }
 
   /// The downloaded video of [question], or null when it is not on the device.
+  @override
   Future<File?> localFile(TheoryQuestion question) async {
     final path = question.video;
     if (path == null) return null;
@@ -38,6 +49,7 @@ class TheoryVideoCache {
 
   /// Returns the video file, downloading it first when needed. Concurrent
   /// calls for the same video share one download.
+  @override
   Future<File> ensure(TheoryQuestion question) {
     final path = question.video;
     if (path == null) {
@@ -68,6 +80,7 @@ class TheoryVideoCache {
 
   /// Downloads the missing videos of [questions]; emits progress from 0 to 1
   /// by size and ends with 1.0. Errors are passed on to the listener.
+  @override
   Stream<double> prepare(List<TheoryQuestion> questions) async* {
     final missing = <String, TheoryQuestion>{};
     for (final q in questions.where((q) => q.hasVideo)) {
@@ -88,6 +101,7 @@ class TheoryVideoCache {
   }
 
   /// Bytes taken by downloaded videos.
+  @override
   Future<int> sizeBytes() async {
     final dir = await _directory();
     if (!dir.existsSync()) return 0;
@@ -101,6 +115,7 @@ class TheoryVideoCache {
   }
 
   /// Removes every downloaded video.
+  @override
   Future<void> clear() async {
     final dir = await _directory();
     if (!dir.existsSync()) return;

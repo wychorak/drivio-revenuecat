@@ -5,11 +5,14 @@ import 'package:photo_view/photo_view.dart';
 import 'package:drivio/features/theory_exam/models.dart';
 import 'package:drivio/theme/app_theme.dart';
 
-/// Picture (tap to zoom) and text of a theory question.
+/// Picture (tap to zoom) or film, and the text of a theory question.
 class QuestionCard extends StatelessWidget {
-  const QuestionCard({super.key, required this.question});
+  const QuestionCard({super.key, required this.question, this.media});
 
   final TheoryQuestion question;
+
+  /// Shown instead of the picture, e.g. the question's film.
+  final Widget? media;
 
   void _zoom(BuildContext context, String image) {
     Navigator.of(context).push(
@@ -30,7 +33,10 @@ class QuestionCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (image != null) ...[
+        if (media != null) ...[
+          media!,
+          const SizedBox(height: 14),
+        ] else if (image != null) ...[
           GestureDetector(
             onTap: () => _zoom(context, image),
             child: ClipRRect(

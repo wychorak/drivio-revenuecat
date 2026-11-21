@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -13,6 +15,11 @@ import 'package:drivio/widgets/ads/premium_aware_banner_ad.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
 import 'package:drivio/widgets/theory_exam/answer_buttons.dart';
 import 'package:drivio/widgets/theory_exam/question_card.dart';
+import 'package:drivio/widgets/theory_exam/question_video.dart';
+
+/// How long practice waits for a film before skipping its question.
+const practiceVideoTimeout = Duration(seconds: 20);
+const offlineSkipMessage = 'Brak internetu – pominięto pytanie z filmem';
 
 /// Untimed practice: random questions, learning in catalogue order with
 /// filters, or a review of questions last answered wrong. Every answer is
@@ -37,6 +44,10 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
   bool _advancing = false;
   PracticeFilter _filter = const PracticeFilter();
 
+  /// Film of the current question, once it is on the device.
+  File? _videoFile;
+  bool _loadingVideo = false;
+
   String get _title => switch (widget.mode) {
     PracticeMode.random => 'Losuj pytanie',
     PracticeMode.learn => 'Nauka',
@@ -54,6 +65,77 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
     _queue = queue;
     _index = start;
     _selected = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prepareCurrent());
+  }
+
+  /// Gets the current question's film (skipping questions whose film cannot
+  /// be downloaded) and fetches the next question's media ahead.
+  Future<void> _prepareCurrent() async {
+    final queue = _queue;
+    if (queue == null || !mounted) return;
+    final store = ref.read(theoryVideoCacheProvider);
+    for (var skips = 0; skips <= queue.length; skips++) {
+      if (_index >= queue.length) return;
+      final question = queue[_index];
+      _prefetch(_index + 1);
+      if (!question.hasVideo) {
+        setState(() {
+          _videoFile = null;
+          _loadingVideo = false;
+        });
+        return;
+      }
+      setState(() {
+        _videoFile = null;
+        _loadingVideo = true;
+      });
+      try {
+        final file = await store.ensure(question).timeout(practiceVideoTimeout);
+        if (!mounted || _queue != queue || queue[_index] != question) return;
+        setState(() {
+          _videoFile = file;
+          _loadingVideo = false;
+        });
+        return;
+      } catch (error) {
+        debugPrint('Theory video download failed: $error');
+        if (!mounted || _queue != queue || queue[_index] != question) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(content: Text(offlineSkipMessage)));
+        setState(() {
+          _loadingVideo = false;
+          _advanceIndex();
+        });
+      }
+    }
+  }
+
+  void _prefetch(int index) {
+    final queue = _queue!;
+    if (index >= queue.length) return;
+    final next = queue[index];
+    if (next.hasVideo) {
+      unawaited(
+        ref
+            .read(theoryVideoCacheProvider)
+            .ensure(next)
+            .then<void>((_) {}, onError: (Object _) {}),
+      );
+    }
+    final image = next.image;
+    if (image != null) {
+      unawaited(precacheImage(AssetImage(image), context, onError: (_, _) {}));
+    }
+  }
+
+  void _advanceIndex() {
+    _selected = null;
+    _index++;
+    if (widget.mode == PracticeMode.random && _index >= _queue!.length) {
+      _queue!.shuffle(_rng);
+      _index = 0;
+    }
   }
 
   Future<void> _select(int answer) async {
@@ -80,13 +162,9 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
     if (!mounted) return;
     setState(() {
       _advancing = false;
-      _selected = null;
-      _index++;
-      if (widget.mode == PracticeMode.random && _index >= _queue!.length) {
-        _queue!.shuffle(_rng);
-        _index = 0;
-      }
+      _advanceIndex();
     });
+    await _prepareCurrent();
   }
 
   Future<void> _editFilter(QuestionBank bank) async {
@@ -180,7 +258,7 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        QuestionCard(question: question),
+        QuestionCard(question: question, media: _media(question)),
         const SizedBox(height: 18),
         AnswerButtons(
           question: question,
@@ -213,6 +291,20 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
         ],
       ],
     );
+  }
+}
+
+extension on _TheoryPracticeScreenState {
+  Widget? _media(TheoryQuestion question) {
+    if (!question.hasVideo) return null;
+    final file = _videoFile;
+    if (file == null || _loadingVideo) {
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return QuestionVideo(key: ValueKey(question.id), file: file);
   }
 }
 

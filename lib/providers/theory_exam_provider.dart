@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -27,16 +28,26 @@ final theoryProgressRepositoryProvider = Provider<TheoryProgressRepository>(
 /// Downloads through the Firebase SDK, so the request carries the user's
 /// sign-in and App Check token that the Storage rules require.
 class FirebaseVideoDownloader implements VideoDownloader {
+  /// Firebase retries a lost connection for up to 10 minutes by default;
+  /// a learner offline should hear about it much sooner.
+  static const timeout = Duration(seconds: 60);
+
   @override
   Future<void> download(String storagePath, File target) async {
-    await FirebaseStorage.instance.ref(storagePath).writeToFile(target);
+    final task = FirebaseStorage.instance.ref(storagePath).writeToFile(target);
+    try {
+      await task.timeout(timeout);
+    } on TimeoutException {
+      await task.cancel();
+      rethrow;
+    }
   }
 }
 
 /// Videos live in the cache directory: iOS keeps it out of iCloud backups
 /// (Apple asks that re-downloadable data is not backed up) and may clear it
 /// when space runs low, in which case the videos are fetched again.
-final theoryVideoCacheProvider = Provider<TheoryVideoCache>(
+final theoryVideoCacheProvider = Provider<TheoryVideoStore>(
   (ref) => TheoryVideoCache(
     directory: () async => Directory(
       '${(await getApplicationCacheDirectory()).path}'
