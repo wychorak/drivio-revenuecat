@@ -33,7 +33,10 @@ Co skrypt pomija:
 
 ## Ostatnie uruchomienie
 
-13.11.2026, katalog 07.2026, czas ok. 2 min:
-- 1100 pytań kat. B, w tym 911 ze zdjęciem (45,7 MB WebP),
-- grupy: podstawowe 1/2/3 pkt: 181/250/286, specjalistyczne 1/2/3 pkt: 78/150/155,
-- pominięte: 1029 pytań z filmem, 6 z błędnym formatem (lista wyżej), 0 duplikatów, 0 bez zdjęcia.
+21.11.2026, katalog 07.2026, z filmami (`--videos-out`, 4 wątki, ok. 1 h):
+- 2129 pytań kat. B: 911 ze zdjęciem (45,7 MB WebP, w aplikacji), 1029 z filmem, reszta bez mediów;
+- filmy: 921 plików MP4, razem 1520 MB, w Firebase Storage, nie w aplikacji. Wszystkie przeszły ffprobe (H.264), 225 ma dźwięk;
+- grupy: podstawowe 1/2/3 pkt: 368/509/869, specjalistyczne 1/2/3 pkt: 78/150/155;
+- pominięte: 6 z błędnym formatem (lista wyżej), 0 duplikatów, 0 brakujących mediów.
+
+Wcześniej, 13.11.2026, bez filmów: 1100 pytań, w tym 911 ze zdjęciem.

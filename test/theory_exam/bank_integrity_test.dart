@@ -10,9 +10,21 @@ void main() {
     File(QuestionBank.assetPath).readAsStringSync(),
   );
 
-  test('bank comes from the 07.2026 catalogue and has ~1100 questions', () {
+  test('bank comes from the 07.2026 catalogue with all category B questions',
+      () {
     expect(bank.sourceVersion, '2026-07');
-    expect(bank.questions.length, greaterThan(1000));
+    expect(bank.questions.length, greaterThan(2000));
+    expect(bank.questions.where((q) => q.hasVideo).length, greaterThan(1000));
+  });
+
+  test('every film has a versioned content-hash path and a size', () {
+    final path = RegExp(r'^theory_exam/videos/2026-07/[0-9a-f]{12}\.mp4$');
+    for (final q in bank.questions.where((q) => q.hasVideo)) {
+      expect(q.video, matches(path), reason: '${q.id}');
+      expect(q.videoBytes, greaterThan(10000), reason: '${q.id}');
+      expect(q.isBasic, isTrue, reason: '${q.id}');
+      expect(q.image, isNull, reason: '${q.id}');
+    }
   });
 
   test('ids are unique and answers are consistent', () {

@@ -158,15 +158,9 @@ void main() {
     expect(find.text('Nauka'), findsOneWidget);
     expect(find.text('Powtórka błędów'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.textContaining('Pytania z filmami nie są uwzględnione'),
+      find.textContaining('Filmy pobierają się przy pierwszym użyciu'),
       200,
     );
-    expect(
-      find.text(
-        'Pytania: Ministerstwo Infrastruktury, stan 07.2026. '
-        'Pytania z filmami nie są uwzględnione.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text(theorySourceNote), findsOneWidget);
   });
 }
