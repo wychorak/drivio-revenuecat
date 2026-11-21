@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'dart:math';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:drivio/features/theory_exam/models.dart';
 import 'package:drivio/features/theory_exam/progress_repository.dart';
 import 'package:drivio/features/theory_exam/question_bank.dart';
+import 'package:drivio/features/theory_exam/video_cache.dart';
 
 /// Wall clock used by the theory section; overridden in tests.
 final theoryClockProvider = Provider<DateTime Function()>(
@@ -18,6 +22,33 @@ final theoryQuestionBankProvider = FutureProvider<QuestionBank>(
 
 final theoryProgressRepositoryProvider = Provider<TheoryProgressRepository>(
   (ref) => SharedPrefsTheoryProgressRepository(),
+);
+
+/// Downloads through the Firebase SDK, so the request carries the user's
+/// sign-in and App Check token that the Storage rules require.
+class FirebaseVideoDownloader implements VideoDownloader {
+  @override
+  Future<void> download(String storagePath, File target) async {
+    await FirebaseStorage.instance.ref(storagePath).writeToFile(target);
+  }
+}
+
+/// Videos live in the cache directory: iOS keeps it out of iCloud backups
+/// (Apple asks that re-downloadable data is not backed up) and may clear it
+/// when space runs low, in which case the videos are fetched again.
+final theoryVideoCacheProvider = Provider<TheoryVideoCache>(
+  (ref) => TheoryVideoCache(
+    directory: () async => Directory(
+      '${(await getApplicationCacheDirectory()).path}'
+      '${Platform.pathSeparator}theory_videos',
+    ),
+    downloader: FirebaseVideoDownloader(),
+  ),
+);
+
+/// Bytes of downloaded videos; invalidate after downloads or clearing.
+final theoryVideoCacheSizeProvider = FutureProvider<int>(
+  (ref) => ref.watch(theoryVideoCacheProvider).sizeBytes(),
 );
 
 final theoryProgressProvider =

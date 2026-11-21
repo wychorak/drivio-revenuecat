@@ -13,6 +13,8 @@ class TheoryQuestion {
     required this.answers,
     required this.correctIndex,
     this.image,
+    this.video,
+    this.videoBytes,
   });
 
   /// "Numer pytania" from the Ministry of Infrastructure catalogue.
@@ -30,7 +32,15 @@ class TheoryQuestion {
   /// Asset path of the picture, if the question has one.
   final String? image;
 
+  /// Firebase Storage path of the MP4, for questions with a video.
+  final String? video;
+
+  /// Size of [video] in bytes, for download progress and storage totals.
+  final int? videoBytes;
+
   bool get isBasic => part == TheoryPart.basic;
+
+  bool get hasVideo => video != null;
 
   factory TheoryQuestion.fromJson(Map<String, dynamic> json) => TheoryQuestion(
     id: json['id'] as int,
@@ -40,6 +50,8 @@ class TheoryQuestion {
     answers: List<String>.from(json['answers'] as List),
     correctIndex: json['correct'] as int,
     image: json['image'] as String?,
+    video: json['video'] as String?,
+    videoBytes: json['videoBytes'] as int?,
   );
 }
 
