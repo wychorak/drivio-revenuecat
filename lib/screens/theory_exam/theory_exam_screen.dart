@@ -89,8 +89,10 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
               final file = await store.localFile(q);
               if (file != null) _videoFiles[q.id] = file;
             }
+            // The learner may have left while the files were looked up.
+            if (!mounted) return;
             ref.invalidate(theoryVideoCacheSizeProvider);
-            if (mounted) setState(() => _start(drawn));
+            setState(() => _start(drawn));
           },
           cancelOnError: true,
         );
