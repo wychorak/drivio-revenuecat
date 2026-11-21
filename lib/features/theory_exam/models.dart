@@ -92,6 +92,7 @@ class ExamRecord {
     required this.passed,
     required this.duration,
     required this.answers,
+    this.withoutVideo = false,
   });
 
   final DateTime date;
@@ -102,7 +103,11 @@ class ExamRecord {
   /// Question ids in exam order with the chosen answer (null = none).
   final List<(int, int?)> answers;
 
+  /// Taken offline, drawn only from questions without a film.
+  final bool withoutVideo;
+
   Map<String, dynamic> toJson() => {
+    if (withoutVideo) 'nv': true,
     'date': date.millisecondsSinceEpoch,
     'score': score,
     'passed': passed,
@@ -121,6 +126,7 @@ class ExamRecord {
       for (final pair in json['answers'] as List)
         ((pair as List)[0] as int, pair[1] as int?),
     ],
+    withoutVideo: json['nv'] as bool? ?? false,
   );
 }
 

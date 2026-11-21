@@ -94,6 +94,14 @@ class _TheoryExamResultScreenState
                     color: AppTheme.textSecondary,
                   ),
                 ),
+                if (record.withoutVideo) ...[
+                  const SizedBox(height: 8),
+                  Chip(
+                    avatar: const Icon(Icons.videocam_off_outlined, size: 16),
+                    label: const Text('Wersja bez filmów'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
               ],
             ),
           ),

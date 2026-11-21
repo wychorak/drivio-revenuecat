@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:drivio/features/theory_exam/exam_engine.dart';
 import 'package:drivio/features/theory_exam/models.dart';
+import 'package:drivio/features/theory_exam/question_bank.dart';
 import 'package:drivio/providers/theory_ad_provider.dart';
 import 'package:drivio/providers/theory_exam_provider.dart';
 import 'package:drivio/services/analytics_service.dart';
@@ -15,6 +17,7 @@ import 'package:drivio/theme/app_theme.dart';
 import 'package:drivio/widgets/common/loading_widget.dart';
 import 'package:drivio/widgets/theory_exam/answer_buttons.dart';
 import 'package:drivio/widgets/theory_exam/question_card.dart';
+import 'package:drivio/widgets/theory_exam/question_video.dart';
 
 String formatClock(Duration d) {
   final s = d.inSeconds;
@@ -23,6 +26,10 @@ String formatClock(Duration d) {
 
 /// Full exam as in WORD: 32 questions, per-question time limits, no going
 /// back, 25 minutes in total. No banner here: ads never sit next to a timer.
+///
+/// Before the clock starts, every film of the drawn questions is put on the
+/// device, so the exam itself never waits for the network. Offline, the
+/// learner can take an exam drawn from film-free questions instead.
 class TheoryExamScreen extends ConsumerStatefulWidget {
   const TheoryExamScreen({super.key});
 
@@ -31,6 +38,14 @@ class TheoryExamScreen extends ConsumerStatefulWidget {
 }
 
 class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
+  /// Drawn exam whose films are being downloaded.
+  List<TheoryQuestion>? _drawn;
+  double _prepareProgress = 0;
+  bool _prepareFailed = false;
+  StreamSubscription<double>? _preparing;
+  bool _withoutVideo = false;
+  final _videoFiles = <int, File>{};
+
   List<TheoryQuestion>? _questions;
   late List<int?> _answers;
   late ExamClock _clock;
@@ -41,7 +56,53 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _preparing?.cancel();
     super.dispose();
+  }
+
+  void _draw(QuestionBank bank) {
+    _drawn = generateExam(bank, Random());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prepare());
+  }
+
+  void _prepare() {
+    final drawn = _drawn!;
+    final store = ref.read(theoryVideoCacheProvider);
+    setState(() {
+      _prepareFailed = false;
+      _prepareProgress = 0;
+    });
+    _preparing?.cancel();
+    _preparing = store
+        .prepare(drawn)
+        .listen(
+          (p) {
+            if (mounted) setState(() => _prepareProgress = p);
+          },
+          onError: (Object error) {
+            debugPrint('Theory exam films failed: $error');
+            if (mounted) setState(() => _prepareFailed = true);
+          },
+          onDone: () async {
+            if (_prepareFailed || !mounted) return;
+            for (final q in drawn.where((q) => q.hasVideo)) {
+              final file = await store.localFile(q);
+              if (file != null) _videoFiles[q.id] = file;
+            }
+            ref.invalidate(theoryVideoCacheSizeProvider);
+            if (mounted) setState(() => _start(drawn));
+          },
+          cancelOnError: true,
+        );
+  }
+
+  void _startWithoutVideo() {
+    _preparing?.cancel();
+    final bank = ref.read(theoryQuestionBankProvider).requireValue;
+    setState(() {
+      _withoutVideo = true;
+      _start(generateExam(bank, Random(), withoutVideo: true));
+    });
   }
 
   void _start(List<TheoryQuestion> questions) {
@@ -90,6 +151,7 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
         for (var i = 0; i < questions.length; i++)
           (questions[i].id, _answers[i]),
       ],
+      withoutVideo: _withoutVideo,
     );
     await ref.read(theoryProgressProvider.notifier).addExam(record);
     AnalyticsService.instance.theoryExamFinished(
@@ -127,9 +189,7 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
   @override
   Widget build(BuildContext context) {
     final bank = ref.watch(theoryQuestionBankProvider);
-    if (_questions == null && bank is AsyncData) {
-      _start(generateExam(bank.requireValue, Random()));
-    }
+    if (_drawn == null && bank is AsyncData<QuestionBank>) _draw(bank.value);
 
     return PopScope(
       canPop: false,
@@ -152,10 +212,118 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
           AsyncError() => const Center(
             child: Text('Nie udało się wczytać pytań.'),
           ),
-          _ when _questions == null => const LoadingWidget(),
+          _ when _drawn == null => const LoadingWidget(),
+          _ when _questions == null => _preparationView(),
           _ => _body(),
         },
       ),
+    );
+  }
+
+  Widget _preparationView() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _prepareFailed
+            ? [
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Nie udało się pobrać filmów do egzaminu.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Sprawdź internet albo zrób egzamin złożony z pytań '
+                  'bez filmów.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _prepare,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: const Text('Spróbuj ponownie'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton(
+                  onPressed: _startWithoutVideo,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: const Text('Egzamin bez filmów'),
+                ),
+              ]
+            : [
+                Text(
+                  'Przygotowuję egzamin…',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pobieram filmy do pytań. Każdy film pobiera się tylko raz.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: _prepareProgress,
+                    minHeight: 8,
+                    backgroundColor: AppTheme.bgElevated,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ],
+      ),
+    ),
+  );
+
+  Widget? _media(TheoryQuestion question, QuestionPhase phase) {
+    if (!question.hasVideo) return null;
+    final file = _videoFiles[question.id];
+    if (file == null) {
+      // Removed from the device mid-exam: the clock's 3 s start timeout
+      // moves on to the answer time.
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(
+          child: Icon(
+            Icons.videocam_off_outlined,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      );
+    }
+    return QuestionVideo(
+      key: ValueKey('exam-video-$_index'),
+      file: file,
+      play: phase != QuestionPhase.reading,
+      controls: false,
+      onStarted: (length) => setState(() => _clock.startVideo(length)),
+      onEnded: () => setState(_clock.videoEnded),
+      onFailed: () => setState(_clock.videoFailed),
     );
   }
 
@@ -163,6 +331,7 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
     final question = _questions![_index];
     final phase = _clock.phase;
     final reading = phase == QuestionPhase.reading;
+    final film = phase == QuestionPhase.video;
     final left = _clock.remainingInPhase;
     final total = _clock.phaseLength;
     final isLast = _index == _questions!.length - 1;
@@ -196,10 +365,14 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
           children: [
             Expanded(
               child: Text(
-                reading ? 'Czas na zapoznanie się' : 'Czas na odpowiedź',
+                reading
+                    ? 'Czas na zapoznanie się'
+                    : film
+                    ? 'Odtwarzanie filmu'
+                    : 'Czas na odpowiedź',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: reading
+                  color: reading || film
                       ? AppTheme.textSecondary
                       : AppTheme.primaryBright,
                 ),
@@ -223,11 +396,11 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
                 : left.inMilliseconds / total.inMilliseconds,
             minHeight: 6,
             backgroundColor: AppTheme.bgElevated,
-            color: reading ? AppTheme.routeBlue : AppTheme.primary,
+            color: reading || film ? AppTheme.routeBlue : AppTheme.primary,
           ),
         ),
         const SizedBox(height: 14),
-        QuestionCard(question: question),
+        QuestionCard(question: question, media: _media(question, phase)),
         const SizedBox(height: 18),
         if (reading) ...[
           OutlinedButton(
@@ -235,7 +408,11 @@ class _TheoryExamScreenState extends ConsumerState<TheoryExamScreen> {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
             ),
-            child: const Text('Start – przejdź do odpowiedzi'),
+            child: Text(
+              question.hasVideo
+                  ? 'Start – odtwórz film'
+                  : 'Start – przejdź do odpowiedzi',
+            ),
           ),
           const SizedBox(height: 12),
         ],

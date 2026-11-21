@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drivio/features/theory_exam/models.dart';
@@ -20,6 +21,41 @@ class MemoryRepo implements TheoryProgressRepository {
   Future<TheoryProgress> load() async => stored;
   @override
   Future<void> save(TheoryProgress progress) async => stored = progress;
+}
+
+/// Like [harnessBank]; basic questions in [videoBasics] get a film. With
+/// [extraPlainBasics] each basic group also gets that many film-free ones.
+QuestionBank videoBank({int extraPlainBasics = 0}) {
+  final base = harnessBank();
+  var id = 1000;
+  return QuestionBank(
+    sourceVersion: base.sourceVersion,
+    questions: [
+      for (final q in base.questions)
+        q.isBasic
+            ? TheoryQuestion(
+                id: q.id,
+                text: q.text,
+                part: q.part,
+                points: q.points,
+                answers: q.answers,
+                correctIndex: q.correctIndex,
+                video: 'theory_exam/videos/2026-07/v${q.id}.mp4',
+                videoBytes: 1000,
+              )
+            : q,
+      for (final points in [3, 2, 1])
+        for (var i = 0; i < extraPlainBasics; i++)
+          TheoryQuestion(
+            id: id++,
+            text: 'Pytanie bez filmu $id?',
+            part: TheoryPart.basic,
+            points: points,
+            answers: const ['TAK', 'NIE'],
+            correctIndex: 0,
+          ),
+    ],
+  );
 }
 
 /// Bank with enough questions for a full exam. Basic questions: correct
@@ -57,6 +93,9 @@ class FakeVideoStore implements TheoryVideoStore {
   /// Ids of questions whose download fails, as if offline.
   final offline = <int>{};
 
+  /// When set, downloads wait for it, so tests can see the progress screen.
+  Completer<void>? hold;
+
   @override
   Future<File?> localFile(TheoryQuestion q) async =>
       local.contains(q.video) ? File(q.video!) : null;
@@ -64,6 +103,7 @@ class FakeVideoStore implements TheoryVideoStore {
   @override
   Future<File> ensure(TheoryQuestion q) async {
     ensured.add(q.id);
+    await hold?.future;
     if (offline.contains(q.id)) throw const SocketException('offline');
     local.add(q.video!);
     return File(q.video!);

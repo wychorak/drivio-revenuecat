@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drivio/features/theory_exam/models.dart';
 import 'package:drivio/screens/theory_exam/theory_exam_result_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_exam_screen.dart';
@@ -102,6 +104,75 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('start'), findsOneWidget);
     expect(h.repo.stored.exams, isEmpty);
+  });
+
+  testWidgets('the films are downloaded first, then the exam starts', (
+    tester,
+  ) async {
+    final h = Harness(bank: videoBank());
+    h.videos.hold = Completer<void>();
+    await tester.pumpWidget(h.app('/', routes()));
+    GoRouter.of(tester.element(find.text('start'))).push('/theory/exam');
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Przygotowuję egzamin…'), findsOneWidget);
+    expect(find.text('Pytanie 1/32'), findsNothing);
+
+    h.videos.hold!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Pytanie 1/32'), findsOneWidget);
+    expect(h.videos.local, hasLength(20));
+  });
+
+  testWidgets('offline: retry, or an exam without films marked as such', (
+    tester,
+  ) async {
+    final h = Harness(bank: videoBank(extraPlainBasics: 12));
+    h.videos.offline.addAll([
+      for (final q in h.bank.questions)
+        if (q.hasVideo) q.id,
+    ]);
+    await startExam(tester, h);
+
+    expect(find.text('Nie udało się pobrać filmów do egzaminu.'), findsOneWidget);
+    await tester.tap(find.text('Spróbuj ponownie'));
+    await tester.pumpAndSettle();
+    expect(find.text('Spróbuj ponownie'), findsOneWidget);
+
+    await tester.tap(find.text('Egzamin bez filmów'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pytanie 1/32'), findsOneWidget);
+    for (var i = 0; i < 32; i++) {
+      await tester.tap(find.byKey(const Key('answer-0')));
+      await tester.tap(find.text(i == 31 ? 'Zakończ' : 'Dalej'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Wersja bez filmów'), findsOneWidget);
+    expect(h.repo.stored.exams.single.withoutVideo, isTrue);
+  });
+
+  testWidgets('a film question: reading, the film once, then 15 s to answer', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final h = Harness(bank: videoBank());
+    await startExam(tester, h);
+
+    expect(find.text('Czas na zapoznanie się'), findsOneWidget);
+    expect(find.text('Start – odtwórz film'), findsOneWidget);
+    expect(h.controllers.last.plays, 0);
+
+    await wait(tester, h, const Duration(seconds: 20));
+    expect(find.text('Odtwarzanie filmu'), findsOneWidget);
+    expect(h.controllers.last.plays, 1);
+
+    h.controllers.last.end();
+    await wait(tester, h, Duration.zero);
+    expect(find.text('Czas na odpowiedź'), findsOneWidget);
+    expect(find.text('15 s'), findsOneWidget);
+    expect(find.text('Odtwórz ponownie'), findsNothing);
   });
 
   testWidgets('the 25 minute limit ends the exam', (tester) async {
