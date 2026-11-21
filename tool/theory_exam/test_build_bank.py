@@ -44,7 +44,7 @@ class NormalizeTest(unittest.TestCase):
 
 
 class SelectTest(unittest.TestCase):
-    def test_filters_video_category_and_duplicates(self):
+    def test_keeps_video_and_filters_category_and_duplicates(self):
         rows = [
             HEADER,
             row(1, media='film.wmv'),
@@ -56,15 +56,15 @@ class SelectTest(unittest.TestCase):
             [],
         ]
         questions, report = bb.select_questions(rows)
-        self.assertEqual([q['id'] for q in questions], [2, 4])
-        self.assertEqual(questions[0]['text'], 'Pytanie?')
-        self.assertEqual(questions[0]['answers'], ['TAK', 'NIE'])
-        self.assertEqual(questions[0]['media'], 'foto.jpg')
-        self.assertEqual(questions[1]['part'], 'specialist')
-        self.assertEqual(questions[1]['points'], 2)
-        self.assertEqual(questions[1]['answers'], ['a', 'b', 'c'])
-        self.assertEqual(questions[1]['correct'], 2)
-        self.assertEqual(report['video_skipped'], 1)
+        self.assertEqual([q['id'] for q in questions], [1, 2, 4])
+        self.assertEqual(questions[0]['media'], 'film.wmv')
+        self.assertEqual(questions[1]['text'], 'Pytanie?')
+        self.assertEqual(questions[1]['answers'], ['TAK', 'NIE'])
+        self.assertEqual(questions[1]['media'], 'foto.jpg')
+        self.assertEqual(questions[2]['part'], 'specialist')
+        self.assertEqual(questions[2]['points'], 2)
+        self.assertEqual(questions[2]['answers'], ['a', 'b', 'c'])
+        self.assertEqual(questions[2]['correct'], 2)
         self.assertEqual(report['duplicates'], [2])
 
     def test_invalid_rows_are_reported_not_kept(self):
@@ -72,6 +72,37 @@ class SelectTest(unittest.TestCase):
         questions, report = bb.select_questions(rows)
         self.assertEqual(questions, [])
         self.assertEqual(sorted(report['invalid']), [5, 6])
+
+
+class VideoTest(unittest.TestCase):
+    def test_media_kind(self):
+        self.assertEqual(bb.media_kind('Film 1.WMV'), 'video')
+        self.assertEqual(bb.media_kind('a.jpeg'), 'image')
+        self.assertIsNone(bb.media_kind(''))
+
+    def test_same_source_gives_same_name_and_new_source_a_new_one(self):
+        a = bb.video_name(b'wmv bytes')
+        self.assertEqual(a, bb.video_name(b'wmv bytes'))
+        self.assertNotEqual(a, bb.video_name(b'other bytes'))
+        self.assertRegex(a, r'^[0-9a-f]{12}\.mp4$')
+
+    def test_video_path_is_versioned(self):
+        self.assertEqual(bb.video_storage_path('abc.mp4'),
+                         'theory_exam/videos/2026-07/abc.mp4')
+
+    def test_ffmpeg_args(self):
+        args = bb.ffmpeg_args('in.wmv', 'out.part', has_audio=False)
+        joined = ' '.join(args)
+        for part in ('-c:v libx264', '-crf 26', '-pix_fmt yuv420p',
+                     '+faststart', '-an', '-f mp4'):
+            self.assertIn(part, joined)
+        self.assertIn("scale='min(1024,iw)':-2", args)
+        self.assertEqual(args[-1], 'out.part')
+        with_audio = ' '.join(bb.ffmpeg_args('in.wmv', 'o', has_audio=True))
+        self.assertNotIn('-an', with_audio)
+        self.assertIn('-c:a aac', with_audio)
+        self.assertIn('-ac 1', with_audio)
+        self.assertIn('-b:a 64k', with_audio)
 
 
 if __name__ == '__main__':

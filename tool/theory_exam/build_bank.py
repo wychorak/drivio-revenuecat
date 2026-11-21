@@ -6,18 +6,24 @@ Usage:
       --zip multimedia_do_pytan.zip --zip multimedia_cz2.zip \
       --out assets/theory_exam
 
-Keeps category B questions without video (.wmv), converts their pictures to
-WebP (max 1080 px wide) and writes questions_b.json. Source files stay
-outside the repository; see README.md.
+Keeps category B questions, converts their pictures to WebP (max 1080 px
+wide) and writes questions_b.json. With --videos-out DIR it also transcodes
+the .wmv videos to MP4 for Firebase Storage; without it, video questions are
+left out. Source files and videos stay outside the repository; see README.md.
 """
 
 import argparse
+import concurrent.futures
 import datetime as dt
+import hashlib
 import io
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -25,6 +31,10 @@ SOURCE_VERSION = '2026-07'
 MAX_WIDTH = 1080
 WEBP_QUALITY = 75
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png')
+VIDEO_EXTENSIONS = ('.wmv',)
+VIDEO_MAX_WIDTH = 1024
+VIDEO_CRF = 26
+VIDEO_PREFIX = 'theory_exam/videos/' + SOURCE_VERSION
 
 _NS = {'m': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
@@ -53,13 +63,54 @@ def correct_index(value, part):
     return mapping.get(v)
 
 
+def media_kind(name):
+    n = (name or '').strip().lower()
+    if n.endswith(VIDEO_EXTENSIONS):
+        return 'video'
+    if n.endswith(IMAGE_EXTENSIONS):
+        return 'image'
+    return None
+
+
+def video_name(data):
+    """Content-addressed MP4 name: one file per source video, and a changed
+    source gets a new name so no device keeps a stale copy."""
+    return hashlib.sha1(data).hexdigest()[:12] + '.mp4'
+
+
+def video_storage_path(name):
+    return VIDEO_PREFIX + '/' + name
+
+
+def ffmpeg_args(src, dst, has_audio):
+    args = [
+        'ffmpeg', '-v', 'error', '-y', '-i', src,
+        '-vf', "scale='min(%d,iw)':-2" % VIDEO_MAX_WIDTH,
+        '-c:v', 'libx264', '-preset', 'slow', '-crf', str(VIDEO_CRF),
+        '-pix_fmt', 'yuv420p',
+    ]
+    if has_audio:
+        args += ['-c:a', 'aac', '-ac', '1', '-b:a', '64k']
+    else:
+        args += ['-an']
+    return args + ['-movflags', '+faststart', '-f', 'mp4', dst]
+
+
+def has_audio(path):
+    out = subprocess.run(
+        ['ffprobe', '-v', 'error', '-select_streams', 'a',
+         '-show_entries', 'stream=index', '-of', 'csv=p=0', path],
+        capture_output=True, text=True, check=True).stdout
+    return bool(out.strip())
+
+
 def select_questions(rows):
-    """Returns (questions, report) for category B rows without video.
+    """Returns (questions, report) for category B rows.
 
     Each question: id, text, part, points, answers, correct, media (source
     file name or ''). The first occurrence of a duplicated id wins.
     """
-    report = {'video_skipped': 0, 'duplicates': [], 'invalid': []}
+    report = {'duplicates': [], 'invalid': []}
     questions = []
     seen = set()
     for r in rows[1:]:
@@ -68,9 +119,6 @@ def select_questions(rows):
         if not is_category_b(r[COL_CATS]):
             continue
         media = r[COL_MEDIA].strip()
-        if media.lower().endswith('.wmv'):
-            report['video_skipped'] += 1
-            continue
         try:
             qid = int(str(r[COL_ID]).strip())
         except ValueError:
@@ -135,13 +183,13 @@ def read_xlsx_rows(path):
 
 
 def index_archives(paths):
-    """Maps lower-case image file names to (archive, member) pairs."""
+    """Maps lower-case media file names to (archive, member) pairs."""
     index = {}
     archives = [zipfile.ZipFile(p) for p in paths]
     for archive in archives:
         for info in archive.infolist():
             name = os.path.basename(info.filename).lower()
-            if name.endswith(IMAGE_EXTENSIONS):
+            if media_kind(name):
                 index.setdefault(name, (archive, info.filename))
     return index
 
@@ -157,25 +205,65 @@ def convert_image(data, target):
         img.save(target, 'WEBP', quality=WEBP_QUALITY, method=6)
 
 
-def build(xlsx, zips, out):
+def transcode_video(data, videos_out):
+    """Writes <sha>.mp4 into videos_out (skipped when it already exists) and
+    returns (name, size)."""
+    name = video_name(data)
+    target = os.path.join(videos_out, name)
+    if not os.path.exists(target):
+        tmp = tempfile.mkdtemp()
+        try:
+            src = os.path.join(tmp, 'src.wmv')
+            with open(src, 'wb') as f:
+                f.write(data)
+            part = target + '.part'
+            subprocess.run(ffmpeg_args(src, part, has_audio(src)), check=True)
+            os.replace(part, target)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    return name, os.path.getsize(target)
+
+
+def build(xlsx, zips, out, videos_out=None, workers=3):
     questions, report = select_questions(read_xlsx_rows(xlsx))
     img_dir = os.path.join(out, 'img')
     os.makedirs(img_dir, exist_ok=True)
+    if videos_out:
+        os.makedirs(videos_out, exist_ok=True)
     index = index_archives(zips)
-    kept, missing = [], []
+    kept, missing, video_skipped = [], [], 0
+    video_jobs = {}  # archive member -> future of (name, size)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
     for q in questions:
         media = q.pop('media')
         q['image'] = None
+        kind = media_kind(media)
+        if kind == 'video' and not videos_out:
+            video_skipped += 1
+            continue
         if media:
             entry = index.get(os.path.basename(media).lower())
             if entry is None:
                 missing.append(q['id'])
                 continue
             archive, member = entry
-            target = os.path.join(img_dir, '%d.webp' % q['id'])
-            convert_image(archive.read(member), target)
-            q['image'] = 'assets/theory_exam/img/%d.webp' % q['id']
+            if kind == 'video':
+                if member not in video_jobs:
+                    video_jobs[member] = pool.submit(
+                        transcode_video, archive.read(member), videos_out)
+                q['_video_job'] = video_jobs[member]
+            else:
+                target = os.path.join(img_dir, '%d.webp' % q['id'])
+                convert_image(archive.read(member), target)
+                q['image'] = 'assets/theory_exam/img/%d.webp' % q['id']
         kept.append(q)
+    for done, q in enumerate([q for q in kept if '_video_job' in q], 1):
+        name, size = q.pop('_video_job').result()
+        q['video'] = video_storage_path(name)
+        q['videoBytes'] = size
+        if done % 50 == 0:
+            print('videos ready for', done, 'questions', flush=True)
+    pool.shutdown()
     kept.sort(key=lambda q: q['id'])
     bank = {
         'sourceVersion': SOURCE_VERSION,
@@ -196,11 +284,18 @@ def build(xlsx, zips, out):
     print('questions kept:', len(kept))
     print('with image:', sum(1 for q in kept if q['image']))
     print('groups:', dict(sorted(groups.items())))
-    print('video skipped:', report['video_skipped'])
+    print('with video:', sum(1 for q in kept if q.get('video')))
+    print('video files:', len(video_jobs))
+    print('video skipped (no --videos-out):', video_skipped)
     print('duplicates skipped:', report['duplicates'])
     print('invalid skipped:', report['invalid'])
-    print('missing image skipped:', missing)
+    print('missing media skipped:', len(missing), missing[:20])
     print('images MB: %.1f' % (image_bytes / 1e6))
+    if videos_out:
+        video_bytes = sum(os.path.getsize(os.path.join(videos_out, f))
+                          for f in os.listdir(videos_out)
+                          if f.endswith('.mp4'))
+        print('videos MB: %.1f' % (video_bytes / 1e6))
 
 
 def main(argv):
@@ -208,8 +303,10 @@ def main(argv):
     parser.add_argument('--xlsx', required=True)
     parser.add_argument('--zip', action='append', required=True)
     parser.add_argument('--out', default='assets/theory_exam')
+    parser.add_argument('--videos-out')
+    parser.add_argument('--workers', type=int, default=3)
     args = parser.parse_args(argv)
-    build(args.xlsx, args.zip, args.out)
+    build(args.xlsx, args.zip, args.out, args.videos_out, args.workers)
 
 
 if __name__ == '__main__':
