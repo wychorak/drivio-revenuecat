@@ -14,7 +14,7 @@ import 'package:drivio/widgets/common/loading_widget.dart';
 
 const theorySourceNote =
     'Pytania: Ministerstwo Infrastruktury, stan 07.2026. '
-    'Pytania z filmami nie są uwzględnione.';
+    'Filmy pobierają się przy pierwszym użyciu i zostają w telefonie.';
 
 class TheoryHomeScreen extends ConsumerStatefulWidget {
   const TheoryHomeScreen({super.key});
@@ -31,9 +31,37 @@ class _TheoryHomeScreenState extends ConsumerState<TheoryHomeScreen> {
     ref.read(theoryAdControllerProvider);
   }
 
-  void _open(String mode, String path) {
+  Future<void> _open(String mode, String path) async {
     AnalyticsService.instance.theoryModeOpen(mode);
-    context.push(path);
+    await context.push(path);
+    // Practice and exams download films; refresh the space shown here.
+    ref.invalidate(theoryVideoCacheSizeProvider);
+  }
+
+  Future<void> _clearVideos() async {
+    final clear = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Usunąć pobrane filmy?'),
+        content: const Text(
+          'Zwolnisz miejsce w telefonie. Filmy pobiorą się ponownie, '
+          'gdy będą potrzebne.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Usuń'),
+          ),
+        ],
+      ),
+    );
+    if (clear != true) return;
+    await ref.read(theoryVideoCacheProvider).clear();
+    ref.invalidate(theoryVideoCacheSizeProvider);
   }
 
   @override
@@ -77,6 +105,7 @@ class _TheoryHomeScreenState extends ConsumerState<TheoryHomeScreen> {
                   : 'Pytań do powtórki: ${p.mistakes.length}',
               onTap: () => _open('mistakes', '/theory/mistakes'),
             ),
+            _VideoStorageRow(onClear: _clearVideos),
             const SizedBox(height: 16),
             Text(
               theorySourceNote,
@@ -93,6 +122,45 @@ class _TheoryHomeScreenState extends ConsumerState<TheoryHomeScreen> {
         ),
         _ => const LoadingWidget(),
       },
+    );
+  }
+}
+
+/// Space taken by downloaded films, shown once there is any.
+class _VideoStorageRow extends ConsumerWidget {
+  const _VideoStorageRow({required this.onClear});
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bytes = ref.watch(theoryVideoCacheSizeProvider).value ?? 0;
+    if (bytes == 0) return const SizedBox(height: 4);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.sd_storage_outlined,
+            size: 18,
+            color: AppTheme.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Pobrane filmy: ${(bytes / 1e6).round()} MB',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onClear,
+            child: const Text('Usuń pobrane filmy'),
+          ),
+        ],
+      ),
     );
   }
 }
