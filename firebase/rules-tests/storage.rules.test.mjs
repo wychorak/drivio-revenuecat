@@ -47,6 +47,20 @@ test('non-admin and different admin cannot upload to another trap folder', async
     'traps/admin/videos/clip.mp4'), bytes, {contentType: 'video/mp4'}));
 });
 
+test('theory exam videos: signed-in users read, nobody writes', async () => {
+  const path = 'theory_exam/videos/2026-07/abc123def456.mp4';
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await uploadBytes(ref(ctx.storage(bucket), path), bytes,
+      {contentType: 'video/mp4'});
+  });
+  await assertSucceeds(getMetadata(ref(storage('viewer'), path)));
+  await assertFails(getMetadata(ref(env.unauthenticatedContext().storage(bucket),
+    path)));
+  await assertFails(uploadBytes(ref(storage('admin', {admin: true}),
+    'theory_exam/videos/2026-07/new.mp4'), bytes, {contentType: 'video/mp4'}));
+  await assertFails(deleteObject(ref(storage('admin', {admin: true}), path)));
+});
+
 test('video path rejects images and unsupported video MIME types', async () => {
   const admin = storage('admin', {admin: true});
   await assertFails(uploadBytes(ref(admin, 'traps/admin/videos/not-video.jpg'),

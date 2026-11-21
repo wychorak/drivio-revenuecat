@@ -44,6 +44,13 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // Official theory exam videos, uploaded by the maintainers with the
+    // Cloud SDK (which bypasses these rules). The app only reads them.
+    match /theory_exam/videos/{version}/{fileName} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
