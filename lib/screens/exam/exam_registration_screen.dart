@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:drivio/services/analytics_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:drivio/config/app_config.dart';
 import 'package:drivio/theme/app_theme.dart';
+
+// Ordering the licence blank online in Szczecin.
+const _licenceFee = '100 zł';
+const _licenceAccount = '52102047950000970202778470';
+const _licenceAccountDisplay = '52 1020 4795 0000 9702 0277 8470';
+const _licenceTransferTitle = 'Opłata za wydanie prawa jazdy kat. B';
+const _cityOfficeEmail = 'ekancelaria@um.szczecin.pl';
+const _licenceEmailSubject = 'Imię i nazwisko – numer PKK';
+
+// Releasing the PKK to take the exam in another city.
+const _wordOfficeEmail = 'sekretariat@word.szczecin.pl';
+const _pkkReleaseFormUrl =
+    'https://word.szczecin.pl/wp-content/uploads/2021/09/zwolnienie-pkk_v202109.pdf';
 
 class ExamRegistrationScreen extends StatefulWidget {
   const ExamRegistrationScreen({super.key});
@@ -15,10 +29,40 @@ class ExamRegistrationScreen extends StatefulWidget {
 class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
   Future<void> _openWord() async {
     AnalyticsService.instance.examBookingOpen();
-    final uri = Uri.parse(AppConfig.wordUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await _openLink(AppConfig.wordUrl);
+  }
+
+  Future<void> _openLink(String url) =>
+      _launch(Uri.parse(url), fallbackCopy: url);
+
+  Future<void> _sendEmail(String address, {String? subject}) => _launch(
+    Uri(
+      scheme: 'mailto',
+      path: address,
+      // Encoded by hand: queryParameters would turn spaces into "+".
+      query: subject == null ? null : 'subject=${Uri.encodeComponent(subject)}',
+    ),
+    fallbackCopy: address,
+  );
+
+  Future<void> _launch(Uri uri, {required String fallbackCopy}) async {
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      opened = false;
     }
+    if (!opened) {
+      await _copy(fallbackCopy, message: 'Nie udało się otworzyć – skopiowano');
+    }
+  }
+
+  Future<void> _copy(String value, {String message = 'Skopiowano'}) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('$message: $value')));
   }
 
   @override
@@ -117,25 +161,94 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
           _section(
             icon: Icons.credit_card_outlined,
             iconColor: AppTheme.premiumGold,
-            title: 'Jak zamówić blankiet prawa jazdy',
+            title: 'Zamówienie blankietu po zdanym egzaminie (online)',
             children: [
               _step(
                 '1',
-                'Po zdanym egzaminie złóż wniosek w urzędzie lub online',
+                'Wykonaj przelew: $_licenceFee na rachunek Urzędu Miasta '
+                    'Szczecin',
               ),
+              _copyBox([
+                _copyRow(
+                  'Numer konta',
+                  _licenceAccountDisplay,
+                  copyValue: _licenceAccount,
+                ),
+                _copyRow('Tytuł przelewu', _licenceTransferTitle),
+              ]),
               _step(
                 '2',
-                'Udaj się do Wydziału Komunikacji Urzędu Miejskiego w Szczecinie',
+                'Pobierz potwierdzenie przelewu w formacie PDF lub jako '
+                    'zdjęcie',
               ),
               _step(
                 '3',
-                'Dostarcz orzeczenie i zdjęcie (jeśli nie było złożone przy PKK)',
+                'Wyślij potwierdzenie e-mailem do urzędu, dołączając je '
+                    'jako załącznik',
               ),
-              _step('4', 'Opłać 100,50 zł za wydanie dokumentu'),
-              _step('5', 'Prawo jazdy odbierzesz w ciągu 2–4 tygodni'),
+              _copyBox([
+                _copyRow('Adres e-mail', _cityOfficeEmail),
+                _copyRow('Temat wiadomości', _licenceEmailSubject),
+                _copyRow(
+                  'Załącznik',
+                  'Potwierdzenie wykonania przelewu',
+                  copyable: false,
+                ),
+              ]),
+              _actionButton(
+                icon: Icons.mail_outline_rounded,
+                label: 'Napisz do urzędu',
+                onPressed: () =>
+                    _sendEmail(_cityOfficeEmail, subject: _licenceEmailSubject),
+              ),
+              const SizedBox(height: 12),
               _step(
-                '6',
-                'Możliwa wysyłka pocztą – zaznacz przy składaniu wniosku',
+                '4',
+                'W ciągu 3–4 tygodni dostaniesz wiadomość, że blankiet jest '
+                    'gotowy do odbioru',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _section(
+            icon: Icons.swap_horiz_rounded,
+            iconColor: AppTheme.routeBlue,
+            title: 'Egzamin w innym mieście – zwolnienie PKK',
+            children: [
+              _infoItem(
+                'Jeśli chcesz zdawać egzamin w innym mieście, musisz złożyć '
+                'wniosek o zwolnienie Profilu Kandydata na Kierowcę (PKK).',
+              ),
+              const SizedBox(height: 4),
+              _step('1', 'Pobierz formularz wniosku o zwolnienie PKK'),
+              _actionButton(
+                icon: Icons.download_rounded,
+                label: 'Pobierz formularz (PDF)',
+                onPressed: () => _openLink(_pkkReleaseFormUrl),
+              ),
+              const SizedBox(height: 12),
+              _step(
+                '2',
+                'Wypełnij wszystkie wymagane pola i upewnij się, że dane są '
+                    'prawidłowe',
+              ),
+              _step(
+                '3',
+                'Wyślij skan wypełnionego formularza lub jego wersję '
+                    'elektroniczną do WORD-u',
+              ),
+              _copyBox([_copyRow('Adres e-mail', _wordOfficeEmail)]),
+              _actionButton(
+                icon: Icons.mail_outline_rounded,
+                label: 'Napisz do WORD Szczecin',
+                onPressed: () => _sendEmail(_wordOfficeEmail),
+              ),
+              const SizedBox(height: 12),
+              _step(
+                '4',
+                'PKK powinien zostać zwolniony w ciągu około 2 dni roboczych. '
+                    'Potem możesz zadzwonić do WORD-u, aby potwierdzić '
+                    'realizację wniosku',
               ),
             ],
           ),
@@ -328,6 +441,79 @@ class _ExamRegistrationScreenState extends State<ExamRegistrationScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _copyBox(List<Widget> rows) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(left: 34, bottom: 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(children: rows),
+    );
+  }
+
+  Widget _copyRow(
+    String label,
+    String value, {
+    String? copyValue,
+    bool copyable = true,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+                SelectableText(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (copyable)
+          IconButton(
+            tooltip: 'Kopiuj: $label',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _copy(copyValue ?? value),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+          ),
+      ],
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 34),
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
       ),
     );
   }
