@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/screens/exam/exam_registration_screen.dart';
+import 'package:drivio/theme/app_theme.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  // Every weight is bundled; fail loudly instead of reaching the network.
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  // Tall view so the whole list is laid out without scrolling. Plain themes
-  // stand in for AppTheme, whose Poppins weights are fetched at runtime.
+  // Tall view so the whole list is laid out without scrolling.
   Future<void> pumpExam(WidgetTester tester, ThemeData theme) async {
     tester.view.physicalSize = const Size(1080, 15000);
     tester.view.devicePixelRatio = 3;
@@ -21,8 +21,8 @@ void main() {
   }
 
   for (final (name, theme) in [
-    ('dark', ThemeData(brightness: Brightness.dark)),
-    ('light', ThemeData(brightness: Brightness.light)),
+    ('dark', AppTheme.darkTheme),
+    ('light', AppTheme.lightTheme),
   ]) {
     testWidgets('shows licence blank and PKK release steps ($name)', (
       tester,
@@ -64,7 +64,7 @@ void main() {
       ),
     );
 
-    await pumpExam(tester, ThemeData(brightness: Brightness.dark));
+    await pumpExam(tester, AppTheme.darkTheme);
     await tester.tap(find.byTooltip('Kopiuj: Numer konta'));
     await tester.pump();
 

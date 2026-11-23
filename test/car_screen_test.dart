@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drivio/screens/guides/car_screen.dart';
+import 'package:drivio/theme/app_theme.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  // Every weight is bundled; fail loudly instead of reaching the network.
   GoogleFonts.config.allowRuntimeFetching = false;
 
   // A phone-wide but very tall view, so the whole lazily built list is laid
@@ -17,10 +18,8 @@ void main() {
     await tester.pump();
   }
 
-  // AppTheme pulls in Poppins weights that are fetched at runtime, which
-  // tests cannot do, so plain themes of both brightnesses stand in for it.
-  final dark = ThemeData(brightness: Brightness.dark);
-  final light = ThemeData(brightness: Brightness.light);
+  final dark = AppTheme.darkTheme;
+  final light = AppTheme.lightTheme;
 
   const titles = [
     'Światła pozycyjne',
