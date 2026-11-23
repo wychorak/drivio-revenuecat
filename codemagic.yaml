@@ -25,9 +25,10 @@ workflows:
       vars:
         APP_STORE_APPLE_ID: "6776345734"
         IOS_BUNDLE_ID: "com.drivio.com"
-        # Internal TestFlight group that gets every build, exactly as named in
-        # App Store Connect > TestFlight > Internal Testing. Empty = upload only.
-        TESTFLIGHT_BETA_GROUP: ""
+        # Optional TESTFLIGHT_BETA_GROUP: the internal TestFlight group that
+        # gets every build, exactly as named in App Store Connect > TestFlight >
+        # Internal Testing. Add it here or in the Codemagic UI; Codemagic
+        # rejects an empty value, so leave it out for upload only.
 
     scripts:
       - name: Validate release configuration
