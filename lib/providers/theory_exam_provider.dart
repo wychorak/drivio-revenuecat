@@ -85,20 +85,37 @@ class TheoryProgressNotifier extends AsyncNotifier<TheoryProgress> {
 
   Future<void> addExam(ExamRecord record) => _update((p) => p.addExam(record));
 
-  Future<void> setLearnCursor(int index) =>
-      _update((p) => p.copyWith(learnCursor: index));
+  /// Remembers the last question answered in a learning section.
+  Future<void> setLearnCursor(String section, int questionId) =>
+      _update((p) => p.withLearnCursor(section, questionId));
 }
 
 enum PracticeMode { random, learn, mistakes }
 
 class PracticeFilter {
-  const PracticeFilter({this.part, this.points, this.onlyUnseen = false});
+  const PracticeFilter({
+    this.part,
+    this.points,
+    this.onlyUnseen = false,
+    this.section = LearnSection.all,
+  });
 
   final TheoryPart? part;
   final int? points;
   final bool onlyUnseen;
 
+  /// Category chosen on the learning or mistakes screen.
+  final LearnSection section;
+
+  /// True when none of the sheet's own filters (part, points, unseen) is set.
   bool get isEmpty => part == null && points == null && !onlyUnseen;
+
+  PracticeFilter withSection(LearnSection section) => PracticeFilter(
+    part: part,
+    points: points,
+    onlyUnseen: onlyUnseen,
+    section: section,
+  );
 }
 
 /// Questions for a practice session: random = whole bank shuffled,
@@ -117,6 +134,7 @@ List<TheoryQuestion> practiceQueue(
       return bank.questions
           .where(
             (q) =>
+                filter.section.contains(q) &&
                 (filter.part == null || q.part == filter.part) &&
                 (filter.points == null || q.points == filter.points) &&
                 (!filter.onlyUnseen || !progress.stats.containsKey(q.id)),
@@ -125,7 +143,9 @@ List<TheoryQuestion> practiceQueue(
         ..sort((a, b) => a.id.compareTo(b.id));
     case PracticeMode.mistakes:
       final ids = progress.mistakes;
-      return bank.questions.where((q) => ids.contains(q.id)).toList()
+      return bank.questions
+          .where((q) => ids.contains(q.id) && filter.section.contains(q))
+          .toList()
         ..sort((a, b) => a.id.compareTo(b.id));
   }
 }

@@ -25,9 +25,16 @@ const offlineSkipMessage = 'Brak internetu – pominięto pytanie z filmem';
 /// filters, or a review of questions last answered wrong. Every answer is
 /// checked at once.
 class TheoryPracticeScreen extends ConsumerStatefulWidget {
-  const TheoryPracticeScreen({super.key, required this.mode});
+  const TheoryPracticeScreen({
+    super.key,
+    required this.mode,
+    this.section = LearnSection.all,
+  });
 
   final PracticeMode mode;
+
+  /// Category picked on the learning or mistakes screen.
+  final LearnSection section;
 
   @override
   ConsumerState<TheoryPracticeScreen> createState() =>
@@ -42,24 +49,27 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
   int _answered = 0;
   int _correct = 0;
   bool _advancing = false;
-  PracticeFilter _filter = const PracticeFilter();
+  late PracticeFilter _filter = PracticeFilter(section: widget.section);
 
   /// Film of the current question, once it is on the device.
   File? _videoFile;
   bool _loadingVideo = false;
 
-  String get _title => switch (widget.mode) {
-    PracticeMode.random => 'Losuj pytanie',
-    PracticeMode.learn => 'Nauka',
-    PracticeMode.mistakes => 'Powtórka błędów',
-  };
+  String get _title => widget.section != LearnSection.all
+      ? widget.section.label
+      : switch (widget.mode) {
+          PracticeMode.random => 'Losuj pytanie',
+          PracticeMode.learn => 'Nauka',
+          PracticeMode.mistakes => 'Powtórka błędów',
+        };
 
   void _buildQueue(QuestionBank bank, TheoryProgress progress) {
     final queue = practiceQueue(bank, progress, widget.mode, _filter, _rng);
     var start = 0;
-    if (widget.mode == PracticeMode.learn && progress.learnCursor > 0) {
-      // Resume after the last question answered in learning mode.
-      start = queue.indexWhere((q) => q.id > progress.learnCursor);
+    final cursor = progress.learnCursorFor(widget.section.key);
+    if (widget.mode == PracticeMode.learn && cursor > 0) {
+      // Resume after the last question answered in this section.
+      start = queue.indexWhere((q) => q.id > cursor);
       if (start < 0) start = 0;
     }
     _queue = queue;
@@ -150,7 +160,7 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
     final progress = ref.read(theoryProgressProvider.notifier);
     await progress.recordAnswer(question.id, correct);
     if (widget.mode == PracticeMode.learn) {
-      await progress.setLearnCursor(question.id);
+      await progress.setLearnCursor(widget.section.key, question.id);
     }
   }
 
@@ -175,7 +185,7 @@ class _TheoryPracticeScreenState extends ConsumerState<TheoryPracticeScreen> {
     );
     if (filter == null || !mounted) return;
     setState(() {
-      _filter = filter;
+      _filter = filter.withSection(widget.section);
       _buildQueue(bank, ref.read(theoryProgressProvider).requireValue);
     });
   }

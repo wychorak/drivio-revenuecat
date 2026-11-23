@@ -4,6 +4,71 @@ library;
 /// Part of the official exam: basic (TAK/NIE) or specialist (A/B/C).
 enum TheoryPart { basic, specialist }
 
+/// Learning category. The catalogue has none, so the bank builder assigns one
+/// from the question's wording (tool/theory_exam/build_bank.py); [key] is the
+/// value stored in questions_b.json. Listed in display order.
+enum TheoryTopic {
+  priority('priority', 'Pierwszeństwo i skrzyżowania'),
+  overtaking('overtaking', 'Wyprzedzanie, wymijanie i pasy ruchu'),
+  pedestrians('pedestrians', 'Piesi, rowerzyści i hulajnogi'),
+  speed('speed', 'Prędkość i hamowanie'),
+  parking('parking', 'Zatrzymanie, parkowanie i manewry'),
+  signs('signs', 'Znaki i sygnały'),
+  vehicle('vehicle', 'Pojazd, dokumenty i kary'),
+  general('general', 'Jazda – zasady ogólne'),
+  railway('railway', 'Przejazdy kolejowe i tramwaje'),
+  conditions('conditions', 'Światła i warunki na drodze'),
+  firstAid('first_aid', 'Pierwsza pomoc i wypadki'),
+  motorway('motorway', 'Autostrady i drogi ekspresowe'),
+  alcohol('alcohol', 'Alkohol, leki i uwaga kierowcy');
+
+  const TheoryTopic(this.key, this.label);
+
+  final String key;
+  final String label;
+
+  static TheoryTopic fromKey(String? key) => values.firstWhere(
+    (t) => t.key == key,
+    orElse: () => TheoryTopic.general,
+  );
+}
+
+/// What a learning or mistakes session covers: everything, questions with a
+/// film, or one topic. [key] is used in routes and to remember progress.
+class LearnSection {
+  const LearnSection._(this.key, this.label, this.topic);
+
+  static const all = LearnSection._('all', 'Wszystkie pytania', null);
+  static const video = LearnSection._('video', 'Pytania z filmem', null);
+
+  factory LearnSection.topic(TheoryTopic topic) =>
+      LearnSection._(topic.key, topic.label, topic);
+
+  factory LearnSection.fromKey(String key) {
+    if (key == video.key) return video;
+    for (final t in TheoryTopic.values) {
+      if (t.key == key) return LearnSection.topic(t);
+    }
+    return all;
+  }
+
+  final String key;
+  final String label;
+  final TheoryTopic? topic;
+
+  bool contains(TheoryQuestion q) => switch (key) {
+    'all' => true,
+    'video' => q.hasVideo,
+    _ => q.topic == topic,
+  };
+
+  @override
+  bool operator ==(Object other) => other is LearnSection && other.key == key;
+
+  @override
+  int get hashCode => key.hashCode;
+}
+
 class TheoryQuestion {
   const TheoryQuestion({
     required this.id,
@@ -15,6 +80,7 @@ class TheoryQuestion {
     this.image,
     this.video,
     this.videoBytes,
+    this.topic = TheoryTopic.general,
   });
 
   /// "Numer pytania" from the Ministry of Infrastructure catalogue.
@@ -38,6 +104,8 @@ class TheoryQuestion {
   /// Size of [video] in bytes, for download progress and storage totals.
   final int? videoBytes;
 
+  final TheoryTopic topic;
+
   bool get isBasic => part == TheoryPart.basic;
 
   bool get hasVideo => video != null;
@@ -52,6 +120,7 @@ class TheoryQuestion {
     image: json['image'] as String?,
     video: json['video'] as String?,
     videoBytes: json['videoBytes'] as int?,
+    topic: TheoryTopic.fromKey(json['topic'] as String?),
   );
 }
 
@@ -134,7 +203,7 @@ class TheoryProgress {
   const TheoryProgress({
     required this.stats,
     required this.exams,
-    this.learnCursor = 0,
+    this.learnCursors = const {},
   });
 
   factory TheoryProgress.empty() => const TheoryProgress(stats: {}, exams: []);
@@ -146,8 +215,14 @@ class TheoryProgress {
   /// Newest first, at most [maxExams].
   final List<ExamRecord> exams;
 
-  /// Position in the learning mode's question list.
-  final int learnCursor;
+  /// Per learning section ([LearnSection.key]): id of the last question
+  /// answered there, so each category resumes where it stopped.
+  final Map<String, int> learnCursors;
+
+  int learnCursorFor(String section) => learnCursors[section] ?? 0;
+
+  TheoryProgress withLearnCursor(String section, int questionId) =>
+      copyWith(learnCursors: {...learnCursors, section: questionId});
 
   Set<int> get mistakes => {
     for (final e in stats.entries)
@@ -169,11 +244,11 @@ class TheoryProgress {
   TheoryProgress copyWith({
     Map<int, QuestionStats>? stats,
     List<ExamRecord>? exams,
-    int? learnCursor,
+    Map<String, int>? learnCursors,
   }) => TheoryProgress(
     stats: stats ?? this.stats,
     exams: exams ?? this.exams,
-    learnCursor: learnCursor ?? this.learnCursor,
+    learnCursors: learnCursors ?? this.learnCursors,
   );
 
   TheoryProgress recordAnswer(int id, bool correct, DateTime at) {
@@ -199,7 +274,7 @@ class TheoryProgress {
       for (final e in stats.entries) '${e.key}': e.value.toJson(),
     },
     'exams': [for (final e in exams) e.toJson()],
-    'learnCursor': learnCursor,
+    'learnCursors': learnCursors,
   };
 
   factory TheoryProgress.fromJson(Map<String, dynamic> json) => TheoryProgress(
@@ -213,6 +288,12 @@ class TheoryProgress {
       for (final e in json['exams'] as List)
         ExamRecord.fromJson(e as Map<String, dynamic>),
     ],
-    learnCursor: json['learnCursor'] as int? ?? 0,
+    learnCursors: {
+      // Saved before categories existed: one cursor for the whole bank.
+      if (json['learnCursor'] is int) 'all': json['learnCursor'] as int,
+      ...?(json['learnCursors'] as Map<String, dynamic>?)?.map(
+        (k, v) => MapEntry(k, v as int),
+      ),
+    },
   );
 }

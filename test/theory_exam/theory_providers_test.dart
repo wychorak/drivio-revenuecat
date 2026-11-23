@@ -130,8 +130,11 @@ void main() {
     );
     expect(repo.stored.exams.single.score, 70);
 
-    await notifier.setLearnCursor(2);
-    expect(container.read(theoryProgressProvider).value!.learnCursor, 2);
-    expect(repo.stored.learnCursor, 2);
+    await notifier.setLearnCursor('signs', 2);
+    expect(
+      container.read(theoryProgressProvider).value!.learnCursorFor('signs'),
+      2,
+    );
+    expect(repo.stored.learnCursorFor('signs'), 2);
   });
 }

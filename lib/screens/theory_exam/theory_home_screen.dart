@@ -94,7 +94,8 @@ class _TheoryHomeScreenState extends ConsumerState<TheoryHomeScreen> {
             _ModeTile(
               icon: Icons.menu_book_rounded,
               title: 'Nauka',
-              subtitle: 'Wszystkie pytania po kolei, z filtrami',
+              subtitle: 'Pytania według kategorii, np. parkowanie, '
+                  'pierwszeństwo, pytania z filmem',
               onTap: () => _open('learn', '/theory/learn'),
             ),
             _ModeTile(

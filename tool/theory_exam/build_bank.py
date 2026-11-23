@@ -104,6 +104,97 @@ def has_audio(path):
     return bool(out.strip())
 
 
+# Topics for learning by category. The catalogue has no topic column, so a
+# question gets one from its wording: ordered keyword rules, first match wins,
+# patterns match at word starts. Checked by hand on samples (about 90% right);
+# a wrong topic only moves a question to another learning tile.
+_TOPIC_PATTERNS = [
+    ('first_aid', [
+        r'\bpierwsz\w* pomoc', r'\bposzkodowan', r'\brann\w', r'\bresuscytac',
+        r'\buciska\w* klatk', r'\bkrwotok', r'\bkrwawi', r'\boparzen', r'\bzłaman',
+        r'\bnieprzytomn', r'\bwypad(ek|k)', r'\boddech', r'\boddycha',
+        r'\bpozycj\w* bezpieczn', r'\bpogotowi', r'\bnumer\w* alarmow', r'\b112\b',
+        r'\bmiejsc\w* zdarzeni', r'\bkolizj\w* drogow', r'\budziel', r'\bratown',
+        r'\bdefibryl', r'\bbez pomocy', r'\bleżąc\w* osob', r'\bwezwa\w* pomoc',
+        r'\bpłonąc']),
+    ('alcohol', [
+        r'\balkohol', r'\bnarkoty', r'\bamfetamin', r'\bodurzaj', r'\bdziałając\w* podobnie',
+        r'\bleki?\b', r'\bleków\b', r'\bzmęcz', r'\bsenn', r'\bsen\b', r'\btrzeźw',
+        r'\bzdrowi', r'\bchorob', r'\bemocj', r'\bstres', r'\bagres', r'\bczas\w* reakcji',
+        r'\bkoncentr', r'\brozprosz', r'\btelefon', r'\bsłuchawk', r'\bmikrofon',
+        r'\bnawigac', r'\bpalen\w* tytoniu', r'\bjedzen']),
+    ('vehicle', [
+        r'\bpraw\w* jazdy', r'\bmandat', r'\bpunkt\w* karn', r'\bgrzywn',
+        r'\bkar(a|y|ę|ą)\b', r'\bkarn', r'\bodpowiedzialnoś', r'\bwykroczen',
+        r'\bprzestęp', r'\bubezpiecz', r'\bdow(ód|odu|odem)\b', r'\bdokument',
+        r'\bbadani\w* technicz', r'\brejestracyjn']),
+    ('railway', [r'\bkolejow', r'\bkolej(e|i|ą)?\b', r'\bpociąg', r'\btramwaj',
+                 r'\bszynow', r'\btorowisk', r'\bzapor', r'\brogatk']),
+    ('motorway', [r'\bautostrad', r'\bekspresow']),
+    ('speed', [r'\bprędkoś', r'\bkm/h', r'\bhamow', r'\bdrog\w* zatrzymania', r'\bodstęp',
+               r'\bodległoś\w* od (poprzedzając|pojazd|jadąc)', r'\bdystans',
+               r'\bszybciej', r'\bwolniej', r'\bprzyspiesz']),
+    ('parking', [
+        r'\bparkow', r'\bzaparkow', r'\bpost(ój|oju|ojow)',
+        r'\b(wolno|możesz|prawo)( ci)? (się )?zatrzyma', r'\bprzed (jego )?opuszczeniem',
+        r'\bunieruchom', r'\bcofa', r'\bcofni', r'\bzawraca', r'\bzawróci', r'\bkopert',
+        r'\bkart\w* parkingow', r'\bwysiad', r'\bdrzwi\b', r'\bopuszcz\w* pojazd',
+        r'\blini\w* przystankow', r'\bzatok']),
+    ('pedestrians', [
+        r'\bpiesz', r'\browerzyst', r'\browe(r|ru|rem|rze)\b', r'\bhulajnog',
+        r'\btransportu osobistego', r'\bdzieci', r'\bdziecko', r'\bdzieck',
+        r'\bniepełnospraw', r'\bbiał\w* lask', r'\bjeźdźc', r'\bzwierz', r'\bmotorower',
+        r'\bzaprzęg', r'\bograniczonej sprawności', r'\bmotocykl', r'\bszkoln',
+        r'\bstarsz\w* osob']),
+    ('overtaking', [
+        r'\bwyprzedz', r'\bwymij', r'\bomij', r'\bomin', r'\bpas\w* ruchu', r'\bpas\w* dla',
+        r'\bzmian\w* pas', r'\bzmieni\w* pas', r'\bzjecha\w* w prawo', r'\bzajmowan\w* pas',
+        r'\bprawym pas', r'\blewym pas', r'\bśrodkow\w* pas']),
+    ('priority', [
+        r'\bpierwszeństw', r'\bskrzyżowa', r'\bustąpi', r'\brond', r'\bruch\w* okrężn',
+        r'\bwłącza\w* się do ruchu', r'\buprzywilejowan', r'\bskręca', r'\bskręci',
+        r'\bskręt', r'\bjezdni\w* poprzeczn', r'\bnadjeżdżając', r'\bz prawej strony',
+        r'\bz lewej strony', r'\bwjecha\w* na drog', r'\bwyjeżdża']),
+    ('conditions', [
+        r'\bświat(ł|eł)\w* (mijania|drogow|przeciwmgł|pozycyjn|awaryjn|do jazdy dziennej|cofania)',
+        r'\breflektor', r'\bkierunkowskaz', r'\boświetl', r'\bmgł', r'\bmgle\b',
+        r'\bnoc(y|ą)?\b', r'\bzmierzch', r'\bzmrok', r'\bwidoczno', r'\bolśni', r'\boślepi',
+        r'\bdeszcz', r'\bopad', r'\bśnie(g|żn)', r'\boblodz', r'\bgołoledź', r'\bślisk',
+        r'\bpoślizg', r'\bkolein', r'\bnawierzchn', r'\bwiatr', r'\bupał', r'\bzakręt',
+        r'\bwzniesieni', r'\bstrom', r'\btunel', r'\bmost', r'\bwiadukt', r'\bpogod',
+        r'\bszron', r'\bkałuż', r'\bszyb', r'\bliście']),
+    ('signs', [
+        r'\bznak', r'\bsygnał', r'\bsygnaliz', r'\btablic', r'\bkierując\w* ruchem',
+        r'\bpolicjant', r'\blini[aię]\b', r'\blinii\b', r'\bliniam', r'\boznakow',
+        r'\boznaczon', r'\bstrzałk', r'\bstref', r'\bostrzega', r'\bobszar\w* zabudowan',
+        r'\bświatł', r'\bodblaskow']),
+    ('vehicle', [
+        r'\bwyposaż', r'\bapteczk', r'\bgaśnic', r'\btrójkąt', r'\bopon', r'\bhamulc',
+        r'\bamortyz', r'\bolej', r'\bsilnik', r'\bakumulator', r'\bbieżnik', r'\blusterk',
+        r'\bpas\w* bezpieczeństwa', r'\bfotelik', r'\bzagłów', r'\bprzewo', r'\bładun',
+        r'\bprzyczep', r'\bholow', r'\bkontroln', r'\bekonomiczn', r'\bpaliw', r'\bemisj',
+        r'\bekologi', r'\babs\b', r'\besp\b', r'\bpoduszk', r'\bkierownic', r'\bpolicj',
+        r'\brejestr', r'\bsprawnoś', r'\busterk', r'\bawari', r'\bbagażnik', r'\bdach',
+        r'\bkatalizator', r'\bspalin', r'\bśrodowisk']),
+]
+_TOPIC_RULES = [(t, re.compile('|'.join(p))) for t, p in _TOPIC_PATTERNS]
+DEFAULT_TOPIC = 'general'
+TOPICS = sorted({t for t, _ in _TOPIC_PATTERNS} | {DEFAULT_TOPIC})
+
+
+def _match_topic(s):
+    for topic, rx in _TOPIC_RULES:
+        if rx.search(s):
+            return topic
+    return None
+
+
+def classify_topic(text, answers):
+    """The question decides; the answers only when the question says nothing."""
+    return (_match_topic(text.lower()) or _match_topic(' '.join(answers).lower())
+            or DEFAULT_TOPIC)
+
+
 def select_questions(rows):
     """Returns (questions, report) for category B rows.
 
@@ -147,6 +238,8 @@ def select_questions(rows):
             'answers': answers,
             'correct': correct,
             'media': media,
+            'topic': classify_topic(
+                text, answers if part == 'specialist' else []),
         })
     return questions, report
 
@@ -284,6 +377,10 @@ def build(xlsx, zips, out, videos_out=None, workers=3):
     print('questions kept:', len(kept))
     print('with image:', sum(1 for q in kept if q['image']))
     print('groups:', dict(sorted(groups.items())))
+    topics = {}
+    for q in kept:
+        topics[q['topic']] = topics.get(q['topic'], 0) + 1
+    print('topics:', dict(sorted(topics.items(), key=lambda kv: -kv[1])))
     print('with video:', sum(1 for q in kept if q.get('video')))
     print('video files:', len(video_jobs))
     print('video skipped (no --videos-out):', video_skipped)
@@ -298,14 +395,37 @@ def build(xlsx, zips, out, videos_out=None, workers=3):
         print('videos MB: %.1f' % (video_bytes / 1e6))
 
 
+def retag(out):
+    """Recomputes the topic of every question in an existing bank; the same
+    result as a full build, without the source archives."""
+    path = os.path.join(out, 'questions_b.json')
+    with open(path, encoding='utf-8') as f:
+        bank = json.load(f)
+    counts = {}
+    for q in bank['questions']:
+        q['topic'] = classify_topic(
+            q['text'], q['answers'] if q['part'] == 'specialist' else [])
+        counts[q['topic']] = counts.get(q['topic'], 0) + 1
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(bank, f, ensure_ascii=False, separators=(',', ':'))
+    print('topics:', dict(sorted(counts.items(), key=lambda kv: -kv[1])))
+
+
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--xlsx', required=True)
-    parser.add_argument('--zip', action='append', required=True)
+    parser.add_argument('--xlsx')
+    parser.add_argument('--zip', action='append')
+    parser.add_argument('--retag', action='store_true',
+                        help='only recompute topics in the existing bank')
     parser.add_argument('--out', default='assets/theory_exam')
     parser.add_argument('--videos-out')
     parser.add_argument('--workers', type=int, default=3)
     args = parser.parse_args(argv)
+    if args.retag:
+        retag(args.out)
+        return
+    if not args.xlsx or not args.zip:
+        parser.error('--xlsx and --zip are required for a full build')
     build(args.xlsx, args.zip, args.out, args.videos_out, args.workers)
 
 

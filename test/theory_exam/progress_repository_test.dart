@@ -48,13 +48,13 @@ void main() {
     final p = TheoryProgress.empty()
         .recordAnswer(3, false, t0)
         .addExam(exam(70, t0))
-        .copyWith(learnCursor: 12);
+        .withLearnCursor('parking', 12);
 
     await repo.save(p);
     final loaded = await repo.load();
 
     expect(loaded.mistakes, {3});
-    expect(loaded.learnCursor, 12);
+    expect(loaded.learnCursorFor('parking'), 12);
     expect(loaded.exams.single.score, 70);
     expect(loaded.exams.single.passed, isTrue);
     expect(loaded.exams.single.answers, const [(1, 0), (2, null)]);

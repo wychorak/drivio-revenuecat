@@ -74,6 +74,49 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(sorted(report['invalid']), [5, 6])
 
 
+class TopicTest(unittest.TestCase):
+    def check(self, topic, text, answers=()):
+        self.assertEqual(bb.classify_topic(text, list(answers)), topic, text)
+
+    def test_real_catalogue_questions(self):
+        self.check('parking', 'Czy wolno Ci zaparkować pojazd w tej zatoce?')
+        self.check('priority', 'Zamierzasz skręcić w lewo. Czy masz obowiązek '
+                   'ustąpić pierwszeństwa pojazdowi nadjeżdżającemu z prawej strony?')
+        self.check('railway', 'Czy w tej sytuacji wolno Ci wjechać na przejazd kolejowy?')
+        self.check('first_aid', 'Czy w tej sytuacji masz obowiązek udzielić '
+                   'niezbędnej pomocy ofierze wypadku?')
+        self.check('vehicle', 'Za które naruszenie przepisów ruchu drogowego '
+                   'policjant zatrzyma prawo jazdy?')
+        self.check('vehicle', 'Jaką funkcję spełnia system przeciwblokujący (ABS)?')
+        self.check('conditions', 'Kiedy masz obowiązek wyłączyć tylne światła przeciwmgłowe?')
+        self.check('signs', 'Czy ten znak ostrzega o niebezpieczeństwie?')
+        self.check('speed', 'Czy w przedstawionej sytuacji należy rozpocząć hamowanie pojazdu?')
+        self.check('general', 'Czy w tej sytuacji masz obowiązek zachować szczególną ostrożność?')
+
+    def test_word_starts_only(self):
+        # 'kolejności' is not about railways, 'pomocy' is not about the night.
+        self.check('vehicle', 'W jakiej kolejności wykonasz czynności przed jazdą?',
+                   ['Ustawić fotel, lusterka i zapiąć pasy bezpieczeństwa.'])
+        self.assertNotEqual(bb.classify_topic('Czy wezwiesz pomocy?', []), 'conditions')
+
+    def test_answers_only_when_the_question_says_nothing(self):
+        self.check('speed', 'Prędkość bezpieczna to prędkość :',
+                   ['Po spożyciu alkoholu.', 'b', 'c'])
+        self.check('alcohol', 'Która z czynności jest niedozwolona?',
+                   ['Prowadzenie po spożyciu alkoholu.', 'b', 'c'])
+
+    def test_every_topic_is_known(self):
+        self.assertEqual(set(bb.TOPICS), {
+            'priority', 'overtaking', 'pedestrians', 'speed', 'parking', 'signs',
+            'vehicle', 'general', 'railway', 'conditions', 'first_aid', 'motorway',
+            'alcohol'})
+
+    def test_selected_questions_get_a_topic(self):
+        questions, _ = bb.select_questions(
+            [HEADER, row(1, text='Czy wolno Ci zaparkować tutaj?')])
+        self.assertEqual(questions[0]['topic'], 'parking')
+
+
 class VideoTest(unittest.TestCase):
     def test_media_kind(self):
         self.assertEqual(bb.media_kind('Film 1.WMV'), 'video')

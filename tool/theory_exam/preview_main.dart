@@ -18,6 +18,7 @@ import 'package:drivio/screens/theory_exam/theory_exam_result_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_exam_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_home_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_practice_screen.dart';
+import 'package:drivio/screens/theory_exam/theory_sections_screen.dart';
 import 'package:drivio/theme/app_theme.dart';
 
 class _OfflineVideos implements TheoryVideoStore {
@@ -48,11 +49,23 @@ void main() {
     initialLocation: '/theory',
     routes: [
       GoRoute(path: '/theory', builder: (_, _) => const TheoryHomeScreen()),
-      for (final mode in PracticeMode.values)
+      GoRoute(
+        path: '/theory/random',
+        builder: (_, _) => const TheoryPracticeScreen(mode: PracticeMode.random),
+      ),
+      for (final mode in const [PracticeMode.learn, PracticeMode.mistakes]) ...[
         GoRoute(
           path: '/theory/${mode.name}',
-          builder: (_, _) => TheoryPracticeScreen(mode: mode),
+          builder: (_, _) => TheorySectionsScreen(mode: mode),
         ),
+        GoRoute(
+          path: '/theory/${mode.name}/:section',
+          builder: (_, state) => TheoryPracticeScreen(
+            mode: mode,
+            section: LearnSection.fromKey(state.pathParameters['section']!),
+          ),
+        ),
+      ],
       GoRoute(path: '/theory/exam', builder: (_, _) => const TheoryExamScreen()),
       GoRoute(
         path: '/theory/exam/result',

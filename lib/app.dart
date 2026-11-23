@@ -32,6 +32,7 @@ import 'package:drivio/features/theory_exam/models.dart';
 import 'package:drivio/providers/theory_exam_provider.dart';
 import 'package:drivio/screens/theory_exam/theory_home_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_practice_screen.dart';
+import 'package:drivio/screens/theory_exam/theory_sections_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_exam_screen.dart';
 import 'package:drivio/screens/theory_exam/theory_exam_result_screen.dart';
 
@@ -140,18 +141,23 @@ final _routerProvider = Provider<GoRouter>((ref) {
           child: TheoryPracticeScreen(mode: PracticeMode.random),
         ),
       ),
-      GoRoute(
-        path: '/theory/learn',
-        builder: (context, state) => const _DarkOnly(
-          child: TheoryPracticeScreen(mode: PracticeMode.learn),
+      for (final mode in const [PracticeMode.learn, PracticeMode.mistakes]) ...[
+        // Category list, then learning or review within one category.
+        GoRoute(
+          path: '/theory/${mode.name}',
+          builder: (context, state) =>
+              _DarkOnly(child: TheorySectionsScreen(mode: mode)),
         ),
-      ),
-      GoRoute(
-        path: '/theory/mistakes',
-        builder: (context, state) => const _DarkOnly(
-          child: TheoryPracticeScreen(mode: PracticeMode.mistakes),
+        GoRoute(
+          path: '/theory/${mode.name}/:section',
+          builder: (context, state) => _DarkOnly(
+            child: TheoryPracticeScreen(
+              mode: mode,
+              section: LearnSection.fromKey(state.pathParameters['section']!),
+            ),
+          ),
         ),
-      ),
+      ],
       GoRoute(
         path: '/theory/exam',
         builder: (context, state) =>

@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drivio/features/theory_exam/exam_engine.dart';
+import 'package:drivio/features/theory_exam/models.dart';
 import 'package:drivio/features/theory_exam/question_bank.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +17,18 @@ void main() {
     expect(bank.sourceVersion, '2026-07');
     expect(bank.questions.length, greaterThan(2000));
     expect(bank.questions.where((q) => q.hasVideo).length, greaterThan(1000));
+  });
+
+  test('every question has a known topic and every topic has questions', () {
+    final raw = jsonDecode(File(QuestionBank.assetPath).readAsStringSync())
+        as Map<String, dynamic>;
+    final keys = {for (final t in TheoryTopic.values) t.key};
+    final used = <String>{};
+    for (final q in (raw['questions'] as List).cast<Map<String, dynamic>>()) {
+      expect(keys, contains(q['topic']), reason: '${q['id']}');
+      used.add(q['topic'] as String);
+    }
+    expect(used, keys);
   });
 
   test('every film has a versioned content-hash path and a size', () {
